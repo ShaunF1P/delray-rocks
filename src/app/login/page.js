@@ -70,11 +70,11 @@ export default function LoginPage() {
           {/* Logo */}
           <div style={{
             width: 100, height: 100, borderRadius: 24,
-            background: 'linear-gradient(135deg, var(--rocks-gold), var(--rocks-gold-light))',
+            background: 'linear-gradient(135deg, #106B3A, #009A44)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 2rem', boxShadow: '0 8px 40px rgba(212,168,67,0.2)',
+            margin: '0 auto 2rem', boxShadow: '0 8px 40px rgba(16,107,58,0.3)',
           }}>
-            <Shield size={50} color="var(--rocks-navy-deep)" strokeWidth={2} />
+            <Shield size={50} color="white" strokeWidth={2} />
           </div>
 
           <h1 className="heading-display" style={{
@@ -83,7 +83,7 @@ export default function LoginPage() {
             marginBottom: '0.75rem',
           }}>
             DELRAY<br />
-            <span className="gradient-text">ROCKS</span>
+            <span className="gradient-text" style={{ display: 'block', color: '#009A44' }}>ROCKS</span>
           </h1>
 
           <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-base)', maxWidth: 380, lineHeight: 1.7 }}>
@@ -182,7 +182,7 @@ export default function LoginPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <a
                 href="/forgot-password"
-                style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-gold)', fontWeight: 600 }}
+                style={{ fontSize: 'var(--text-xs)', color: '#009A44', fontWeight: 600 }}
               >
                 Forgot password?
               </a>
@@ -214,7 +214,7 @@ export default function LoginPage() {
             fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
           }}>
             Need an account?{' '}
-            <a href="/signup" style={{ color: 'var(--rocks-gold)', fontWeight: 600 }}>
+            <a href="/signup" style={{ color: '#009A44', fontWeight: 600 }}>
               Contact your coach for an invite
             </a>
           </div>

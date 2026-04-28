@@ -71,13 +71,13 @@ export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = '
           width: 40,
           height: 40,
           borderRadius: 'var(--radius-md)',
-          background: 'linear-gradient(135deg, var(--rocks-gold), var(--rocks-gold-light))',
+          background: 'linear-gradient(135deg, #106B3A, #009A44)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <Shield size={22} color="var(--rocks-navy-deep)" strokeWidth={2.5} />
+          <Shield size={22} color="white" strokeWidth={2.5} />
         </div>
         <AnimatePresence>
           {!collapsed && (
@@ -117,8 +117,8 @@ export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = '
                   borderRadius: 'var(--radius-sm)',
                   fontSize: 'var(--text-sm)',
                   fontWeight: isActive ? 600 : 500,
-                  color: isActive ? 'var(--rocks-gold)' : 'var(--text-secondary)',
-                  background: isActive ? 'var(--rocks-gold-dim)' : 'transparent',
+                  color: isActive ? '#009A44' : 'var(--text-secondary)',
+                  background: isActive ? 'rgba(16, 107, 58, 0.12)' : 'transparent',
                   transition: 'all 150ms ease',
                   textDecoration: 'none',
                   position: 'relative',
@@ -148,7 +148,7 @@ export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = '
                       width: 3,
                       height: 20,
                       borderRadius: '0 4px 4px 0',
-                      background: 'var(--rocks-gold)',
+                      background: '#009A44',
                     }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />

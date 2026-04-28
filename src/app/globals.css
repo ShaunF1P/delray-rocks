@@ -12,15 +12,18 @@
 
 /* ── CSS Custom Properties ─────────────────────────────────────── */
 :root {
-  /* Brand Colors */
-  --rocks-navy: #0D1B2A;
-  --rocks-navy-deep: #060E18;
-  --rocks-navy-light: #1B2D44;
-  --rocks-gold: #D4A843;
-  --rocks-gold-light: #E2C56D;
-  --rocks-gold-dim: rgba(212, 168, 67, 0.15);
-  --rocks-crimson: #C62828;
-  --rocks-crimson-light: #E53935;
+  /* Brand Colors — Delray Rocks Official */
+  --rocks-green: #106B3A;
+  --rocks-green-deep: #0A4425;
+  --rocks-green-dark: #042E18;
+  --rocks-green-light: #009A44;
+  --rocks-green-bright: #2ECC71;
+  --rocks-green-dim: rgba(16, 107, 58, 0.15);
+  --rocks-gold: #FDB913;
+  --rocks-gold-light: #FFCC33;
+  --rocks-gold-dim: rgba(253, 185, 19, 0.15);
+  --rocks-black: #111111;
+  --rocks-white: #FFFFFF;
 
   /* UI Colors */
   --electric-blue: #3B82F6;
@@ -38,14 +41,14 @@
   --purple-dim: rgba(139, 92, 246, 0.12);
 
   /* Surface Colors */
-  --bg-primary: var(--rocks-navy-deep);
-  --bg-secondary: var(--rocks-navy);
-  --bg-card: rgba(15, 23, 42, 0.7);
-  --bg-card-hover: rgba(20, 30, 50, 0.8);
-  --bg-glass: rgba(30, 41, 59, 0.4);
-  --bg-glass-heavy: rgba(15, 23, 42, 0.85);
-  --bg-input: rgba(30, 41, 59, 0.6);
-  --bg-overlay: rgba(6, 14, 24, 0.8);
+  --bg-primary: #060E0A;
+  --bg-secondary: #0A1A10;
+  --bg-card: rgba(10, 26, 16, 0.75);
+  --bg-card-hover: rgba(16, 35, 22, 0.85);
+  --bg-glass: rgba(16, 40, 25, 0.4);
+  --bg-glass-heavy: rgba(8, 18, 12, 0.9);
+  --bg-input: rgba(16, 40, 25, 0.6);
+  --bg-overlay: rgba(4, 10, 6, 0.85);
 
   /* Text Colors */
   --text-primary: #F1F5F9;
@@ -56,16 +59,16 @@
   /* Border Colors */
   --border: rgba(148, 163, 184, 0.08);
   --border-light: rgba(148, 163, 184, 0.12);
-  --border-accent: rgba(212, 168, 67, 0.25);
-  --border-blue: rgba(59, 130, 246, 0.2);
+  --border-accent: rgba(253, 185, 19, 0.3);
+  --border-green: rgba(16, 107, 58, 0.3);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
-  --shadow-gold: 0 4px 24px rgba(212, 168, 67, 0.15);
-  --shadow-blue: 0 4px 24px rgba(59, 130, 246, 0.15);
+  --shadow-gold: 0 4px 24px rgba(253, 185, 19, 0.15);
+  --shadow-green: 0 4px 24px rgba(16, 107, 58, 0.2);
 
   /* Radii */
   --radius-xs: 6px;
@@ -144,9 +147,9 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse at 15% 15%, rgba(212, 168, 67, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 85%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(198, 40, 40, 0.02) 0%, transparent 60%);
+    radial-gradient(ellipse at 15% 15%, rgba(16, 107, 58, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 85%, rgba(253, 185, 19, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 154, 68, 0.02) 0%, transparent 60%);
   z-index: -1;
   pointer-events: none;
 }
@@ -172,7 +175,14 @@ h6 { font-size: var(--text-base); }
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--rocks-gold), var(--rocks-gold-light), var(--amber));
+  background: linear-gradient(135deg, var(--rocks-green), var(--rocks-green-light), var(--rocks-green-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, var(--rocks-gold), var(--rocks-gold-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -190,7 +200,7 @@ a {
   text-decoration: none;
   transition: color var(--duration-fast) ease;
 }
-a:hover { color: var(--rocks-gold-light); }
+a:hover { color: var(--rocks-green-light); }
 
 /* ── Card System ───────────────────────────────────────────────── */
 .card {
@@ -207,9 +217,9 @@ a:hover { color: var(--rocks-gold-light); }
 }
 
 .card:hover {
-  border-color: var(--border-accent);
+  border-color: var(--border-green);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-gold);
+  box-shadow: var(--shadow-green);
 }
 
 .card-flat {
@@ -229,8 +239,8 @@ a:hover { color: var(--rocks-gold-light); }
 }
 
 .card-highlight {
-  background: linear-gradient(135deg, rgba(212, 168, 67, 0.08), rgba(212, 168, 67, 0.02));
-  border: 1px solid var(--border-accent);
+  background: linear-gradient(135deg, rgba(16, 107, 58, 0.1), rgba(16, 107, 58, 0.02));
+  border: 1px solid var(--border-green);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
 }
@@ -264,12 +274,12 @@ a:hover { color: var(--rocks-gold-light); }
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--rocks-gold), var(--rocks-gold-light));
-  color: var(--rocks-navy-deep);
-  box-shadow: var(--shadow-gold);
+  background: linear-gradient(135deg, var(--rocks-green), var(--rocks-green-light));
+  color: var(--rocks-white);
+  box-shadow: var(--shadow-green);
 }
 .btn-primary:hover {
-  box-shadow: 0 6px 32px rgba(212, 168, 67, 0.3);
+  box-shadow: 0 6px 32px rgba(16, 107, 58, 0.35);
   transform: translateY(-1px);
 }
 
@@ -297,7 +307,7 @@ a:hover { color: var(--rocks-gold-light); }
   color: white;
 }
 .btn-danger:hover {
-  background: var(--rocks-crimson-light);
+  background: #E53935;
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
 }
 
@@ -333,7 +343,7 @@ a:hover { color: var(--rocks-gold-light); }
 .badge-gold {
   background: var(--rocks-gold-dim);
   color: var(--rocks-gold);
-  border: 1px solid rgba(212, 168, 67, 0.25);
+  border: 1px solid rgba(253, 185, 19, 0.25);
 }
 .badge-blue {
   background: var(--electric-blue-dim);
@@ -368,8 +378,8 @@ a:hover { color: var(--rocks-gold-light); }
 
 /* Position-specific badge colors */
 .badge-offense { background: rgba(59,130,246,0.12); color: var(--electric-blue-light); border: 1px solid rgba(59,130,246,0.2); }
-.badge-defense { background: rgba(198,40,40,0.12); color: var(--rocks-crimson-light); border: 1px solid rgba(198,40,40,0.2); }
-.badge-special { background: rgba(212,168,67,0.12); color: var(--rocks-gold); border: 1px solid rgba(212,168,67,0.2); }
+.badge-defense { background: rgba(16,107,58,0.12); color: var(--rocks-green-light); border: 1px solid rgba(16,107,58,0.2); }
+.badge-special { background: rgba(253,185,19,0.12); color: var(--rocks-gold); border: 1px solid rgba(253,185,19,0.2); }
 
 /* ── Form System ───────────────────────────────────────────────── */
 .form-group {
@@ -400,8 +410,8 @@ a:hover { color: var(--rocks-gold-light); }
 }
 
 .form-input:focus {
-  border-color: var(--rocks-gold);
-  box-shadow: 0 0 0 3px var(--rocks-gold-dim);
+  border-color: var(--rocks-green);
+  box-shadow: 0 0 0 3px var(--rocks-green-dim);
 }
 
 .form-input::placeholder {
@@ -471,7 +481,7 @@ td {
 }
 
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(59, 130, 246, 0.03); }
+tr:hover td { background: rgba(16, 107, 58, 0.04); }
 
 /* ── Stat Cards ────────────────────────────────────────────────── */
 .stat-grid {
@@ -490,7 +500,7 @@ tr:hover td { background: rgba(59, 130, 246, 0.03); }
 }
 
 .stat-card:hover {
-  border-color: var(--border-accent);
+  border-color: var(--border-green);
 }
 
 .stat-value {
@@ -586,7 +596,7 @@ tr:hover td { background: rgba(59, 130, 246, 0.03); }
 
 /* ── Focus Ring ────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--rocks-gold);
+  outline: 2px solid var(--rocks-green);
   outline-offset: 2px;
 }
 
