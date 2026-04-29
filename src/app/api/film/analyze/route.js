@@ -3,92 +3,13 @@ import { NextResponse } from 'next/server';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = 'gemini-2.5-pro';
 
-// Step 1: Upload video to Google File API (required for Gemini video analysis)
-async function uploadToGoogleFileAPI(videoUrl) {
-  // Download from Supabase
-  const videoResponse = await fetch(videoUrl);
-  if (!videoResponse.ok) throw new Error('Failed to download video from storage');
-  
-  const videoBlob = await videoResponse.blob();
-  const mimeType = videoBlob.type || 'video/mp4';
-  const numBytes = videoBlob.size;
-
-  // Start resumable upload to Google File API
-  const startRes = await fetch(
-    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: {
-        'X-Goog-Upload-Protocol': 'resumable',
-        'X-Goog-Upload-Command': 'start',
-        'X-Goog-Upload-Header-Content-Length': String(numBytes),
-        'X-Goog-Upload-Header-Content-Type': mimeType,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ file: { display_name: 'game-film-analysis' } }),
-    }
-  );
-
-  if (!startRes.ok) {
-    const err = await startRes.text();
-    throw new Error(`File API start failed: ${err}`);
-  }
-
-  const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
-  if (!uploadUrl) throw new Error('No upload URL returned from File API');
-
-  // Upload the actual bytes
-  const videoBuffer = Buffer.from(await videoBlob.arrayBuffer());
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Length': String(numBytes),
-      'X-Goog-Upload-Offset': '0',
-      'X-Goog-Upload-Command': 'upload, finalize',
-    },
-    body: videoBuffer,
-  });
-
-  if (!uploadRes.ok) {
-    const err = await uploadRes.text();
-    throw new Error(`File API upload failed: ${err}`);
-  }
-
-  const fileInfo = await uploadRes.json();
-  const fileName = fileInfo.file?.name;
-  if (!fileName) throw new Error('No file name returned');
-
-  // Poll until processing is complete
-  let fileState = fileInfo.file?.state || 'PROCESSING';
-  let fileUri = fileInfo.file?.uri;
-  let attempts = 0;
-  const maxAttempts = 60; // up to 5 minutes
-
-  while (fileState === 'PROCESSING' && attempts < maxAttempts) {
-    await new Promise(r => setTimeout(r, 5000));
-    const statusRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/files/${fileName}?key=${GEMINI_API_KEY}`
-    );
-    const status = await statusRes.json();
-    fileState = status.state;
-    fileUri = status.uri;
-    attempts++;
-  }
-
-  if (fileState !== 'ACTIVE') {
-    throw new Error(`File processing failed. State: ${fileState}`);
-  }
-
-  return { fileUri, mimeType };
-}
-
 export async function POST(request) {
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 503 });
   }
 
   try {
-    const { videoUrl, filmType, opponent, analysisType } = await request.json();
+    const { fileUri, mimeType, filmType, opponent, analysisType } = await request.json();
 
     const prompts = {
       full_breakdown: `You are an elite youth football (8U) coaching analyst — on par with what Hudl Pro, Sportscode, or Catapult provides. Analyze this game film and provide:
@@ -142,15 +63,12 @@ Keep it concise and actionable — this goes straight to the coaching staff.`,
 
     const systemPrompt = prompts[analysisType] || prompts.full_breakdown;
 
-    // Build the content parts
     let contentParts = [{ text: systemPrompt }];
 
-    if (videoUrl) {
-      // Upload video to Google File API first
-      const { fileUri, mimeType } = await uploadToGoogleFileAPI(videoUrl);
+    if (fileUri) {
       contentParts.push({
         file_data: {
-          mime_type: mimeType,
+          mime_type: mimeType || 'video/mp4',
           file_uri: fileUri,
         },
       });
@@ -194,7 +112,3 @@ Keep it concise and actionable — this goes straight to the coaching staff.`,
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-export const config = {
-  maxDuration: 300, // 5 minute timeout for large video uploads
-};
