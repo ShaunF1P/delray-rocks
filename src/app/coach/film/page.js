@@ -251,7 +251,7 @@ export default function FilmRoomPage() {
       {/* Upload Modal with Drag & Drop */}
       <AnimatePresence>
         {showUpload && (
-          <Modal onClose={() => { setShowUpload(false); setSelectedFile(null); }} title="Upload Game Film">
+          <Modal isOpen={showUpload} onClose={() => { setShowUpload(false); setSelectedFile(null); }} title="Upload Game Film">
             <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               {/* Drop Zone */}
               <div
@@ -339,7 +339,7 @@ export default function FilmRoomPage() {
       {/* Film Viewer + AI Analysis Modal */}
       <AnimatePresence>
         {selectedFilm && (
-          <Modal onClose={() => { setSelectedFilm(null); setAnalysis(null); }} title={selectedFilm.title} wide>
+          <Modal isOpen={!!selectedFilm} onClose={() => { setSelectedFilm(null); setAnalysis(null); }} title={selectedFilm.title} size="xl">
             <div style={{ display: 'grid', gridTemplateColumns: analysis ? '1fr' : '2fr 1fr', gap: 'var(--space-xl)' }}>
               {!analysis ? (
                 <>
