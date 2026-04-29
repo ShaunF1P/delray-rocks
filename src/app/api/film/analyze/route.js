@@ -55,20 +55,27 @@ ${GROUND_TRUTH_RULES}
 This clip is ${isClip ? `${Math.round(clipEnd - clipStart)} seconds long` : 'a short segment'}. Analyze ONLY what you actually see:
 
 1. **What Happened**: In 1-2 sentences, describe the actual event. Was it a live play? A penalty? A dead ball? A practice rep?
-2. **Penalty Check**: Did you see any flags, offsides, false starts, illegal motion, or referee intervention? If YES, describe it and note the yardage walked off.
-3. **Formation (if live play)**:
+2. **Penalty Analysis** (if any flag or dead ball):
+   - **Type of penalty**: Name it precisely (offsides, encroachment, false start, neutral zone infraction, illegal motion, delay of game, etc.)
+   - **Who committed it**: Identify the SPECIFIC player by jersey number and position who caused the infraction. Look carefully at which defender jumped early, which offensive player moved, etc. If you can identify them from the roster, use their full label (e.g., "DE #53 (Player Name)").
+   - **What they did wrong**: Describe the specific action — did they jump across the line? Were they lined up in the neutral zone? Did they flinch before the snap?
+   - **Why it likely happened**: Provide coaching rationale. Were they anticipating the snap count? Reacting to offensive motion? Over-aggressive in their stance? Did the offense use a hard count to draw them offside?
+   - **Yardage**: How many yards were walked off and in which direction?
+   - **Coaching correction**: What specific drill or mental cue should the coach use with THIS player to fix this? (e.g., "Train #53 to watch the ball, not the QB's cadence" or "Practice holding stance through hard counts")
+3. **Pre-Snap Read (even on dead balls)**:
    - Offensive formation with player positions labeled (LT, LG, C, RG, RT, TE, WR, QB, RB)
    - Defensive formation with positions labeled
+   - Note any interesting alignment, overloads, or mismatches visible before the penalty occurred
 4. **Play Execution (if live play)**:
    - What type of play was called (run/pass)?
    - How did each visible blocker perform? (only comment on players you can actually see)
    - Ball carrier/receiver: what did they do?
    - Key defensive players: who made the play?
-5. **Coaching Points**: 2-3 specific, actionable coaching corrections based on what you saw.
-6. **Grade**: Grade the play execution A-F for offense and defense.
+5. **Coaching Points**: 2-3 specific, actionable coaching corrections. Reference specific players by name and jersey number.
+6. **Grade**: Grade the play execution A-F for offense and defense. If dead ball/penalty, grade the pre-snap discipline instead.
 
 Opponent: ${opponent || 'Unknown'}
-BE HONEST. If there's only 1 play in this clip, analyze 1 play. If it's a dead ball, say it's a dead ball.`,
+BE HONEST. If there's only 1 play in this clip, analyze 1 play. If it's a dead ball, say it's a dead ball. Always identify the specific player who committed any infraction.`,
 
       // For full games: tactical overview
       full_breakdown: `You are an elite youth football (8U) coaching analyst.
