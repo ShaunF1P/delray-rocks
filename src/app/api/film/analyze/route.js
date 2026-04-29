@@ -27,8 +27,11 @@ export async function POST(request) {
   }
 
   try {
-    const { fileUri, mimeType, filmType, opponent, analysisType, roster } = await request.json();
+    const { fileUri, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd } = await request.json();
     const rosterContext = buildRosterContext(roster);
+    const clipContext = (clipStart != null && clipEnd != null)
+      ? `\n\n⚠️ CRITICAL: This is a CLIP from a longer video. ONLY analyze the segment from timestamp ${Math.floor(clipStart / 60)}:${String(Math.floor(clipStart % 60)).padStart(2, '0')} to ${Math.floor(clipEnd / 60)}:${String(Math.floor(clipEnd % 60)).padStart(2, '0')}. Ignore all footage outside this range. Provide maximum depth and detail for this single segment — analyze every player's movement, every block, every gap.\n`
+      : '';
 
     const prompts = {
       full_breakdown: `You are an elite youth football (8U) coaching analyst — on par with what Hudl Pro, Sportscode, or Catapult provides.
@@ -108,7 +111,7 @@ Watch this football film and provide a concise tactical summary:
 Keep it concise and actionable — this goes straight to the coaching staff.`,
     };
 
-    const systemPrompt = prompts[analysisType] || prompts.full_breakdown;
+    const systemPrompt = (prompts[analysisType] || prompts.full_breakdown) + clipContext;
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Upload, Search, Play, Clock, Grid, List, Eye, Trash2, Brain, FileVideo, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Film, Upload, Search, Play, Clock, Grid, List, Eye, Trash2, Brain, FileVideo, CheckCircle, AlertCircle, Loader2, Scissors, SkipBack, SkipForward, Save } from 'lucide-react';
 import { Card, Button, Badge, PageHeader, Modal, EmptyState } from '@/components/ui/index';
 import { FootballIcon, StadiumIcon, LightningIcon, TrophyIcon } from '@/components/ui/Icons';
 import { createClient } from '@/lib/supabase';
@@ -38,6 +38,12 @@ export default function FilmRoomPage() {
   const [analysis, setAnalysis] = useState(null);
   const [analysisType, setAnalysisType] = useState('full_breakdown');
   const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const [showClipTrimmer, setShowClipTrimmer] = useState(false);
+  const [clipStart, setClipStart] = useState(0);
+  const [clipEnd, setClipEnd] = useState(0);
+  const [clipTitle, setClipTitle] = useState('');
+  const [savingClip, setSavingClip] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     title: '', description: '', film_type: 'game', opponent: '',
     film_date: new Date().toISOString().split('T')[0],
@@ -175,7 +181,9 @@ export default function FilmRoomPage() {
       if (uploadData.error) throw new Error(uploadData.error);
 
       // Step 3: Run Gemini analysis with roster context
-      toast.loading('Gemini is analyzing your game film...', { id: 'analysis-progress' });
+      toast.loading(film.clip_start_seconds != null
+        ? `Gemini is deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
+        : 'Gemini is analyzing your game film...', { id: 'analysis-progress' });
       const res = await fetch('/api/film/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,6 +194,8 @@ export default function FilmRoomPage() {
           opponent: film.opponent,
           analysisType,
           roster,
+          clipStart: film.clip_start_seconds,
+          clipEnd: film.clip_end_seconds,
         }),
       });
       const data = await res.json();
@@ -205,6 +215,77 @@ export default function FilmRoomPage() {
     await supabase.from('game_films').delete().eq('id', id);
     toast.success('Film removed');
     loadFilms();
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function openClipTrimmer() {
+    const video = videoRef.current;
+    if (video) {
+      setClipStart(Math.floor(video.currentTime));
+      setClipEnd(Math.min(Math.floor(video.currentTime) + 30, Math.floor(video.duration)));
+    } else {
+      setClipStart(0);
+      setClipEnd(30);
+    }
+    setClipTitle('');
+    setShowClipTrimmer(true);
+  }
+
+  function setStartToCurrent() {
+    const video = videoRef.current;
+    if (video) setClipStart(Math.floor(video.currentTime));
+  }
+
+  function setEndToCurrent() {
+    const video = videoRef.current;
+    if (video) setClipEnd(Math.floor(video.currentTime));
+  }
+
+  function previewClip() {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = clipStart;
+      video.play();
+      const checkEnd = setInterval(() => {
+        if (video.currentTime >= clipEnd) {
+          video.pause();
+          clearInterval(checkEnd);
+        }
+      }, 100);
+    }
+  }
+
+  async function saveClip() {
+    if (!clipTitle.trim()) { toast.error('Give your clip a title'); return; }
+    if (clipEnd <= clipStart) { toast.error('End time must be after start time'); return; }
+    setSavingClip(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('game_films').insert({
+        title: clipTitle,
+        description: `Clip from ${formatTime(clipStart)} to ${formatTime(clipEnd)} of ${selectedFilm.title}`,
+        film_type: 'drill',
+        opponent: selectedFilm.opponent,
+        film_date: selectedFilm.film_date,
+        video_url: selectedFilm.video_url,
+        parent_film_id: selectedFilm.id,
+        clip_start_seconds: clipStart,
+        clip_end_seconds: clipEnd,
+      });
+      if (error) throw error;
+      toast.success(`Clip saved: ${formatTime(clipStart)} → ${formatTime(clipEnd)}`);
+      setShowClipTrimmer(false);
+      loadFilms();
+    } catch (err) {
+      toast.error(err.message || 'Failed to save clip');
+    } finally {
+      setSavingClip(false);
+    }
   }
 
   const typeConfig = (type) => FILM_TYPES.find(t => t.value === type) || FILM_TYPES[0];
@@ -392,8 +473,91 @@ export default function FilmRoomPage() {
                 <>
                   <div>
                     {selectedFilm.video_url ? (
-                      <div style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#000' }}>
-                        <video src={selectedFilm.video_url} controls style={{ width: '100%', maxHeight: 400 }} />
+                      <div>
+                        <div style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#000' }}>
+                          <video ref={videoRef} src={selectedFilm.video_url} controls style={{ width: '100%', maxHeight: 400 }}
+                            onLoadedMetadata={() => {
+                              const v = videoRef.current;
+                              if (v && selectedFilm.clip_start_seconds != null) {
+                                v.currentTime = selectedFilm.clip_start_seconds;
+                              }
+                            }}
+                          />
+                        </div>
+                        {/* Clip indicator for virtual clips */}
+                        {selectedFilm.clip_start_seconds != null && (
+                          <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(253,185,19,0.1)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(253,185,19,0.3)', fontSize: 'var(--text-xs)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Scissors size={12} color="var(--rocks-gold)" />
+                            <span>Clip: {formatTime(selectedFilm.clip_start_seconds)} → {formatTime(selectedFilm.clip_end_seconds)}</span>
+                            <button onClick={() => { const v = videoRef.current; if (v) { v.currentTime = selectedFilm.clip_start_seconds; v.play(); }}} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--rocks-green-light)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 600 }}>▶ Play Clip</button>
+                          </div>
+                        )}
+
+                        {/* Clip Trimmer Panel */}
+                        <AnimatePresence>
+                          {showClipTrimmer && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                              style={{ marginTop: 12, padding: '16px', background: 'linear-gradient(135deg, rgba(16,107,58,0.06), rgba(253,185,19,0.04))', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16,107,58,0.25)', overflow: 'hidden' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 12, fontWeight: 700, fontSize: 'var(--text-sm)' }}>
+                                <Scissors size={16} color="var(--rocks-gold)" /> Create Clip
+                              </div>
+
+                              {/* Timeline visualization */}
+                              <div style={{ position: 'relative', height: 32, background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', marginBottom: 12, overflow: 'hidden' }}>
+                                <div style={{
+                                  position: 'absolute', top: 0, bottom: 0,
+                                  left: `${(clipStart / (videoRef.current?.duration || 1)) * 100}%`,
+                                  width: `${((clipEnd - clipStart) / (videoRef.current?.duration || 1)) * 100}%`,
+                                  background: 'linear-gradient(90deg, rgba(16,107,58,0.5), rgba(0,154,68,0.5))',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '2px solid var(--rocks-green-light)',
+                                }} />
+                                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: `${(clipStart / (videoRef.current?.duration || 1)) * 100}%`, fontSize: 10, color: '#fff', fontWeight: 700, padding: '0 4px' }}>{formatTime(clipStart)}</div>
+                                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: `${(clipEnd / (videoRef.current?.duration || 1)) * 100}%`, fontSize: 10, color: '#fff', fontWeight: 700, padding: '0 4px' }}>{formatTime(clipEnd)}</div>
+                              </div>
+
+                              {/* Time controls */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                                <div>
+                                  <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginBottom: 4, display: 'block' }}>Start Time</label>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <input type="number" min={0} max={clipEnd - 1} value={clipStart} onChange={e => setClipStart(Number(e.target.value))}
+                                      className="form-input" style={{ flex: 1, fontSize: 'var(--text-xs)' }} />
+                                    <button onClick={setStartToCurrent} title="Set to current video time" style={{ padding: '4px 8px', background: 'rgba(16,107,58,0.2)', border: '1px solid rgba(16,107,58,0.4)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--rocks-green-light)', fontSize: 10 }}>
+                                      <SkipBack size={12} /> Now
+                                    </button>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginBottom: 4, display: 'block' }}>End Time</label>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <input type="number" min={clipStart + 1} value={clipEnd} onChange={e => setClipEnd(Number(e.target.value))}
+                                      className="form-input" style={{ flex: 1, fontSize: 'var(--text-xs)' }} />
+                                    <button onClick={setEndToCurrent} title="Set to current video time" style={{ padding: '4px 8px', background: 'rgba(16,107,58,0.2)', border: '1px solid rgba(16,107,58,0.4)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--rocks-green-light)', fontSize: 10 }}>
+                                      <SkipForward size={12} /> Now
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginBottom: 8 }}>Duration: {formatTime(clipEnd - clipStart)} ({clipEnd - clipStart}s)</div>
+
+                              {/* Clip title */}
+                              <input className="form-input" placeholder="Clip title (e.g., Play 3 - Inside Dive)" value={clipTitle} onChange={e => setClipTitle(e.target.value)}
+                                style={{ marginBottom: 12, fontSize: 'var(--text-xs)' }} />
+
+                              {/* Actions */}
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <Button variant="secondary" size="sm" icon={<Play size={12} />} onClick={previewClip}>Preview</Button>
+                                <Button variant="primary" size="sm" icon={savingClip ? <Loader2 size={12} className="spin" /> : <Save size={12} />}
+                                  onClick={saveClip} disabled={savingClip}>
+                                  {savingClip ? 'Saving...' : 'Save Clip'}
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setShowClipTrimmer(false)}>Cancel</Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     ) : (
                       <div style={{ height: 300, background: 'linear-gradient(135deg, rgba(16,107,58,0.1), rgba(0,0,0,0.3))', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)', flexDirection: 'column', gap: '1rem' }}>
@@ -428,7 +592,7 @@ export default function FilmRoomPage() {
                     </div>
 
                     <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: '0.5rem' }}>
-                      <Button variant="secondary" icon={<Eye size={14} />} size="sm">Create Highlight</Button>
+                      <Button variant="secondary" icon={<Scissors size={14} />} size="sm" onClick={openClipTrimmer}>Create Clip</Button>
                       <Button variant="ghost" icon={<Trash2 size={14} />} size="sm" onClick={() => { deleteFilm(selectedFilm.id); setSelectedFilm(null); }}>Delete</Button>
                     </div>
                   </div>
