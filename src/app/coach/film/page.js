@@ -123,7 +123,6 @@ export default function FilmRoomPage() {
       const { error } = await supabase.from('game_films').insert({
         ...uploadForm,
         video_url: videoUrl,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id,
         duration_seconds: selectedFile ? Math.round(selectedFile.size / 50000) : null,
       });
 
