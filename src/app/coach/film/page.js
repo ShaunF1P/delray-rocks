@@ -151,66 +151,25 @@ export default function FilmRoomPage() {
     setAnalyzing(true);
     setAnalysis(null);
     try {
-      // Step 1: Get resumable upload URL from our server (lightweight call)
-      toast.loading('Preparing video for AI analysis...', { id: 'analysis-progress' });
-      
-      // Fetch the video blob from Supabase (browser handles the large download)
-      const videoRes = await fetch(film.video_url);
-      if (!videoRes.ok) throw new Error('Could not fetch video from storage');
-      const videoBlob = await videoRes.blob();
-      const mimeType = videoBlob.type || 'video/mp4';
+      // Step 1: Server streams video from Supabase → Google File API
+      toast.loading('Uploading video to AI engine... (this may take several minutes for large files)', { id: 'analysis-progress' });
 
-      toast.loading(`Uploading ${(videoBlob.size / (1024*1024)).toFixed(0)}MB to AI engine...`, { id: 'analysis-progress' });
-
-      // Get Google File API upload URL from our server
-      const initRes = await fetch('/api/film/init-upload', {
+      const uploadRes = await fetch('/api/film/init-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileSize: videoBlob.size, mimeType }),
+        body: JSON.stringify({ videoUrl: film.video_url }),
       });
-      const initData = await initRes.json();
-      if (initData.error) throw new Error(initData.error);
+      const uploadData = await uploadRes.json();
+      if (uploadData.error) throw new Error(uploadData.error);
 
-      // Step 2: Upload video directly from browser to Google (bypasses our server)
-      const uploadRes = await fetch(initData.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Length': String(videoBlob.size),
-          'X-Goog-Upload-Offset': '0',
-          'X-Goog-Upload-Command': 'upload, finalize',
-        },
-        body: videoBlob,
-      });
-      if (!uploadRes.ok) throw new Error('Failed to upload video to Google');
-      const fileInfo = await uploadRes.json();
-      const fileName = fileInfo.file?.name;
-
-      // Step 3: Poll until Google finishes processing the video
-      toast.loading('Google is processing video... (this may take a few minutes)', { id: 'analysis-progress' });
-      let fileState = fileInfo.file?.state || 'PROCESSING';
-      let fileUri = fileInfo.file?.uri;
-      let attempts = 0;
-
-      while (fileState === 'PROCESSING' && attempts < 60) {
-        await new Promise(r => setTimeout(r, 5000));
-        const statusRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/files/${fileName}?key=${initData.apiKey}`
-        );
-        const status = await statusRes.json();
-        fileState = status.state;
-        fileUri = status.uri;
-        attempts++;
-      }
-
-      if (fileState !== 'ACTIVE') throw new Error(`Video processing failed (state: ${fileState})`);
-
-      // Step 4: Run Gemini analysis with the Google-hosted file URI (lightweight call)
+      // Step 2: Run Gemini analysis with the Google-hosted file URI
       toast.loading('Gemini is analyzing your game film...', { id: 'analysis-progress' });
       const res = await fetch('/api/film/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fileUri, mimeType,
+          fileUri: uploadData.fileUri,
+          mimeType: uploadData.mimeType,
           filmType: film.film_type,
           opponent: film.opponent,
           analysisType,
