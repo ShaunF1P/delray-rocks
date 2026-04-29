@@ -91,16 +91,29 @@ export default function FilmRoomPage() {
     let videoUrl = '';
 
     try {
+      // Check auth state
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to upload. Please refresh and log in again.');
+        return;
+      }
+
       if (selectedFile) {
-        setUploadProgress(20);
+        setUploadProgress(15);
+        toast.loading(`Uploading ${(selectedFile.size / (1024 * 1024)).toFixed(0)}MB...`, { id: 'upload-progress' });
+
         const ext = selectedFile.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('game-films')
           .upload(fileName, selectedFile, { contentType: selectedFile.type, upsert: false });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
         setUploadProgress(70);
+        toast.loading('Saving film record...', { id: 'upload-progress' });
 
         const { data: urlData } = supabase.storage.from('game-films').getPublicUrl(fileName);
         videoUrl = urlData.publicUrl;
@@ -110,12 +123,16 @@ export default function FilmRoomPage() {
       const { error } = await supabase.from('game_films').insert({
         ...uploadForm,
         video_url: videoUrl,
+        uploaded_by: (await supabase.auth.getUser()).data.user?.id,
         duration_seconds: selectedFile ? Math.round(selectedFile.size / 50000) : null,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insert error:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
       setUploadProgress(100);
-      toast.success('Film uploaded successfully');
+      toast.success('Film uploaded successfully! 🏈', { id: 'upload-progress' });
       setTimeout(() => {
         setShowUpload(false);
         setSelectedFile(null);
@@ -124,7 +141,8 @@ export default function FilmRoomPage() {
         loadFilms();
       }, 500);
     } catch (err) {
-      toast.error(err.message || 'Upload failed');
+      console.error('Upload error:', err);
+      toast.error(err.message || 'Upload failed', { id: 'upload-progress' });
     } finally {
       setUploading(false);
     }
