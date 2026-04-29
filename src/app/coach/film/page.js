@@ -37,6 +37,7 @@ export default function FilmRoomPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [analysisType, setAnalysisType] = useState('full_breakdown');
+  const [speedMode, setSpeedMode] = useState('flash');
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const [showClipTrimmer, setShowClipTrimmer] = useState(false);
@@ -153,12 +154,21 @@ export default function FilmRoomPage() {
     }
   }
 
-  async function runAnalysis(film) {
+  async function runAnalysis(film, forceRerun = false) {
     setAnalyzing(true);
     setAnalysis(null);
     try {
-      // Step 1: Fetch roster for player identification
       const supabase = createClient();
+
+      // Check for cached analysis first (unless force re-run)
+      if (!forceRerun && film.ai_analysis && film.ai_analysis_type === analysisType) {
+        setAnalysis(film.ai_analysis);
+        toast.success('Loaded saved analysis', { id: 'analysis-progress' });
+        setAnalyzing(false);
+        return;
+      }
+
+      // Step 1: Fetch roster for player identification
       const { data: rosterData } = await supabase
         .from('players')
         .select('first_name, last_name, jersey_number, position')
@@ -170,7 +180,7 @@ export default function FilmRoomPage() {
       }));
 
       // Step 2: Server streams video from Supabase → Google File API
-      toast.loading('Uploading video to AI engine... (this may take several minutes for large files)', { id: 'analysis-progress' });
+      toast.loading('Uploading video to AI engine...', { id: 'analysis-progress' });
 
       const uploadRes = await fetch('/api/film/init-upload', {
         method: 'POST',
@@ -180,10 +190,11 @@ export default function FilmRoomPage() {
       const uploadData = await uploadRes.json();
       if (uploadData.error) throw new Error(uploadData.error);
 
-      // Step 3: Run Gemini analysis with roster context
-      toast.loading(film.clip_start_seconds != null
-        ? `Gemini is deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
-        : 'Gemini is analyzing your game film...', { id: 'analysis-progress' });
+      // Step 3: Run Gemini analysis with roster + speed mode
+      const isClip = film.clip_start_seconds != null;
+      toast.loading(isClip
+        ? `AI deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
+        : `AI analyzing game film (${speedMode})...`, { id: 'analysis-progress' });
       const res = await fetch('/api/film/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,12 +207,27 @@ export default function FilmRoomPage() {
           roster,
           clipStart: film.clip_start_seconds,
           clipEnd: film.clip_end_seconds,
+          speedMode,
         }),
       });
       const data = await res.json();
       if (data.error) { toast.error(data.error, { id: 'analysis-progress' }); return; }
       setAnalysis(data.analysis);
-      toast.success('AI analysis complete! 🏈', { id: 'analysis-progress' });
+
+      // Step 4: Save analysis to database for caching
+      await supabase.from('game_films').update({
+        ai_analysis: data.analysis,
+        ai_analysis_type: analysisType,
+        ai_analyzed_at: new Date().toISOString(),
+      }).eq('id', film.id);
+
+      // Update the film in local state so cache works on next click
+      setFilms(prev => prev.map(f => f.id === film.id
+        ? { ...f, ai_analysis: data.analysis, ai_analysis_type: analysisType, ai_analyzed_at: new Date().toISOString() }
+        : f));
+      setSelectedFilm(prev => prev ? { ...prev, ai_analysis: data.analysis, ai_analysis_type: analysisType } : prev);
+
+      toast.success(`AI analysis complete! (${data.model}) 🏈`, { id: 'analysis-progress' });
     } catch (err) {
       console.error('Analysis error:', err);
       toast.error(err.message || 'Analysis failed', { id: 'analysis-progress' });
@@ -475,10 +501,15 @@ export default function FilmRoomPage() {
                     {selectedFilm.video_url ? (
                       <div>
                         <div style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#000' }}>
-                          <video ref={videoRef} src={selectedFilm.video_url} controls style={{ width: '100%', maxHeight: 400 }}
-                            onLoadedMetadata={() => {
+                          <video ref={videoRef}
+                            src={selectedFilm.clip_start_seconds != null
+                              ? `${selectedFilm.video_url}#t=${selectedFilm.clip_start_seconds},${selectedFilm.clip_end_seconds}`
+                              : selectedFilm.video_url}
+                            controls style={{ width: '100%', maxHeight: 400 }}
+                            onTimeUpdate={() => {
                               const v = videoRef.current;
-                              if (v && selectedFilm.clip_start_seconds != null) {
+                              if (v && selectedFilm.clip_end_seconds != null && v.currentTime >= selectedFilm.clip_end_seconds) {
+                                v.pause();
                                 v.currentTime = selectedFilm.clip_start_seconds;
                               }
                             }}
@@ -585,10 +616,44 @@ export default function FilmRoomPage() {
                       <select className="form-input" value={analysisType} onChange={e => setAnalysisType(e.target.value)} style={{ marginBottom: 'var(--space-sm)', fontSize: 'var(--text-xs)' }}>
                         {ANALYSIS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label} — {t.desc}</option>)}
                       </select>
-                      <Button variant="primary" size="sm" icon={analyzing ? <Loader2 size={14} className="spin" /> : <Brain size={14} />}
-                        onClick={() => runAnalysis(selectedFilm)} disabled={analyzing} style={{ width: '100%' }}>
-                        {analyzing ? 'Analyzing...' : 'Run AI Analysis'}
-                      </Button>
+
+                      {/* Speed Mode Toggle */}
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 'var(--space-sm)' }}>
+                        <button onClick={() => setSpeedMode('flash')} style={{
+                          flex: 1, padding: '6px 8px', fontSize: 'var(--text-xs)', fontWeight: 600, border: '1px solid', cursor: 'pointer',
+                          borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
+                          background: speedMode === 'flash' ? 'rgba(253,185,19,0.2)' : 'transparent',
+                          borderColor: speedMode === 'flash' ? 'var(--rocks-gold)' : 'var(--border)',
+                          color: speedMode === 'flash' ? 'var(--rocks-gold)' : 'var(--text-dim)',
+                        }}>⚡ Flash (Fast)</button>
+                        <button onClick={() => setSpeedMode('pro')} style={{
+                          flex: 1, padding: '6px 8px', fontSize: 'var(--text-xs)', fontWeight: 600, border: '1px solid', cursor: 'pointer',
+                          borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+                          background: speedMode === 'pro' ? 'rgba(16,107,58,0.2)' : 'transparent',
+                          borderColor: speedMode === 'pro' ? 'var(--rocks-green-light)' : 'var(--border)',
+                          color: speedMode === 'pro' ? 'var(--rocks-green-light)' : 'var(--text-dim)',
+                        }}>🔬 Pro (Deep)</button>
+                      </div>
+
+                      {/* Cached analysis indicator */}
+                      {selectedFilm.ai_analysis && selectedFilm.ai_analysis_type === analysisType && (
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-green-light)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CheckCircle size={12} /> Saved analysis available
+                          {selectedFilm.ai_analyzed_at && <span style={{ color: 'var(--text-dim)' }}>({new Date(selectedFilm.ai_analyzed_at).toLocaleDateString()})</span>}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <Button variant="primary" size="sm" icon={analyzing ? <Loader2 size={14} className="spin" /> : <Brain size={14} />}
+                          onClick={() => runAnalysis(selectedFilm)} disabled={analyzing} style={{ flex: 1 }}>
+                          {analyzing ? 'Analyzing...' : selectedFilm.ai_analysis && selectedFilm.ai_analysis_type === analysisType ? 'View Saved' : 'Run AI Analysis'}
+                        </Button>
+                        {selectedFilm.ai_analysis && selectedFilm.ai_analysis_type === analysisType && (
+                          <Button variant="ghost" size="sm" onClick={() => runAnalysis(selectedFilm, true)} disabled={analyzing} title="Re-run analysis">
+                            🔄
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: '0.5rem' }}>
@@ -604,7 +669,10 @@ export default function FilmRoomPage() {
                       <Brain size={20} color="var(--rocks-green-light)" />
                       <span style={{ fontWeight: 700 }}>AI Analysis — {ANALYSIS_TYPES.find(t => t.value === analysisType)?.label}</span>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setAnalysis(null)}>Back to Film</Button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Button variant="ghost" size="sm" onClick={() => runAnalysis(selectedFilm, true)} disabled={analyzing}>🔄 Re-run</Button>
+                      <Button variant="ghost" size="sm" onClick={() => setAnalysis(null)}>Back to Film</Button>
+                    </div>
                   </div>
                   <div style={{ padding: 'var(--space-lg)', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', lineHeight: 1.8, whiteSpace: 'pre-wrap', maxHeight: 500, overflow: 'auto', border: '1px solid var(--border)' }}>
                     {analysis}

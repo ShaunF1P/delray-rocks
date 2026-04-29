@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-pro';
 
 function buildRosterContext(roster) {
   if (!roster || roster.length === 0) return '';
@@ -27,7 +26,8 @@ export async function POST(request) {
   }
 
   try {
-    const { fileUri, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd } = await request.json();
+    const { fileUri, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd, speedMode } = await request.json();
+    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
     const rosterContext = buildRosterContext(roster);
     const clipContext = (clipStart != null && clipEnd != null)
       ? `\n\n⚠️ CRITICAL: This is a CLIP from a longer video. ONLY analyze the segment from timestamp ${Math.floor(clipStart / 60)}:${String(Math.floor(clipStart % 60)).padStart(2, '0')} to ${Math.floor(clipEnd / 60)}:${String(Math.floor(clipEnd % 60)).padStart(2, '0')}. Ignore all footage outside this range. Provide maximum depth and detail for this single segment — analyze every player's movement, every block, every gap.\n`
