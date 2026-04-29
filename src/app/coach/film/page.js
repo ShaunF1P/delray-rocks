@@ -62,8 +62,8 @@ export default function FilmRoomPage() {
       toast.error('Please upload a video file (MP4, MOV, AVI, WebM)');
       return;
     }
-    if (file.size > 500 * 1024 * 1024) {
-      toast.error('File too large. Maximum size is 500MB');
+    if (file.size > 2 * 1024 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 2GB');
       return;
     }
     setSelectedFile(file);
@@ -282,7 +282,7 @@ export default function FilmRoomPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                     <FileVideo size={40} color="var(--text-dim)" />
                     <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Drop video file here or click to browse</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>MP4, MOV, AVI, WebM — up to 500MB</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>MP4, MOV, AVI, WebM — up to 2GB</div>
                   </div>
                 )}
               </div>
