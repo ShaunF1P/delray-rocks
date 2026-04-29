@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = 'gemini-2.5-pro';
@@ -63,13 +64,16 @@ Keep it concise and actionable — this goes straight to the coaching staff.`,
 
     const systemPrompt = prompts[analysisType] || prompts.full_breakdown;
 
-    let contentParts = [{ text: systemPrompt }];
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+    const contentParts = [{ text: systemPrompt }];
 
     if (fileUri) {
       contentParts.push({
-        file_data: {
-          mime_type: mimeType || 'video/mp4',
-          file_uri: fileUri,
+        fileData: {
+          mimeType: mimeType || 'video/mp4',
+          fileUri: fileUri,
         },
       });
     } else {
@@ -78,28 +82,8 @@ Keep it concise and actionable — this goes straight to the coaching staff.`,
       });
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: contentParts }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 8192,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      return NextResponse.json({ error: `Gemini API error: ${err}` }, { status: 500 });
-    }
-
-    const data = await response.json();
-    const analysisText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No analysis generated';
+    const result = await model.generateContent(contentParts);
+    const analysisText = result.response.text();
 
     return NextResponse.json({
       analysis: analysisText,
