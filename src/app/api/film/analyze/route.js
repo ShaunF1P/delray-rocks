@@ -32,6 +32,15 @@ const GROUND_TRUTH_RULES = `
 6. If you CANNOT determine what happened, say "unclear from film angle" — do NOT fabricate a narrative.
 7. Count the actual number of LIVE plays in the clip. A live play = snap to whistle with actual football action. Pre-snap penalties and dead balls are NOT live plays.
 8. Be HONEST about what the film quality and angle allows you to see. A single sideline camera cannot show all 22 players.
+
+=== PLAYER IDENTIFICATION RULES ===
+Jersey numbers are HARD to read on youth football film. Use this identification hierarchy:
+1. **POSITION FIRST**: Always identify by field position (e.g., "the Left DE", "the DT aligned over the center"). This is your primary identifier.
+2. **PHYSICAL DESCRIPTORS**: Include distinguishing features you can actually see — hair (long hair, braids, mohawk), relative size (tallest player on the DL, smallest LB), skin tone, equipment (visor, colored cleats, arm sleeve). Example: "the Left DE (long hair, tall build)".
+3. **JERSEY NUMBER (with confidence)**: Only state a jersey number if you can clearly read it. If uncertain, say "appears to be #53 (uncertain)" or "possibly #5 or #53". NEVER state a number with false confidence.
+4. **COMBINE ALL THREE**: Best format: "Left DE #53 (long hair, tall) — appears to be the player who jumped offsides"
+5. If the number is unreadable, the position + physical description IS enough: "the Left DE (long hair) committed the infraction"
+=== END PLAYER IDENTIFICATION RULES ===
 === END GROUND TRUTH RULES ===
 `;
 
