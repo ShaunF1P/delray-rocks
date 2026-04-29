@@ -179,19 +179,25 @@ export default function FilmRoomPage() {
         position: p.position,
       }));
 
-      // Step 2: Server streams video from Supabase → Google File API
-      toast.loading('Uploading video to AI engine...', { id: 'analysis-progress' });
+      // Step 2: Server downloads + trims (for clips) + uploads to Google
+      const isClip = film.clip_start_seconds != null;
+      toast.loading(isClip
+        ? `Trimming clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)}) and uploading...`
+        : 'Uploading video to AI engine...', { id: 'analysis-progress' });
 
       const uploadRes = await fetch('/api/film/init-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl: film.video_url }),
+        body: JSON.stringify({
+          videoUrl: film.video_url,
+          clipStart: film.clip_start_seconds,
+          clipEnd: film.clip_end_seconds,
+        }),
       });
       const uploadData = await uploadRes.json();
       if (uploadData.error) throw new Error(uploadData.error);
 
       // Step 3: Run Gemini analysis with roster + speed mode
-      const isClip = film.clip_start_seconds != null;
       toast.loading(isClip
         ? `AI deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
         : `AI analyzing game film (${speedMode})...`, { id: 'analysis-progress' });
