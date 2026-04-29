@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Users, Calendar, TrendingUp, DollarSign, Plus, Star, ClipboardCheck, Zap } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { Card, Button, Badge, Avatar, PageHeader, PositionBadge } from '@/components/ui/index';
+import { FootballIcon, CalendarIcon, ClipboardCheckIcon, DollarIcon, StadiumIcon, PlaybookIcon } from '@/components/ui/Icons';
 import { createClient } from '@/lib/supabase';
 
 export default function CoachDashboard() {
@@ -92,7 +93,7 @@ export default function CoachDashboard() {
       {/* Hero Stats */}
       <div className="stat-grid stagger-children" style={{ marginBottom: 'var(--space-xl)' }}>
         <StatCard
-          icon="🏈"
+          icon={<FootballIcon size={22} />}
           value={stats.totalPlayers}
           label="Total Players"
           color="gold"
@@ -101,14 +102,14 @@ export default function CoachDashboard() {
           delay={0}
         />
         <StatCard
-          icon="📅"
+          icon={<CalendarIcon size={22} />}
           value={stats.upcomingEvents}
           label="Upcoming Events"
           color="blue"
           delay={1}
         />
         <StatCard
-          icon="✅"
+          icon={<ClipboardCheckIcon size={22} />}
           value={`${stats.attendanceRate}%`}
           label="Attendance Rate"
           color="green"
@@ -117,7 +118,7 @@ export default function CoachDashboard() {
           delay={2}
         />
         <StatCard
-          icon="💰"
+          icon={<DollarIcon size={22} />}
           value={stats.activeFundraising}
           label="Active Campaigns"
           color="amber"
@@ -163,7 +164,7 @@ export default function CoachDashboard() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '1.1rem', flexShrink: 0,
                     }}>
-                      {event.type === 'game' ? '🏟️' : event.type === 'practice' ? '🏈' : '📋'}
+                      {event.type === 'game' ? <StadiumIcon size={18} color={event.type === 'game' ? 'var(--red)' : 'var(--green)'} /> : event.type === 'practice' ? <FootballIcon size={18} color="var(--green)" /> : <PlaybookIcon size={18} color="var(--electric-blue-light)" />}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

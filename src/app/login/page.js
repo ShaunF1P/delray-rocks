@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Shield, Mail, Lock, ArrowRight, Eye, EyeOff, MapPin } from 'lucide-react';
+import { FootballIcon } from '@/components/ui/Icons';
 import { signIn, getUserWithProfile, getPortalPath } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -46,18 +47,18 @@ export default function LoginPage() {
           padding: '3rem',
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(165deg, #0D1B2A 0%, #060E18 50%, #1a0a0a 100%)',
+          background: 'linear-gradient(165deg, #0A1A10 0%, #060E0A 50%, #042E18 100%)',
         }}
       >
         {/* Animated orbs */}
         <div style={{
           position: 'absolute', top: '20%', left: '20%', width: 300, height: 300,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,67,0.08) 0%, transparent 70%)',
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,107,58,0.1) 0%, transparent 70%)',
           animation: 'pulse 6s ease-in-out infinite',
         }} />
         <div style={{
           position: 'absolute', bottom: '20%', right: '20%', width: 400, height: 400,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(198,40,40,0.06) 0%, transparent 70%)',
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(253,185,19,0.06) 0%, transparent 70%)',
           animation: 'pulse 8s ease-in-out infinite 1s',
         }} />
 
@@ -67,15 +68,16 @@ export default function LoginPage() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}
         >
-          {/* Logo */}
-          <div style={{
-            width: 100, height: 100, borderRadius: 24,
-            background: 'linear-gradient(135deg, #106B3A, #009A44)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 2rem', boxShadow: '0 8px 40px rgba(16,107,58,0.3)',
-          }}>
-            <Shield size={50} color="white" strokeWidth={2} />
-          </div>
+          {/* Official DR Logo */}
+          <img
+            src="/dr-logo.jpg"
+            alt="Delray Rocks"
+            style={{
+              width: 120, height: 'auto',
+              margin: '0 auto 2rem',
+              filter: 'drop-shadow(0 8px 30px rgba(16,107,58,0.4))',
+            }}
+          />
 
           <h1 className="heading-display" style={{
             fontSize: 'clamp(2.5rem, 4vw, 3.5rem)',
@@ -96,8 +98,8 @@ export default function LoginPage() {
             marginTop: '3rem', color: 'var(--text-muted)', fontSize: 'var(--text-xs)',
             textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600,
           }}>
-            <span>🏈 8U Football</span>
-            <span>📍 Delray Beach, FL</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FootballIcon size={14} color="var(--rocks-green-light)" /> 8U Football</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><MapPin size={14} /> Delray Beach, FL</span>
           </div>
         </motion.div>
       </div>
@@ -197,7 +199,7 @@ export default function LoginPage() {
               {loading ? (
                 <span style={{
                   width: 18, height: 18, border: '2px solid rgba(13,27,42,0.3)',
-                  borderTopColor: 'var(--rocks-navy-deep)', borderRadius: '50%',
+                  borderTopColor: '#042E18', borderRadius: '50%',
                   animation: 'spin 0.6s linear infinite',
                 }} />
               ) : (

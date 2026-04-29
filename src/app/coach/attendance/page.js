@@ -80,8 +80,8 @@ export default function AttendancePage() {
             </select>
           </div>
           <div style={{ flex: 1 }} />
-          <Button variant="secondary" size="sm" onClick={() => markAll(true)}>✅ All Present</Button>
-          <Button variant="ghost" size="sm" onClick={() => markAll(false)}>❌ All Absent</Button>
+          <Button variant="secondary" size="sm" onClick={() => markAll(true)}>All Present</Button>
+          <Button variant="ghost" size="sm" onClick={() => markAll(false)}>All Absent</Button>
         </div>
       </Card>
 

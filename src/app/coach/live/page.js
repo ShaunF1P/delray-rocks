@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Plus, Minus, RotateCcw, Clock, Trophy } from 'lucide-react';
 import { Card, Button, Badge, PageHeader } from '@/components/ui/index';
+import { GameLogIcon } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
 export default function LiveGamePage() {
@@ -122,7 +123,7 @@ export default function LiveGamePage() {
       {/* Game Log */}
       {gameLog.length > 0 && (
         <Card>
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-md)' }}>📝 Game Log</h3>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><GameLogIcon size={18} color="var(--rocks-green-light)" /> Game Log</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {gameLog.map((entry, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', background: entry.type === 'home' ? 'rgba(16,107,58,0.06)' : 'rgba(239,68,68,0.06)' }}>

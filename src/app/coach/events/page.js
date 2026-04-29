@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Plus, MapPin, Clock, Edit2, Trash2 } from 'lucide-react';
 import { Card, Button, Badge, PageHeader, Modal, EmptyState } from '@/components/ui/index';
+import { StadiumIcon, FootballIcon, PlaybookIcon, DollarIcon } from '@/components/ui/Icons';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -55,10 +56,10 @@ export default function EventsPage() {
   }
 
   const typeConfig = {
-    game: { emoji: '🏟️', color: 'red', label: 'Game' },
-    practice: { emoji: '🏈', color: 'green', label: 'Practice' },
-    meeting: { emoji: '📋', color: 'blue', label: 'Meeting' },
-    fundraiser: { emoji: '💰', color: 'amber', label: 'Fundraiser' },
+    game: { Icon: StadiumIcon, color: 'red', label: 'Game' },
+    practice: { Icon: FootballIcon, color: 'green', label: 'Practice' },
+    meeting: { Icon: PlaybookIcon, color: 'blue', label: 'Meeting' },
+    fundraiser: { Icon: DollarIcon, color: 'amber', label: 'Fundraiser' },
   };
 
   return (
@@ -104,7 +105,7 @@ export default function EventsPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: 4 }}>
                       <span style={{ fontSize: 'var(--text-base)', fontWeight: 700 }}>{event.name || event.title || `${config.label}`}</span>
-                      <Badge variant={config.color}>{config.emoji} {config.label}</Badge>
+                      <Badge variant={config.color}><config.Icon size={12} /> {config.label}</Badge>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
                       {date && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} />{date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>}

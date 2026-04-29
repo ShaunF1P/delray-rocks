@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, Users, Award } from 'lucide-react';
 import { Card, PageHeader, Badge, Avatar, PositionBadge } from '@/components/ui/index';
 import { StatCard } from '@/components/ui/StatCard';
+import { FootballIcon, ChartBarIcon, TrophyIcon, ClipboardCheckIcon, MedalGoldIcon, MedalSilverIcon, MedalBronzeIcon } from '@/components/ui/Icons';
 import { createClient, getPlayerAge } from '@/lib/supabase';
 
 export default function AnalyticsPage() {
@@ -55,10 +56,10 @@ export default function AnalyticsPage() {
       <PageHeader title="Analytics" subtitle="Team performance insights and player rankings" />
 
       <div className="stat-grid stagger-children" style={{ marginBottom: 'var(--space-xl)' }}>
-        <StatCard icon="🏈" value={stats.players} label="Total Players" color="green" delay={0} />
-        <StatCard icon="📊" value={stats.evals} label="Evaluations" color="blue" delay={1} />
-        <StatCard icon="⭐" value={`${stats.avgScore}%`} label="Avg Score" color="gold" delay={2} />
-        <StatCard icon="✅" value={`${stats.attendanceRate}%`} label="Attendance" color="teal" delay={3} />
+        <StatCard icon={<FootballIcon size={22} />} value={stats.players} label="Total Players" color="green" delay={0} />
+        <StatCard icon={<ChartBarIcon size={22} />} value={stats.evals} label="Evaluations" color="blue" delay={1} />
+        <StatCard icon={<TrophyIcon size={22} />} value={`${stats.avgScore}%`} label="Avg Score" color="gold" delay={2} />
+        <StatCard icon={<ClipboardCheckIcon size={22} />} value={`${stats.attendanceRate}%`} label="Attendance" color="teal" delay={3} />
       </div>
 
       {/* Top Players */}
@@ -79,7 +80,7 @@ export default function AnalyticsPage() {
               {topPlayers.map((entry, i) => {
                 const p = entry.player;
                 const score = Math.round(entry.avgScore * 20);
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+                const medal = i === 0 ? <MedalGoldIcon size={20} color="#FDB913" /> : i === 1 ? <MedalSilverIcon size={20} color="#94A3B8" /> : i === 2 ? <MedalBronzeIcon size={20} color="#CD7F32" /> : null;
                 return (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
@@ -87,7 +88,7 @@ export default function AnalyticsPage() {
                     background: i < 3 ? 'rgba(16,107,58,0.04)' : 'transparent',
                     border: i < 3 ? '1px solid rgba(16,107,58,0.1)' : '1px solid transparent',
                   }}>
-                    <span style={{ width: 28, textAlign: 'center', fontSize: medal ? '1.2rem' : 'var(--text-sm)', fontWeight: 700, color: 'var(--text-dim)' }}>
+                    <span style={{ width: 28, textAlign: 'center', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {medal || `#${i + 1}`}
                     </span>
                     <Avatar name={p ? `${p.first_name} ${p.last_name}` : ''} size={36} />

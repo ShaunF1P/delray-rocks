@@ -4,15 +4,16 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight, Save, Users, Zap } from 'lucide-react';
 import { Card, Button, Badge, Avatar, PageHeader, PositionBadge } from '@/components/ui/index';
+import { FlexIcon, TargetIcon, PlaybookIcon, LightningIcon, FootballIcon } from '@/components/ui/Icons';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 const METRICS = [
-  { key: 'effort', label: 'Effort', emoji: '💪', desc: 'Hustle and intensity' },
-  { key: 'discipline', label: 'Discipline', emoji: '🎯', desc: 'Following assignments' },
-  { key: 'coachability', label: 'Coachability', emoji: '📋', desc: 'Takes direction well' },
-  { key: 'technique', label: 'Technique', emoji: '⚡', desc: 'Fundamental skills' },
-  { key: 'physicality', label: 'Physicality', emoji: '🏈', desc: 'Strength & conditioning' },
+  { key: 'effort', label: 'Effort', icon: FlexIcon, desc: 'Hustle and intensity' },
+  { key: 'discipline', label: 'Discipline', icon: TargetIcon, desc: 'Following assignments' },
+  { key: 'coachability', label: 'Coachability', icon: PlaybookIcon, desc: 'Takes direction well' },
+  { key: 'technique', label: 'Technique', icon: LightningIcon, desc: 'Fundamental skills' },
+  { key: 'physicality', label: 'Physicality', icon: FootballIcon, desc: 'Strength & conditioning' },
 ];
 
 export default function EvaluatePage() {
@@ -66,7 +67,7 @@ export default function EvaluatePage() {
       setCurrentIdx(currentIdx + 1);
       resetForm();
     } else {
-      toast.success('All players evaluated! 🎉');
+      toast.success('All players evaluated!');
       setMode('select');
     }
   }
@@ -134,7 +135,7 @@ export default function EvaluatePage() {
             {METRICS.map(metric => (
               <div key={metric.key}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{metric.emoji} {metric.label}</span>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><metric.icon size={16} color="var(--rocks-green-light)" /> {metric.label}</span>
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>{metric.desc}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>

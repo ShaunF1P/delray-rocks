@@ -12,8 +12,9 @@ export function StatCard({ value, label, icon, color = 'gold', trend, trendLabel
     teal: 'var(--teal)',
     purple: 'var(--purple)',
     amber: 'var(--amber)',
-    crimson: 'var(--rocks-crimson-light)',
   };
+
+  const iconColor = colorMap[color] || colorMap.gold;
 
   return (
     <motion.div
@@ -22,7 +23,13 @@ export function StatCard({ value, label, icon, color = 'gold', trend, trendLabel
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
-      {icon && <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{icon}</div>}
+      {icon && (
+        <div style={{
+          width: 44, height: 44, borderRadius: 'var(--radius-md)',
+          background: `${iconColor}15`, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', margin: '0 auto 0.75rem', color: iconColor,
+        }}>{icon}</div>
+      )}
       <AnimatedCounter value={value} color={colorMap[color] || colorMap.gold} />
       <div className="stat-label">{label}</div>
       {trend !== undefined && (
