@@ -619,9 +619,18 @@ export default function FilmRoomPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 'var(--space-sm)', fontWeight: 700, fontSize: 'var(--text-sm)' }}>
                         <Brain size={16} color="var(--rocks-green-light)" /> AI Film Analysis
                       </div>
-                      <select className="form-input" value={analysisType} onChange={e => setAnalysisType(e.target.value)} style={{ marginBottom: 'var(--space-sm)', fontSize: 'var(--text-xs)' }}>
-                        {ANALYSIS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label} — {t.desc}</option>)}
-                      </select>
+
+                      {/* Clips auto-use clip_breakdown — full films get the dropdown */}
+                      {selectedFilm.clip_start_seconds != null ? (
+                        <div style={{ padding: '8px 12px', background: 'rgba(253,185,19,0.1)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(253,185,19,0.3)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Scissors size={12} color="var(--rocks-gold)" />
+                          <span><strong>Clip Analysis</strong> — Deep single-play breakdown ({formatTime(selectedFilm.clip_start_seconds)} → {formatTime(selectedFilm.clip_end_seconds)})</span>
+                        </div>
+                      ) : (
+                        <select className="form-input" value={analysisType} onChange={e => setAnalysisType(e.target.value)} style={{ marginBottom: 'var(--space-sm)', fontSize: 'var(--text-xs)' }}>
+                          {ANALYSIS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label} — {t.desc}</option>)}
+                        </select>
+                      )}
 
                       {/* Speed Mode Toggle */}
                       <div style={{ display: 'flex', gap: 4, marginBottom: 'var(--space-sm)' }}>
@@ -642,7 +651,7 @@ export default function FilmRoomPage() {
                       </div>
 
                       {/* Cached analysis indicator */}
-                      {selectedFilm.ai_analysis && selectedFilm.ai_analysis_type === analysisType && (
+                      {selectedFilm.ai_analysis && (
                         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-green-light)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <CheckCircle size={12} /> Saved analysis available
                           {selectedFilm.ai_analyzed_at && <span style={{ color: 'var(--text-dim)' }}>({new Date(selectedFilm.ai_analyzed_at).toLocaleDateString()})</span>}
@@ -652,9 +661,9 @@ export default function FilmRoomPage() {
                       <div style={{ display: 'flex', gap: 4 }}>
                         <Button variant="primary" size="sm" icon={analyzing ? <Loader2 size={14} className="spin" /> : <Brain size={14} />}
                           onClick={() => runAnalysis(selectedFilm)} disabled={analyzing} style={{ flex: 1 }}>
-                          {analyzing ? 'Analyzing...' : selectedFilm.ai_analysis && selectedFilm.ai_analysis_type === analysisType ? 'View Saved' : 'Run AI Analysis'}
+                          {analyzing ? 'Analyzing...' : selectedFilm.ai_analysis ? 'View Saved' : 'Run AI Analysis'}
                         </Button>
-                        {selectedFilm.ai_analysis && selectedFilm.ai_analysis_type === analysisType && (
+                        {selectedFilm.ai_analysis && (
                           <Button variant="ghost" size="sm" onClick={() => runAnalysis(selectedFilm, true)} disabled={analyzing} title="Re-run analysis">
                             🔄
                           </Button>

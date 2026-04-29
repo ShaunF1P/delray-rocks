@@ -20,6 +20,21 @@ ${lines}
 === END ROSTER ===\n`;
 }
 
+// This critical instruction goes into EVERY prompt
+const GROUND_TRUTH_RULES = `
+
+=== GROUND TRUTH RULES — FOLLOW THESE EXACTLY ===
+1. ONLY describe what you ACTUALLY SEE in the video. Do NOT fabricate, infer, or guess details.
+2. If a play is a DEAD BALL (penalty flag, offsides, false start, referee whistle, coach intervention), SAY SO. Do NOT analyze a dead ball as a live play.
+3. If players line up and then the play is blown dead before a snap or after a penalty, report it as: "DEAD BALL — [reason]" (e.g., "DEAD BALL — Offsides on defense, 5-yard penalty assessed").
+4. If you see teams moving forward or backward without running a play, that is likely a PENALTY ENFORCEMENT (e.g., walking off 5 yards for offsides). Report it as such.
+5. If you CANNOT clearly see a jersey number, say "unidentified" — do NOT make up a number.
+6. If you CANNOT determine what happened, say "unclear from film angle" — do NOT fabricate a narrative.
+7. Count the actual number of LIVE plays in the clip. A live play = snap to whistle with actual football action. Pre-snap penalties and dead balls are NOT live plays.
+8. Be HONEST about what the film quality and angle allows you to see. A single sideline camera cannot show all 22 players.
+=== END GROUND TRUTH RULES ===
+`;
+
 export async function POST(request) {
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 503 });
@@ -29,89 +44,102 @@ export async function POST(request) {
     const { fileUri, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd, speedMode } = await request.json();
     const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
     const rosterContext = buildRosterContext(roster);
-    const clipContext = (clipStart != null && clipEnd != null)
-      ? `\n\n⚠️ CRITICAL: This is a CLIP from a longer video. ONLY analyze the segment from timestamp ${Math.floor(clipStart / 60)}:${String(Math.floor(clipStart % 60)).padStart(2, '0')} to ${Math.floor(clipEnd / 60)}:${String(Math.floor(clipEnd % 60)).padStart(2, '0')}. Ignore all footage outside this range. Provide maximum depth and detail for this single segment — analyze every player's movement, every block, every gap.\n`
-      : '';
+    const isClip = clipStart != null && clipEnd != null;
 
     const prompts = {
-      full_breakdown: `You are an elite youth football (8U) coaching analyst — on par with what Hudl Pro, Sportscode, or Catapult provides.
+      // For clips: focused single-play analysis
+      clip_breakdown: `You are an elite youth football (8U) film analyst reviewing a single play or short clip.
 ${rosterContext}
+${GROUND_TRUTH_RULES}
+
+This clip is ${isClip ? `${Math.round(clipEnd - clipStart)} seconds long` : 'a short segment'}. Analyze ONLY what you actually see:
+
+1. **What Happened**: In 1-2 sentences, describe the actual event. Was it a live play? A penalty? A dead ball? A practice rep?
+2. **Penalty Check**: Did you see any flags, offsides, false starts, illegal motion, or referee intervention? If YES, describe it and note the yardage walked off.
+3. **Formation (if live play)**:
+   - Offensive formation with player positions labeled (LT, LG, C, RG, RT, TE, WR, QB, RB)
+   - Defensive formation with positions labeled
+4. **Play Execution (if live play)**:
+   - What type of play was called (run/pass)?
+   - How did each visible blocker perform? (only comment on players you can actually see)
+   - Ball carrier/receiver: what did they do?
+   - Key defensive players: who made the play?
+5. **Coaching Points**: 2-3 specific, actionable coaching corrections based on what you saw.
+6. **Grade**: Grade the play execution A-F for offense and defense.
+
+Opponent: ${opponent || 'Unknown'}
+BE HONEST. If there's only 1 play in this clip, analyze 1 play. If it's a dead ball, say it's a dead ball.`,
+
+      // For full games: tactical overview
+      full_breakdown: `You are an elite youth football (8U) coaching analyst.
+${rosterContext}
+${GROUND_TRUTH_RULES}
+
 Analyze this game film and provide:
 
-1. **Formation Recognition**: Identify every offensive and defensive formation used. Name them precisely (e.g., "Shotgun Trips Right", "I-Formation Strong", "4-3 Under"). For OUR formations, label each player position on the line (LT, LG, C, RG, RT, TE, WR) and backfield (QB, FB, HB, WB).
-2. **Play-by-Play Breakdown**: For EVERY visible play (not just the first one), describe:
-   - Pre-snap alignment and motion
-   - Play call type (run/pass/screen/special)
-   - Blocking assignments by position (e.g., "LG #54 pulls to lead through the B-gap")
-   - Ball carrier/receiver performance
-   - Defensive response and gaps exploited or defended
-3. **Key Player Performances**: Identify players by POSITION, jersey number, and name from the roster. Note speed, technique, decision-making.
-4. **Tactical Trends**: What offensive/defensive tendencies are visible? Down-and-distance patterns? Formation tendencies?
-5. **Coaching Recommendations**: Specific drill suggestions to fix weaknesses and amplify strengths. Reference specific players by name.
-6. **Play Success/Failure Analysis**: For each play, state if it succeeded or failed and WHY (missed block by which OL position, wrong read, great coverage by which DB, etc.).
+1. **Formation Recognition**: Identify offensive and defensive formations used. Label positions.
+2. **Play-by-Play Breakdown**: For EVERY live play (snap to whistle), describe what actually happened. If a play is a penalty/dead ball, label it as such and move to the next play.
+3. **Key Player Performances**: Identify standout players by position, jersey #, and name.
+4. **Tactical Trends**: What tendencies are visible?
+5. **Coaching Recommendations**: Specific drill suggestions referencing specific players.
+6. **Play Success/Failure Analysis**: For each LIVE play, grade it and explain why.
 
 Opponent: ${opponent || 'Unknown'}
 Film Type: ${filmType || 'game'}
-CRITICAL: Analyze the ENTIRE film, not just the first play. Provide timestamps for every significant play.
-Format your response in clear sections with headers.`,
+Provide timestamps for every play. Count total live plays vs dead balls/penalties.`,
 
-      player_tracking: `You are a sports biomechanics and performance analyst for youth football (8U).
+      player_tracking: `You are a sports biomechanics analyst for youth football (8U).
 ${rosterContext}
-Watch this film and for EVERY visible player on OUR team, provide a detailed assessment:
+${GROUND_TRUTH_RULES}
 
-**OFFENSIVE LINE (label each: LT, LG, C, RG, RT)**:
-- Stance and first step (explosion vs. slow fire-out)
-- Pad level (playing low vs. standing upright)
-- Drive blocking power and sustain
-- Pull technique (if applicable)
-- Pass protection sets (if applicable)
+Watch this film and assess ONLY what you can actually see:
 
-**SKILL POSITIONS (QB, RB, WR, TE)**:
-- Movement Analysis: acceleration, top speed, agility, change of direction
-- Ball skills: carrying, catching, throwing mechanics
-- Vision and decision-making
+**OFFENSIVE LINE**: Stance, first step, pad level, drive blocking, pulling technique.
+**SKILL POSITIONS**: Speed, agility, ball skills, vision, decision-making.
+**DEFENSIVE PLAYERS**: Gap discipline, pursuit angles, tackling form.
 
-**DEFENSIVE PLAYERS (label: DE, DT, LB, CB, S)**:
-- Gap discipline and assignment execution
-- Pursuit angles and closing speed
-- Tackling form (Heads Up Football technique)
-- Read and react speed
+For ALL players:
+- Only comment on players whose jersey numbers you can clearly see
+- If you cannot determine a number, say "unidentified player at [position]"
+- Grade each identified player A-F on fundamentals
+- Include specific timestamps for notable plays
 
-**FOR ALL PLAYERS:**
-1. **Effort Metrics**: Rate hustle on a 1-5 scale per play. Call out loafing AND hustle plays.
-2. **Technique Assessment**: Grade each player A-F on fundamentals
-3. **Fatigue Indicators**: Note any visible decline over the course of the film
-
-Reference every player by Position, Jersey #, and Name (e.g., "RB #10 (Marcus Johnson)").
-Include specific timestamps for notable plays.`,
+Opponent: ${opponent || 'Unknown'}`,
 
       highlights: `You are a highlight reel editor for youth football.
 ${rosterContext}
+${GROUND_TRUTH_RULES}
+
 Watch this film and:
+1. Identify the most exciting, impressive plays (LIVE plays only, not penalties)
+2. Rank by impact
+3. Timestamp each highlight
+4. Describe what makes each play special
+5. Which players deserve individual highlight reels?
 
-1. **Identify Top Plays**: Find the most exciting, impressive, or noteworthy plays
-2. **Rank by Impact**: Order from most impressive to least
-3. **Timestamp Each**: Provide approximate timestamps for each highlight moment
-4. **Describe the Action**: What makes each play special (big hit, long run, great catch, etc.)
-5. **Player Callouts**: Reference by Position, Jersey #, and Name. Which player(s) deserve individual highlight reels from this film?
-
-Focus on plays that would look great on social media or a parent highlight reel.`,
+Focus on plays that would look great on social media or a parent highlight reel.
+Opponent: ${opponent || 'Unknown'}`,
 
       quick_summary: `You are a head coach's assistant for an 8U youth football team.
 ${rosterContext}
-Watch this football film and provide a concise tactical summary:
+${GROUND_TRUTH_RULES}
 
+Provide a concise tactical summary:
 1. **Score/Result**: If identifiable
-2. **Top 3 Takeaways**: Most important observations
-3. **Players of the Game**: Reference by Position, Jersey #, and Name
-4. **Position Group Grades**: Grade each position group (OL, RB, QB, DL, LB, DB) on a letter scale A-F
-5. **Areas for Improvement**: 3 key things to work on in practice, referencing specific players
-6. **Next Game Prep**: What to emphasize based on what you see
+2. **Play Count**: How many LIVE plays vs dead balls/penalties did you observe?
+3. **Top 3 Takeaways**: Most important observations
+4. **Players of the Game**: By position, jersey #, and name
+5. **Position Group Grades**: OL, RB, QB, DL, LB, DB (A-F scale)
+6. **Areas for Improvement**: 3 key things referencing specific players
+7. **Penalties/Issues**: Any offsides, false starts, alignment issues observed
 
-Keep it concise and actionable — this goes straight to the coaching staff.`,
+Keep it concise and actionable — this goes straight to the coaching staff.
+Opponent: ${opponent || 'Unknown'}`,
     };
 
-    const systemPrompt = (prompts[analysisType] || prompts.full_breakdown) + clipContext;
+    // Auto-select clip_breakdown for clips, otherwise use selected type
+    const effectiveType = isClip ? 'clip_breakdown' : analysisType;
+    const systemPrompt = prompts[effectiveType] || prompts.full_breakdown;
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
@@ -137,7 +165,7 @@ Keep it concise and actionable — this goes straight to the coaching staff.`,
     return NextResponse.json({
       analysis: analysisText,
       model: GEMINI_MODEL,
-      analysisType,
+      analysisType: effectiveType,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
