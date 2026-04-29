@@ -151,7 +151,19 @@ export default function FilmRoomPage() {
     setAnalyzing(true);
     setAnalysis(null);
     try {
-      // Step 1: Server streams video from Supabase → Google File API
+      // Step 1: Fetch roster for player identification
+      const supabase = createClient();
+      const { data: rosterData } = await supabase
+        .from('players')
+        .select('first_name, last_name, jersey_number, position')
+        .order('jersey_number');
+      const roster = (rosterData || []).map(p => ({
+        jersey: p.jersey_number,
+        name: `${p.first_name} ${p.last_name}`,
+        position: p.position,
+      }));
+
+      // Step 2: Server streams video from Supabase → Google File API
       toast.loading('Uploading video to AI engine... (this may take several minutes for large files)', { id: 'analysis-progress' });
 
       const uploadRes = await fetch('/api/film/init-upload', {
@@ -162,7 +174,7 @@ export default function FilmRoomPage() {
       const uploadData = await uploadRes.json();
       if (uploadData.error) throw new Error(uploadData.error);
 
-      // Step 2: Run Gemini analysis with the Google-hosted file URI
+      // Step 3: Run Gemini analysis with roster context
       toast.loading('Gemini is analyzing your game film...', { id: 'analysis-progress' });
       const res = await fetch('/api/film/analyze', {
         method: 'POST',
@@ -173,6 +185,7 @@ export default function FilmRoomPage() {
           filmType: film.film_type,
           opponent: film.opponent,
           analysisType,
+          roster,
         }),
       });
       const data = await res.json();
