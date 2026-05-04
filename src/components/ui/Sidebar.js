@@ -7,12 +7,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck, BarChart3,
   DollarSign, Settings, Film, Trophy, ChevronLeft, ChevronRight,
-  User, LogOut, Star, Zap, Shield, Activity, FileText
+  User, LogOut, Star, Zap, Shield, Activity, FileText, UserCog
 } from 'lucide-react';
 
 const coachMenuItems = [
   { label: 'Dashboard', href: '/coach/dashboard', icon: LayoutDashboard },
   { label: 'Roster', href: '/coach/roster', icon: Users },
+  { label: 'Coaching Staff', href: '/coach/staff', icon: UserCog },
   { label: 'Events', href: '/coach/events', icon: Calendar },
   { label: 'Evaluate', href: '/coach/evaluate', icon: Star },
   { label: 'Form Analysis', href: '/coach/form-analysis', icon: Activity, badge: 'AI' },

@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, Search, Filter, Grid3X3, List, Edit2, Trash2, Eye, X } from 'lucide-react';
+import { Users, Plus, Search, Filter, Grid3X3, List, Edit2, Trash2, Eye, X, Heart, ShieldCheck, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Avatar, PageHeader, PositionBadge, Modal, EmptyState } from '@/components/ui/index';
 import { createClient, POSITION_LABELS, getPlayerAge } from '@/lib/supabase';
+
+const PHYSICAL_STATUS = {
+  not_submitted: { label: 'No Physical', color: 'var(--red)', icon: XCircle },
+  scheduled: { label: 'Scheduled', color: 'var(--amber)', icon: AlertTriangle },
+  completed: { label: 'Cleared', color: 'var(--green)', icon: CheckCircle },
+};
 import toast from 'react-hot-toast';
 
 export default function RosterPage() {
@@ -13,6 +19,7 @@ export default function RosterPage() {
   const [view, setView] = useState('grid');
   const [search, setSearch] = useState('');
   const [posFilter, setPosFilter] = useState('all');
+  const [programFilter, setProgramFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editPlayer, setEditPlayer] = useState(null);
 
@@ -31,8 +38,19 @@ export default function RosterPage() {
   const filtered = players.filter(p => {
     const matchSearch = `${p.first_name} ${p.last_name} ${p.jersey_number || ''}`.toLowerCase().includes(search.toLowerCase());
     const matchPos = posFilter === 'all' || p.position === posFilter;
-    return matchSearch && matchPos;
+    const matchProgram = programFilter === 'all' || (p.program_type || 'football') === programFilter;
+    return matchSearch && matchPos && matchProgram;
   });
+
+  // Compliance stats
+  const complianceStats = {
+    total: players.length,
+    physicalCleared: players.filter(p => p.physical_status === 'completed').length,
+    hasId: players.filter(p => p.has_state_id).length,
+    regPaid: players.filter(p => p.registration_paid).length,
+    football: players.filter(p => (p.program_type || 'football') === 'football').length,
+    cheer: players.filter(p => p.program_type === 'cheerleading').length,
+  };
 
   const positions = [...new Set(players.map(p => p.position).filter(Boolean))];
 
@@ -65,9 +83,33 @@ export default function RosterPage() {
     <div>
       <PageHeader
         title="Team Roster"
-        subtitle={`${players.length} players · 8U Rocks`}
+        subtitle={`${complianceStats.football} football · ${complianceStats.cheer} cheer · ${players.length} total`}
         actions={<Button variant="primary" icon={<Plus size={16} />} onClick={() => { setEditPlayer(null); setShowAddModal(true); }}>Add Player</Button>}
       />
+
+      {/* Compliance Summary Bar */}
+      {players.length > 0 && (
+        <Card style={{ marginBottom: 'var(--space-lg)', padding: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-xl)', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Compliance</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ShieldCheck size={14} color={complianceStats.physicalCleared === complianceStats.total ? 'var(--green)' : 'var(--amber)'} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{complianceStats.physicalCleared}/{complianceStats.total}</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Physicals</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle size={14} color={complianceStats.hasId === complianceStats.total ? 'var(--green)' : 'var(--amber)'} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{complianceStats.hasId}/{complianceStats.total}</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>State IDs</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle size={14} color={complianceStats.regPaid === complianceStats.total ? 'var(--green)' : 'var(--amber)'} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{complianceStats.regPaid}/{complianceStats.total}</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Registered</span>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Toolbar */}
       <Card style={{ marginBottom: 'var(--space-lg)', padding: 'var(--space-md)' }}>
@@ -76,6 +118,11 @@ export default function RosterPage() {
             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input className="form-input" placeholder="Search players..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36 }} />
           </div>
+          <select className="form-input" value={programFilter} onChange={e => setProgramFilter(e.target.value)} style={{ width: 130 }}>
+            <option value="all">All Programs</option>
+            <option value="football">🏈 Football</option>
+            <option value="cheerleading">📣 Cheer</option>
+          </select>
           <select className="form-input" value={posFilter} onChange={e => setPosFilter(e.target.value)} style={{ width: 140 }}>
             <option value="all">All Positions</option>
             {positions.map(p => <option key={p} value={p}>{p} — {POSITION_LABELS[p] || p}</option>)}
@@ -107,8 +154,14 @@ export default function RosterPage() {
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: 'var(--space-sm)', flexWrap: 'wrap' }}>
                   {player.position && <PositionBadge position={player.position} />}
                   {player.date_of_birth && <Badge variant="blue">Age {getPlayerAge(player.date_of_birth)}</Badge>}
+                  {player.program_type === 'cheerleading' && <Badge variant="purple">📣 Cheer</Badge>}
                 </div>
-                {player.weight && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginTop: 'var(--space-sm)' }}>{player.weight} lbs</div>}
+                {/* Compliance dots */}
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 'var(--space-sm)' }}>
+                  <span title={`Physical: ${PHYSICAL_STATUS[player.physical_status || 'not_submitted']?.label}`} style={{ width: 8, height: 8, borderRadius: '50%', background: PHYSICAL_STATUS[player.physical_status || 'not_submitted']?.color }} />
+                  <span title={player.has_state_id ? 'ID: ✓' : 'ID: Missing'} style={{ width: 8, height: 8, borderRadius: '50%', background: player.has_state_id ? 'var(--green)' : 'var(--red)' }} />
+                  <span title={player.registration_paid ? 'Reg: Paid' : 'Reg: Unpaid'} style={{ width: 8, height: 8, borderRadius: '50%', background: player.registration_paid ? 'var(--green)' : 'var(--red)' }} />
+                </div>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: 'var(--space-lg)' }}>
                   <Button variant="ghost" size="sm" icon={<Eye size={14} />} onClick={() => window.location.href = `/coach/roster/${player.id}`}>View</Button>
                   <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => { setEditPlayer(player); setShowAddModal(true); }}>Edit</Button>
@@ -122,15 +175,17 @@ export default function RosterPage() {
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>#</th><th>Player</th><th>Position</th><th>Age</th><th>Weight</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Player</th><th>Program</th><th>Position</th><th>Physical</th><th>ID</th><th>Reg</th><th>Actions</th></tr></thead>
               <tbody>
                 {filtered.map(player => (
                   <tr key={player.id}>
                     <td style={{ fontWeight: 800, color: 'var(--rocks-green-light)' }}>{player.jersey_number || '—'}</td>
                     <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Avatar name={`${player.first_name} ${player.last_name}`} size={32} /><span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{player.first_name} {player.last_name}</span></div></td>
+                    <td><Badge variant={(player.program_type || 'football') === 'football' ? 'green' : 'purple'}>{(player.program_type || 'football') === 'football' ? '🏈' : '📣'}</Badge></td>
                     <td>{player.position ? <PositionBadge position={player.position} /> : '—'}</td>
-                    <td>{player.date_of_birth ? getPlayerAge(player.date_of_birth) : '—'}</td>
-                    <td>{player.weight ? `${player.weight} lbs` : '—'}</td>
+                    <td><span style={{ color: PHYSICAL_STATUS[player.physical_status || 'not_submitted']?.color, fontWeight: 600, fontSize: 'var(--text-xs)' }}>{PHYSICAL_STATUS[player.physical_status || 'not_submitted']?.label}</span></td>
+                    <td>{player.has_state_id ? <CheckCircle size={14} color="var(--green)" /> : <XCircle size={14} color="var(--red)" />}</td>
+                    <td>{player.registration_paid ? <CheckCircle size={14} color="var(--green)" /> : <XCircle size={14} color="var(--red)" />}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.25rem' }}>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditPlayer(player); setShowAddModal(true); }}><Edit2 size={14} /></button>
@@ -161,6 +216,11 @@ function PlayerForm({ player, onSave, onCancel }) {
     position: player?.position || '',
     date_of_birth: player?.date_of_birth || '',
     weight: player?.weight || '',
+    program_type: player?.program_type || 'football',
+    physical_status: player?.physical_status || 'not_submitted',
+    physical_date: player?.physical_date || '',
+    has_state_id: player?.has_state_id || false,
+    registration_paid: player?.registration_paid || false,
     guardian_name: player?.guardian_name || '',
     guardian_phone: player?.guardian_phone || '',
     guardian_email: player?.guardian_email || '',
@@ -197,7 +257,40 @@ function PlayerForm({ player, onSave, onCancel }) {
         </div>
         <div className="form-group"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={form.date_of_birth} onChange={e => update('date_of_birth', e.target.value)} /></div>
         <div className="form-group"><label className="form-label">Weight (lbs)</label><input className="form-input" type="number" value={form.weight} onChange={e => update('weight', e.target.value)} /></div>
+        <div className="form-group"><label className="form-label">Program</label>
+          <select className="form-input" value={form.program_type} onChange={e => update('program_type', e.target.value)}>
+            <option value="football">🏈 Football ($175)</option>
+            <option value="cheerleading">📣 Cheerleading ($100)</option>
+          </select>
+        </div>
       </div>
+      {/* Compliance Section */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
+        <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 'var(--space-md)', color: 'var(--rocks-green-light)' }}>📋 Compliance</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+          <div className="form-group"><label className="form-label">Physical Status</label>
+            <select className="form-input" value={form.physical_status} onChange={e => update('physical_status', e.target.value)}>
+              <option value="not_submitted">❌ Not Submitted</option>
+              <option value="scheduled">📅 Scheduled</option>
+              <option value="completed">✅ Completed</option>
+            </select>
+          </div>
+          <div className="form-group"><label className="form-label">Physical Date</label><input className="form-input" type="date" value={form.physical_date} onChange={e => update('physical_date', e.target.value)} /></div>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="checkbox" checked={form.has_state_id} onChange={e => update('has_state_id', e.target.checked)} style={{ width: 16, height: 16 }} />
+              Has State ID / Passport
+            </label>
+          </div>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="checkbox" checked={form.registration_paid} onChange={e => update('registration_paid', e.target.checked)} style={{ width: 16, height: 16 }} />
+              Registration Paid ({form.program_type === 'cheerleading' ? '$100' : '$175'})
+            </label>
+          </div>
+        </div>
+      </div>
+      {/* Guardian Section */}
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
         <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 'var(--space-md)', color: 'var(--rocks-gold)' }}>Guardian Info</h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
