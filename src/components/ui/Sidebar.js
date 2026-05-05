@@ -74,13 +74,10 @@ export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = '
           width: 40,
           height: 40,
           borderRadius: 'var(--radius-md)',
-          background: 'linear-gradient(135deg, #106B3A, #009A44)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          overflow: 'hidden',
           flexShrink: 0,
         }}>
-          <Shield size={22} color="white" strokeWidth={2.5} />
+          <img src="/dr-logo.jpg" alt="DR" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <AnimatePresence>
           {!collapsed && (
