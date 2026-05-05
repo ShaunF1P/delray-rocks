@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, ArrowRight, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Shield, User, Lock, ArrowRight, Eye, EyeOff, MapPin } from 'lucide-react';
 import { FootballIcon } from '@/components/ui/Icons';
 import { signIn, getUserWithProfile, getPortalPath } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,6 +19,8 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
+    // Convert username to email format for Supabase auth
+    const email = username.includes('@') ? username : `${username.toLowerCase().trim()}@delrayrocks.app`;
     const { error } = await signIn(email, password);
 
     if (error) {
@@ -131,23 +133,28 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="login-email">Email</label>
+              <label className="form-label" htmlFor="login-username">Username</label>
               <div style={{ position: 'relative' }}>
-                <Mail size={16} style={{
+                <User size={16} style={{
                   position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
                   color: 'var(--text-muted)',
                 }} />
                 <input
-                  id="login-email"
-                  type="email"
+                  id="login-username"
+                  type="text"
                   className="form-input"
-                  placeholder="coach@delrayrocks.org"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="gerardm"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   style={{ paddingLeft: 40 }}
                 />
               </div>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                First name + last initial (e.g. gerardm)
+              </span>
             </div>
 
             <div className="form-group">
