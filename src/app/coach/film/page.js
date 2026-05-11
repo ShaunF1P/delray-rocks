@@ -179,13 +179,14 @@ export default function FilmRoomPage() {
         position: p.position,
       }));
 
-      // Step 2: Upload video to Google via our server
+      // Step 2: Upload video to Google via Cloud Run (no timeout limits)
+      const FILM_API = 'https://delray-film-service-489554556909.us-east1.run.app';
       const isClip = film.clip_start_seconds != null;
       toast.loading(isClip
         ? `Trimming clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)}) and uploading...`
         : 'Uploading video to AI engine...', { id: 'analysis-progress' });
 
-      const uploadRes = await fetch('/api/film/init-upload', {
+      const uploadRes = await fetch(`${FILM_API}/init-upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -233,7 +234,7 @@ export default function FilmRoomPage() {
       toast.loading(isClip
         ? `AI deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
         : `AI analyzing game film (${speedMode})...`, { id: 'analysis-progress' });
-      const res = await fetch('/api/film/analyze', {
+      const res = await fetch(`${FILM_API}/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
