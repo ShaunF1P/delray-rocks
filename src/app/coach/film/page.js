@@ -154,6 +154,43 @@ export default function FilmRoomPage() {
     }
   }
 
+  const FILM_API = 'https://delray-film-service-489554556909.us-east1.run.app';
+
+  // Poll for background analysis results every 15 seconds
+  useEffect(() => {
+    const processingFilms = films.filter(f => f.ai_status === 'processing');
+    if (processingFilms.length === 0) return;
+
+    const interval = setInterval(async () => {
+      let updated = false;
+      for (const film of processingFilms) {
+        try {
+          const res = await fetch(`${FILM_API}/status/${film.id}`);
+          const data = await res.json();
+          if (data.ai_status === 'complete' || data.ai_status === 'failed') {
+            updated = true;
+            setFilms(prev => prev.map(f => f.id === film.id
+              ? { ...f, ...data }
+              : f));
+            // If the user is viewing this film, update the selected film too
+            setSelectedFilm(prev => prev?.id === film.id ? { ...prev, ...data } : prev);
+            if (data.ai_status === 'complete') {
+              toast.success(`Analysis ready: ${film.title} 🏈`);
+              // If viewing this film, show the analysis
+              if (selectedFilm?.id === film.id) setAnalysis(data.ai_analysis);
+            } else {
+              toast.error(`Analysis failed for ${film.title}`);
+            }
+          }
+        } catch {}
+      }
+      // If any updated, do a full refresh to get clean state
+      if (updated) loadFilms();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [films, selectedFilm, loadFilms]);
+
   async function runAnalysis(film, forceRerun = false) {
     setAnalyzing(true);
     setAnalysis(null);
@@ -161,14 +198,14 @@ export default function FilmRoomPage() {
       const supabase = createClient();
 
       // Check for cached analysis first (unless force re-run)
-      if (!forceRerun && film.ai_analysis && film.ai_analysis_type === analysisType) {
+      if (!forceRerun && film.ai_analysis && film.ai_analysis_type === analysisType && film.ai_status !== 'failed') {
         setAnalysis(film.ai_analysis);
         toast.success('Loaded saved analysis', { id: 'analysis-progress' });
         setAnalyzing(false);
         return;
       }
 
-      // Step 1: Fetch roster for player identification
+      // Fetch roster for player identification
       const { data: rosterData } = await supabase
         .from('players')
         .select('first_name, last_name, jersey_number, position')
@@ -179,131 +216,37 @@ export default function FilmRoomPage() {
         position: p.position,
       }));
 
-      // Step 2: Upload video to Google via Cloud Run (no timeout limits)
-      const FILM_API = 'https://delray-film-service-489554556909.us-east1.run.app';
-      const isClip = film.clip_start_seconds != null;
-      toast.loading(isClip
-        ? `Trimming clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)}) and uploading...`
-        : 'Uploading video to AI engine...', { id: 'analysis-progress' });
-
-      const uploadRes = await fetch(`${FILM_API}/init-upload`, {
+      // Fire-and-forget: send to Cloud Run, returns immediately
+      const res = await fetch(`${FILM_API}/analyze-background`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          filmId: film.id,
           videoUrl: film.video_url,
           clipStart: film.clip_start_seconds,
           clipEnd: film.clip_end_seconds,
-        }),
-      });
-
-      let uploadData;
-      const ct = uploadRes.headers.get('content-type') || '';
-
-      if (ct.includes('application/json')) {
-        // Clip mode: simple JSON response
-        uploadData = await uploadRes.json();
-        if (uploadData.error) throw new Error(uploadData.error);
-      } else {
-        // Full video mode: streaming NDJSON with progress
-        const reader = uploadRes.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() || '';
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const msg = JSON.parse(line);
-              if (msg.error) throw new Error(msg.error);
-              if (msg._progress) toast.loading(msg._progress, { id: 'analysis-progress' });
-              if (msg._done) uploadData = msg;
-            } catch (e) {
-              if (e.message && !e.message.includes('JSON')) throw e;
-            }
-          }
-        }
-        if (!uploadData) throw new Error('Upload failed — no result received');
-      }
-
-      // Step 3: Run Gemini analysis with roster + speed mode (STREAMING)
-      toast.loading(isClip
-        ? `AI deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
-        : `AI analyzing game film (${speedMode})...`, { id: 'analysis-progress' });
-      const res = await fetch(`${FILM_API}/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileUri: uploadData.fileUri,
-          mimeType: uploadData.mimeType,
           filmType: film.film_type,
           opponent: film.opponent,
           analysisType,
           roster,
-          clipStart: film.clip_start_seconds,
-          clipEnd: film.clip_end_seconds,
           speedMode,
         }),
       });
 
-      // Read streaming NDJSON response (bypasses Vercel 60s timeout)
-      if (!res.ok) {
-        let errMsg = `Analysis failed (${res.status})`;
-        try { const j = await res.json(); errMsg = j.error || errMsg; } catch {}
-        throw new Error(errMsg);
-      }
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let analysisText = '';
-      let modelUsed = speedMode;
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line in buffer
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const msg = JSON.parse(line);
-            if (msg._meta) { modelUsed = msg.model; }
-            else if (msg._chunk) { analysisText += msg._chunk; toast.loading('AI analyzing...', { id: 'analysis-progress' }); }
-            else if (msg._error) { throw new Error(msg._error); }
-          } catch (e) {
-            if (e.message && !e.message.includes('JSON')) throw e;
-          }
-        }
-      }
-
-      if (!analysisText) throw new Error('No analysis received');
-      setAnalysis(analysisText);
-
-      // Step 4: Save analysis to database for caching
-      await supabase.from('game_films').update({
-        ai_analysis: analysisText,
-        ai_analysis_type: analysisType,
-        ai_analyzed_at: new Date().toISOString(),
-      }).eq('id', film.id);
-
-      // Update the film in local state so cache works on next click
+      // Update local state to show processing status
       setFilms(prev => prev.map(f => f.id === film.id
-        ? { ...f, ai_analysis: analysisText, ai_analysis_type: analysisType, ai_analyzed_at: new Date().toISOString() }
+        ? { ...f, ai_status: 'processing' }
         : f));
-      setSelectedFilm(prev => prev ? { ...prev, ai_analysis: analysisText, ai_analysis_type: analysisType } : prev);
+      setSelectedFilm(prev => prev ? { ...prev, ai_status: 'processing' } : prev);
 
-      toast.success(`AI analysis complete! (${modelUsed}) 🏈`, { id: 'analysis-progress' });
+      toast.success('Analysis started! You can navigate away — results will appear when ready. 🏈', { id: 'analysis-progress' });
+
     } catch (err) {
       console.error('Analysis error:', err);
-      toast.error(err.message || 'Analysis failed', { id: 'analysis-progress' });
+      toast.error(err.message || 'Failed to start analysis', { id: 'analysis-progress' });
     } finally {
       setAnalyzing(false);
     }
@@ -717,8 +660,18 @@ export default function FilmRoomPage() {
                         }}>🔬 Pro (Deep)</button>
                       </div>
 
-                      {/* Cached analysis indicator */}
-                      {selectedFilm.ai_analysis && (
+                      {/* Status indicator */}
+                      {selectedFilm.ai_status === 'processing' && (
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-gold)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Loader2 size={12} className="spin" /> Analysis in progress — you can navigate away
+                        </div>
+                      )}
+                      {selectedFilm.ai_status === 'failed' && (
+                        <div style={{ fontSize: 'var(--text-xs)', color: '#ef4444', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <AlertCircle size={12} /> Analysis failed — try again
+                        </div>
+                      )}
+                      {selectedFilm.ai_analysis && selectedFilm.ai_status !== 'processing' && selectedFilm.ai_status !== 'failed' && (
                         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-green-light)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <CheckCircle size={12} /> Saved analysis available
                           {selectedFilm.ai_analyzed_at && <span style={{ color: 'var(--text-dim)' }}>({new Date(selectedFilm.ai_analyzed_at).toLocaleDateString()})</span>}
@@ -726,12 +679,12 @@ export default function FilmRoomPage() {
                       )}
 
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <Button variant="primary" size="sm" icon={analyzing ? <Loader2 size={14} className="spin" /> : <Brain size={14} />}
-                          onClick={() => runAnalysis(selectedFilm)} disabled={analyzing} style={{ flex: 1 }}>
-                          {analyzing ? 'Analyzing...' : selectedFilm.ai_analysis ? 'View Saved' : 'Run AI Analysis'}
+                        <Button variant="primary" size="sm" icon={analyzing || selectedFilm.ai_status === 'processing' ? <Loader2 size={14} className="spin" /> : <Brain size={14} />}
+                          onClick={() => runAnalysis(selectedFilm)} disabled={analyzing || selectedFilm.ai_status === 'processing'} style={{ flex: 1 }}>
+                          {analyzing ? 'Starting...' : selectedFilm.ai_status === 'processing' ? 'Processing...' : selectedFilm.ai_analysis ? 'View Saved' : 'Run AI Analysis'}
                         </Button>
-                        {selectedFilm.ai_analysis && (
-                          <Button variant="ghost" size="sm" onClick={() => runAnalysis(selectedFilm, true)} disabled={analyzing} title="Re-run analysis">
+                        {(selectedFilm.ai_analysis || selectedFilm.ai_status === 'failed') && (
+                          <Button variant="ghost" size="sm" onClick={() => runAnalysis(selectedFilm, true)} disabled={analyzing || selectedFilm.ai_status === 'processing'} title="Re-run analysis">
                             🔄
                           </Button>
                         )}

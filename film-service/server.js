@@ -1,16 +1,28 @@
 const express = require('express');
 const cors = require('cors');
+const { execSync } = require('child_process');
+const { writeFileSync, unlinkSync, statSync } = require('fs');
+const path = require('path');
+const os = require('os');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { GoogleAIFileManager, FileState } = require('@google/generative-ai/server');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const GEMINI_UPLOAD_URL = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
 
-// Allow requests from Delray Rocks frontend
 app.use(cors({ origin: ['https://dr.f1rstposition.com', 'http://localhost:3000', 'http://localhost:3002'] }));
 app.use(express.json({ limit: '1mb' }));
+
+// Supabase admin client (service role — can write to any row)
+function getSupabase() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) throw new Error('Supabase not configured');
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Health check
@@ -18,273 +30,315 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'delray-film-service' }));
 
 // ═══════════════════════════════════════════════════════════════
-// POST /init-upload — Upload video to Google (streaming response)
+// POST /analyze-background — Fire-and-forget analysis
+// Returns 202 immediately. Runs upload + analysis in background.
+// Writes results directly to Supabase when done.
 // ═══════════════════════════════════════════════════════════════
-app.post('/init-upload', async (req, res) => {
+app.post('/analyze-background', async (req, res) => {
   if (!GEMINI_API_KEY) return res.status(503).json({ error: 'GEMINI_API_KEY not configured' });
 
-  const { videoUrl, clipStart, clipEnd } = req.body;
-  if (!videoUrl) return res.status(400).json({ error: 'videoUrl required' });
+  const { filmId, videoUrl, clipStart, clipEnd, filmType, opponent, analysisType,
+          roster, speedMode } = req.body;
 
-  // Always use streaming response for Cloud Run (no timeout concerns, but keeps client informed)
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Transfer-Encoding', 'chunked');
-
-  const send = (obj) => res.write(JSON.stringify(obj) + '\n');
-
-  try {
-    send({ _progress: 'Downloading video from storage...' });
-    const videoRes = await fetch(videoUrl);
-    if (!videoRes.ok) throw new Error('Cannot access video from storage');
-
-    const contentLength = videoRes.headers.get('content-length');
-    if (!contentLength) throw new Error('Video source did not provide content-length');
-    const fileSize = parseInt(contentLength, 10);
-    send({ _progress: `Video size: ${(fileSize / 1024 / 1024).toFixed(0)}MB` });
-
-    // Initiate Google resumable upload
-    send({ _progress: 'Initiating upload to Google...' });
-    const initRes = await fetch(`${GEMINI_UPLOAD_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'X-Goog-Upload-Protocol': 'resumable',
-        'X-Goog-Upload-Command': 'start',
-        'X-Goog-Upload-Header-Content-Length': String(fileSize),
-        'X-Goog-Upload-Header-Content-Type': 'video/mp4',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ file: { displayName: 'game-film' } }),
-    });
-    if (!initRes.ok) throw new Error(`Google init failed: ${initRes.status}`);
-    const uploadUri = initRes.headers.get('x-goog-upload-url');
-    if (!uploadUri) throw new Error('No upload URI from Google');
-
-    // Stream chunks from Supabase to Google (8MB at a time)
-    const CHUNK_SIZE = 8 * 1024 * 1024;
-    const reader = videoRes.body.getReader();
-    let buffer = Buffer.alloc(0);
-    let offset = 0;
-    let done = false;
-    let finalResult = null;
-
-    while (!done) {
-      while (buffer.length < CHUNK_SIZE && !done) {
-        const { value, done: streamDone } = await reader.read();
-        if (streamDone) { done = true; break; }
-        buffer = Buffer.concat([buffer, Buffer.from(value)]);
-      }
-      if (buffer.length === 0) break;
-
-      const isLast = done || (offset + buffer.length >= fileSize);
-      const chunk = isLast ? buffer : buffer.subarray(0, CHUNK_SIZE);
-
-      const chunkRes = await fetch(uploadUri, {
-        method: 'POST',
-        headers: {
-          'Content-Length': String(chunk.length),
-          'X-Goog-Upload-Offset': String(offset),
-          'X-Goog-Upload-Command': isLast ? 'upload, finalize' : 'upload',
-        },
-        body: chunk,
-      });
-      if (!chunkRes.ok) throw new Error(`Chunk failed at offset ${offset}`);
-
-      offset += chunk.length;
-      buffer = isLast ? Buffer.alloc(0) : buffer.subarray(CHUNK_SIZE);
-      if (isLast) finalResult = await chunkRes.json();
-
-      const pct = Math.round((offset / fileSize) * 100);
-      send({ _progress: `Uploading to Google... ${pct}%` });
-    }
-
-    if (!finalResult?.file) throw new Error('No file returned from Google');
-
-    // Poll until Google processes the video
-    send({ _progress: 'Google is processing video...' });
-    const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
-    let file = finalResult.file;
-    while (file.state === 'PROCESSING' || file.state === FileState.PROCESSING) {
-      await new Promise(r => setTimeout(r, 5000));
-      file = await fileManager.getFile(file.name);
-      send({ _progress: 'Still processing...' });
-    }
-    if (file.state === 'FAILED' || file.state === FileState.FAILED) {
-      throw new Error('Google video processing failed');
-    }
-
-    send({
-      fileUri: file.uri,
-      mimeType: file.mimeType || 'video/mp4',
-      fileName: file.name,
-      trimmed: false,
-      _done: true,
-    });
-    res.end();
-
-  } catch (err) {
-    console.error('Upload error:', err);
-    send({ error: err.message });
-    res.end();
+  if (!filmId || !videoUrl) {
+    return res.status(400).json({ error: 'filmId and videoUrl are required' });
   }
+
+  // Immediately mark as processing in Supabase
+  try {
+    const supabase = getSupabase();
+    await supabase.from('game_films').update({ ai_status: 'processing' }).eq('id', filmId);
+  } catch (err) {
+    console.error('Failed to set processing status:', err);
+  }
+
+  // Return immediately — processing continues in background
+  res.status(202).json({ status: 'accepted', filmId });
+
+  // ── Background pipeline ──────────────────────────────────────
+  runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opponent, analysisType, roster, speedMode })
+    .catch(err => console.error(`Pipeline failed for film ${filmId}:`, err));
 });
 
-// ═══════════════════════════════════════════════════════════════
-// POST /analyze — Run Gemini analysis (streaming response)
-// ═══════════════════════════════════════════════════════════════
+async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opponent,
+                             analysisType, roster, speedMode }) {
+  const supabase = getSupabase();
+  const isClip = clipStart != null && clipEnd != null;
 
+  try {
+    // ── STEP 1: Upload video to Google ─────────────────────────
+    let geminiFile;
+
+    if (isClip) {
+      // CLIP: FFmpeg physically trims the video — Gemini only sees this segment
+      console.log(`[${filmId}] Trimming clip: ${clipStart}s → ${clipEnd}s`);
+      geminiFile = await trimAndUploadClip(videoUrl, clipStart, clipEnd);
+    } else {
+      // FULL VIDEO: Stream directly to Google
+      console.log(`[${filmId}] Streaming full video to Google...`);
+      geminiFile = await streamFullVideo(videoUrl);
+    }
+
+    console.log(`[${filmId}] Google file ready: ${geminiFile.uri}`);
+
+    // ── STEP 2: Run Gemini analysis ────────────────────────────
+    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
+    const prompt = buildPrompt(effectiveType, { roster, opponent, filmType, isClip, clipStart, clipEnd });
+
+    console.log(`[${filmId}] Running ${GEMINI_MODEL} analysis (${effectiveType})...`);
+
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+    const contentParts = [
+      { text: prompt },
+      { fileData: { mimeType: geminiFile.mimeType || 'video/mp4', fileUri: geminiFile.uri } },
+    ];
+
+    const streamResult = await model.generateContentStream(contentParts);
+    let analysisText = '';
+    for await (const chunk of streamResult.stream) {
+      const text = chunk.text();
+      if (text) analysisText += text;
+    }
+
+    if (!analysisText) throw new Error('Empty analysis returned from Gemini');
+
+    // ── STEP 3: Save results to Supabase ───────────────────────
+    await supabase.from('game_films').update({
+      ai_analysis: analysisText,
+      ai_analysis_type: effectiveType,
+      ai_analyzed_at: new Date().toISOString(),
+      ai_status: 'complete',
+    }).eq('id', filmId);
+
+    console.log(`[${filmId}] ✅ Analysis complete and saved (${GEMINI_MODEL})`);
+
+  } catch (err) {
+    console.error(`[${filmId}] ❌ Pipeline error:`, err);
+    await supabase.from('game_films').update({
+      ai_status: 'failed',
+      ai_analysis: `Analysis failed: ${err.message}`,
+    }).eq('id', filmId).catch(() => {});
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Clip trimming with FFmpeg
+// Downloads → trims → uploads ONLY the clip to Google
+// ═══════════════════════════════════════════════════════════════
+async function trimAndUploadClip(videoUrl, clipStart, clipEnd) {
+  const duration = clipEnd - clipStart;
+  const tmpInput = path.join(os.tmpdir(), `input-${Date.now()}.mp4`);
+  const tmpClip = path.join(os.tmpdir(), `clip-${Date.now()}.mp4`);
+
+  try {
+    // Download full video to temp (Cloud Run has up to 2GB in-memory tmpfs)
+    console.log('Downloading video for trimming...');
+    const res = await fetch(videoUrl);
+    if (!res.ok) throw new Error('Cannot download video');
+    const buffer = Buffer.from(await res.arrayBuffer());
+    writeFileSync(tmpInput, buffer);
+    console.log(`Downloaded ${(buffer.length / 1024 / 1024).toFixed(0)}MB`);
+
+    // FFmpeg trim — creates a standalone clip with NO reference to the rest
+    console.log(`FFmpeg trimming ${clipStart}s to ${clipEnd}s (${duration}s)...`);
+    execSync(
+      `ffmpeg -y -ss ${clipStart} -i "${tmpInput}" -t ${duration} -c copy -avoid_negative_ts make_zero "${tmpClip}"`,
+      { timeout: 120000, stdio: 'pipe' }
+    );
+
+    const clipSize = statSync(tmpClip).size;
+    console.log(`Clip created: ${(clipSize / 1024 / 1024).toFixed(1)}MB`);
+
+    // Upload ONLY the trimmed clip to Google
+    const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
+    const uploadResult = await fileManager.uploadFile(tmpClip, {
+      mimeType: 'video/mp4',
+      displayName: `clip-${clipStart}s-${clipEnd}s`,
+    });
+
+    // Poll until processed
+    let file = uploadResult.file;
+    while (file.state === 'PROCESSING' || file.state === FileState.PROCESSING) {
+      await new Promise(r => setTimeout(r, 3000));
+      file = await fileManager.getFile(file.name);
+    }
+    if (file.state === 'FAILED' || file.state === FileState.FAILED) {
+      throw new Error('Google failed to process clip');
+    }
+
+    return file;
+  } finally {
+    try { unlinkSync(tmpInput); } catch {}
+    try { unlinkSync(tmpClip); } catch {}
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Full video streaming upload (no disk, chunked 8MB)
+// ═══════════════════════════════════════════════════════════════
+async function streamFullVideo(videoUrl) {
+  const videoRes = await fetch(videoUrl);
+  if (!videoRes.ok) throw new Error('Cannot access video');
+
+  const fileSize = parseInt(videoRes.headers.get('content-length') || '0', 10);
+  if (!fileSize) throw new Error('No content-length');
+
+  // Initiate resumable upload
+  const initRes = await fetch(`${GEMINI_UPLOAD_URL}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'X-Goog-Upload-Protocol': 'resumable',
+      'X-Goog-Upload-Command': 'start',
+      'X-Goog-Upload-Header-Content-Length': String(fileSize),
+      'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ file: { displayName: 'game-film-full' } }),
+  });
+  if (!initRes.ok) throw new Error(`Google init failed: ${initRes.status}`);
+  const uploadUri = initRes.headers.get('x-goog-upload-url');
+
+  // Stream in 8MB chunks
+  const CHUNK_SIZE = 8 * 1024 * 1024;
+  const reader = videoRes.body.getReader();
+  let buffer = Buffer.alloc(0);
+  let offset = 0;
+  let done = false;
+  let finalResult = null;
+
+  while (!done) {
+    while (buffer.length < CHUNK_SIZE && !done) {
+      const { value, done: streamDone } = await reader.read();
+      if (streamDone) { done = true; break; }
+      buffer = Buffer.concat([buffer, Buffer.from(value)]);
+    }
+    if (buffer.length === 0) break;
+
+    const isLast = done || (offset + buffer.length >= fileSize);
+    const chunk = isLast ? buffer : buffer.subarray(0, CHUNK_SIZE);
+
+    const chunkRes = await fetch(uploadUri, {
+      method: 'POST',
+      headers: {
+        'Content-Length': String(chunk.length),
+        'X-Goog-Upload-Offset': String(offset),
+        'X-Goog-Upload-Command': isLast ? 'upload, finalize' : 'upload',
+      },
+      body: chunk,
+    });
+    if (!chunkRes.ok) throw new Error(`Chunk failed at ${offset}`);
+
+    offset += chunk.length;
+    buffer = isLast ? Buffer.alloc(0) : buffer.subarray(CHUNK_SIZE);
+    if (isLast) finalResult = await chunkRes.json();
+
+    console.log(`Upload progress: ${Math.round((offset / fileSize) * 100)}%`);
+  }
+
+  if (!finalResult?.file) throw new Error('No file from Google');
+
+  // Poll until processed
+  const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
+  let file = finalResult.file;
+  while (file.state === 'PROCESSING' || file.state === FileState.PROCESSING) {
+    await new Promise(r => setTimeout(r, 5000));
+    file = await fileManager.getFile(file.name);
+  }
+  if (file.state === 'FAILED' || file.state === FileState.FAILED) {
+    throw new Error('Google video processing failed');
+  }
+  return file;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Prompt builder
+// ═══════════════════════════════════════════════════════════════
 function buildRosterContext(roster) {
   if (!roster || roster.length === 0) return '';
   const lines = roster.map(p => `  #${p.jersey} — ${p.name} (${p.position})`).join('\n');
   return `\n\n=== OUR TEAM ROSTER ===
-IMPORTANT: When you identify a player from OUR team, always label them by POSITION, Jersey #, and Name.
-Example: "RB #10 (Marcus Johnson)" or "LG #54 (David Smith)"
-For OPPONENT players where you don't have a roster, label by jersey # and their observed position.
-Example: "Opponent DL #5" or "Opponent Safety #1"
-
-For offensive linemen, identify by specific position (LT, LG, C, RG, RT, TE) based on their alignment.
-For defensive players, identify by scheme position (DE, DT, NT, OLB, MLB, ILB, CB, FS, SS).
-
+IMPORTANT: Label OUR players by POSITION, Jersey #, and Name. Example: "RB #10 (Marcus Johnson)"
+For OPPONENT players, label by jersey # and observed position. Example: "Opponent DL #5"
 Our Roster:
 ${lines}
 === END ROSTER ===\n`;
 }
 
 const GROUND_TRUTH_RULES = `
+=== GROUND TRUTH RULES ===
+1. ONLY describe what you ACTUALLY SEE. Do NOT fabricate.
+2. Dead balls, penalties — say so. Do NOT analyze as live plays.
+3. If you can't see a jersey number, say "unidentified".
+4. Count actual LIVE plays (snap to whistle). Penalties are NOT live plays.
+5. Be HONEST about film quality limitations.
+=== PLAYER ID RULES ===
+1. POSITION FIRST  2. 2-3 PHYSICAL DESCRIPTORS (cleats, hair, build)  3. JERSEY # (only if clearly visible)
+=== END RULES ===`;
 
-=== GROUND TRUTH RULES — FOLLOW THESE EXACTLY ===
-1. ONLY describe what you ACTUALLY SEE in the video. Do NOT fabricate, infer, or guess details.
-2. If a play is a DEAD BALL (penalty flag, offsides, false start, referee whistle, coach intervention), SAY SO.
-3. If players line up and then the play is blown dead before a snap or after a penalty, report it as: "DEAD BALL — [reason]".
-4. If you see teams moving forward or backward without running a play, that is likely a PENALTY ENFORCEMENT.
-5. If you CANNOT clearly see a jersey number, say "unidentified" — do NOT make up a number.
-6. If you CANNOT determine what happened, say "unclear from film angle".
-7. Count the actual number of LIVE plays in the clip. A live play = snap to whistle with actual football action.
-8. Be HONEST about what the film quality and angle allows you to see.
-
-=== PLAYER IDENTIFICATION RULES ===
-1. POSITION FIRST: Always identify by field position.
-2. PHYSICAL DESCRIPTORS (minimum 2-3): Shoe/cleat color, hair, build/size, equipment, skin tone.
-3. JERSEY NUMBER (with confidence): Only state if you can clearly read it.
-4. COMBINE ALL THREE for best identification.
-=== END GROUND TRUTH RULES ===
-`;
-
-app.post('/analyze', async (req, res) => {
-  if (!GEMINI_API_KEY) return res.status(503).json({ error: 'GEMINI_API_KEY not configured' });
-
-  const { fileUri, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd, speedMode } = req.body;
-  const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
-  const rosterContext = buildRosterContext(roster);
-  const isClip = clipStart != null && clipEnd != null;
+function buildPrompt(type, { roster, opponent, filmType, isClip, clipStart, clipEnd }) {
+  const ctx = buildRosterContext(roster);
 
   const prompts = {
     clip_breakdown: `You are an elite youth football (8U) film analyst reviewing a single play or short clip.
-${rosterContext}
-${GROUND_TRUTH_RULES}
+${ctx}${GROUND_TRUTH_RULES}
 
-This clip is ${isClip ? `${Math.round(clipEnd - clipStart)} seconds long` : 'a short segment'}. Analyze ONLY what you actually see:
-
-1. **What Happened**: Describe the actual event. Live play? Penalty? Dead ball?
-2. **Penalty Analysis** (if any flag or dead ball): Type, who committed it, what they did wrong, coaching correction.
-3. **Pre-Snap Read**: Offensive and defensive formations with positions labeled.
-4. **Play Execution** (if live play): Play type, blocker performance, ball carrier, key defenders.
-5. **Coaching Points**: 2-3 specific, actionable corrections.
+This clip is ${isClip ? `${Math.round(clipEnd - clipStart)} seconds long` : 'a short segment'}. Analyze ONLY what you see:
+1. **What Happened**: Live play? Penalty? Dead ball?
+2. **Penalty Analysis** (if any): Type, who committed it, coaching correction.
+3. **Pre-Snap Read**: Formations with positions labeled.
+4. **Play Execution** (if live): Play type, blocking, ball carrier, key defenders.
+5. **Coaching Points**: 2-3 specific corrections.
 6. **Grade**: A-F for offense and defense.
-
 Opponent: ${opponent || 'Unknown'}`,
 
     full_breakdown: `You are an elite youth football (8U) coaching analyst.
-${rosterContext}
-${GROUND_TRUTH_RULES}
+${ctx}${GROUND_TRUTH_RULES}
 
-Analyze this game film and provide:
-1. **Formation Recognition**: Identify offensive and defensive formations.
-2. **Play-by-Play Breakdown**: For EVERY live play, describe what happened.
-3. **Key Player Performances**: Standout players by position, jersey #, and name.
+Analyze this game film:
+1. **Formation Recognition**: Offensive and defensive formations.
+2. **Play-by-Play Breakdown**: Every live play with timestamps.
+3. **Key Player Performances**: Standouts by position, jersey, name.
 4. **Tactical Trends**: Visible tendencies.
-5. **Coaching Recommendations**: Specific drill suggestions.
-6. **Play Success/Failure Analysis**: Grade each play and explain.
-
-Opponent: ${opponent || 'Unknown'}
-Film Type: ${filmType || 'game'}
-Provide timestamps for every play.`,
+5. **Coaching Recommendations**: Specific drills.
+6. **Play Grades**: A-F for each play.
+Opponent: ${opponent || 'Unknown'}  Film Type: ${filmType || 'game'}`,
 
     player_tracking: `You are a sports biomechanics analyst for youth football (8U).
-${rosterContext}
-${GROUND_TRUTH_RULES}
-
-Assess ONLY what you can actually see:
-**OFFENSIVE LINE**: Stance, first step, pad level, blocking.
-**SKILL POSITIONS**: Speed, agility, ball skills, vision.
-**DEFENSIVE PLAYERS**: Gap discipline, pursuit angles, tackling form.
-Grade each identified player A-F. Include timestamps.
-Opponent: ${opponent || 'Unknown'}`,
+${ctx}${GROUND_TRUTH_RULES}
+OL: Stance, first step, blocking. Skills: Speed, vision. Defense: Gap discipline, tackling.
+Grade each player A-F. Include timestamps. Opponent: ${opponent || 'Unknown'}`,
 
     highlights: `You are a highlight reel editor for youth football.
-${rosterContext}
-${GROUND_TRUTH_RULES}
+${ctx}${GROUND_TRUTH_RULES}
+Find exciting LIVE plays. Rank by impact, timestamp each. Opponent: ${opponent || 'Unknown'}`,
 
-Find the most exciting plays (LIVE only, not penalties). Rank by impact, timestamp each, describe what makes each special.
-Opponent: ${opponent || 'Unknown'}`,
-
-    quick_summary: `You are a head coach's assistant for an 8U youth football team.
-${rosterContext}
-${GROUND_TRUTH_RULES}
-
-Provide a concise tactical summary:
-1. Score/Result  2. Play Count  3. Top 3 Takeaways  4. Players of the Game
-5. Position Group Grades (A-F)  6. Areas for Improvement  7. Penalties/Issues
-Keep it concise and actionable.
-Opponent: ${opponent || 'Unknown'}`,
+    quick_summary: `You are a head coach's assistant (8U).
+${ctx}${GROUND_TRUTH_RULES}
+1. Score  2. Play count  3. Top 3 takeaways  4. Players of the game
+5. Position grades (A-F)  6. Areas to improve  7. Penalties
+Be concise. Opponent: ${opponent || 'Unknown'}`,
   };
 
-  const effectiveType = isClip ? 'clip_breakdown' : analysisType;
-  const systemPrompt = prompts[effectiveType] || prompts.full_breakdown;
-
-  // Stream the response
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Transfer-Encoding', 'chunked');
-
-  const send = (obj) => res.write(JSON.stringify(obj) + '\n');
-
-  try {
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
-    const contentParts = [{ text: systemPrompt }];
-    if (fileUri) {
-      contentParts.push({ fileData: { mimeType: mimeType || 'video/mp4', fileUri } });
-    }
-
-    send({ _meta: true, model: GEMINI_MODEL, analysisType: effectiveType, timestamp: new Date().toISOString() });
-
-    const streamResult = await model.generateContentStream(contentParts);
-    for await (const chunk of streamResult.stream) {
-      const text = chunk.text();
-      if (text) send({ _chunk: text });
-    }
-
-    send({ _done: true });
-    res.end();
-
-  } catch (err) {
-    console.error('Analysis error:', err);
-    send({ _error: err.message });
-    res.end();
-  }
-});
+  return prompts[type] || prompts.full_breakdown;
+}
 
 // ═══════════════════════════════════════════════════════════════
-// POST /file-status — Poll Google file processing status
+// GET /status/:filmId — Check analysis status (for polling)
 // ═══════════════════════════════════════════════════════════════
-app.post('/file-status', async (req, res) => {
+app.get('/status/:filmId', async (req, res) => {
   try {
-    const { fileName } = req.body;
-    const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
-    const file = await fileManager.getFile(fileName);
-    res.json({ state: file.state, uri: file.uri, mimeType: file.mimeType, name: file.name });
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('game_films')
+      .select('ai_status, ai_analysis, ai_analysis_type, ai_analyzed_at')
+      .eq('id', req.params.filmId)
+      .single();
+
+    if (error) throw error;
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
