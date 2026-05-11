@@ -276,7 +276,7 @@ export default function FilmRoomPage() {
         uploadData = { fileUri: file.uri, mimeType: file.mimeType || 'video/mp4' };
       }
 
-      // Step 3: Run Gemini analysis with roster + speed mode
+      // Step 3: Run Gemini analysis with roster + speed mode (STREAMING)
       toast.loading(isClip
         ? `AI deep-analyzing clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)})...`
         : `AI analyzing game film (${speedMode})...`, { id: 'analysis-progress' });
@@ -295,24 +295,58 @@ export default function FilmRoomPage() {
           speedMode,
         }),
       });
-      const data = await res.json();
-      if (data.error) { toast.error(data.error, { id: 'analysis-progress' }); return; }
-      setAnalysis(data.analysis);
+
+      // Read streaming NDJSON response (bypasses Vercel 60s timeout)
+      if (!res.ok) {
+        let errMsg = `Analysis failed (${res.status})`;
+        try { const j = await res.json(); errMsg = j.error || errMsg; } catch {}
+        throw new Error(errMsg);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let analysisText = '';
+      let modelUsed = speedMode;
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg._meta) { modelUsed = msg.model; }
+            else if (msg._chunk) { analysisText += msg._chunk; toast.loading('AI analyzing...', { id: 'analysis-progress' }); }
+            else if (msg._error) { throw new Error(msg._error); }
+          } catch (e) {
+            if (e.message && !e.message.includes('JSON')) throw e;
+          }
+        }
+      }
+
+      if (!analysisText) throw new Error('No analysis received');
+      setAnalysis(analysisText);
 
       // Step 4: Save analysis to database for caching
       await supabase.from('game_films').update({
-        ai_analysis: data.analysis,
+        ai_analysis: analysisText,
         ai_analysis_type: analysisType,
         ai_analyzed_at: new Date().toISOString(),
       }).eq('id', film.id);
 
       // Update the film in local state so cache works on next click
       setFilms(prev => prev.map(f => f.id === film.id
-        ? { ...f, ai_analysis: data.analysis, ai_analysis_type: analysisType, ai_analyzed_at: new Date().toISOString() }
+        ? { ...f, ai_analysis: analysisText, ai_analysis_type: analysisType, ai_analyzed_at: new Date().toISOString() }
         : f));
-      setSelectedFilm(prev => prev ? { ...prev, ai_analysis: data.analysis, ai_analysis_type: analysisType } : prev);
+      setSelectedFilm(prev => prev ? { ...prev, ai_analysis: analysisText, ai_analysis_type: analysisType } : prev);
 
-      toast.success(`AI analysis complete! (${data.model}) 🏈`, { id: 'analysis-progress' });
+      toast.success(`AI analysis complete! (${modelUsed}) 🏈`, { id: 'analysis-progress' });
     } catch (err) {
       console.error('Analysis error:', err);
       toast.error(err.message || 'Analysis failed', { id: 'analysis-progress' });

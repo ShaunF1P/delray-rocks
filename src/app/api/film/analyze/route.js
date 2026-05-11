@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+export const maxDuration = 60;
 
 function buildRosterContext(roster) {
   if (!roster || roster.length === 0) return '';
@@ -181,14 +182,47 @@ Opponent: ${opponent || 'Unknown'}`,
       });
     }
 
-    const result = await model.generateContent(contentParts);
-    const analysisText = result.response.text();
+    // Use streaming to beat Vercel's 60-second timeout.
+    // First byte arrives in ~2-3 seconds, keeping connection alive.
+    const streamResult = await model.generateContentStream(contentParts);
 
-    return NextResponse.json({
-      analysis: analysisText,
-      model: GEMINI_MODEL,
-      analysisType: effectiveType,
-      timestamp: new Date().toISOString(),
+    // Stream Gemini's response directly to the client
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send metadata header first (keeps connection alive immediately)
+          controller.enqueue(encoder.encode(JSON.stringify({
+            _meta: true,
+            model: GEMINI_MODEL,
+            analysisType: effectiveType,
+            timestamp: new Date().toISOString(),
+          }) + '\n'));
+
+          // Stream each chunk of analysis text
+          for await (const chunk of streamResult.stream) {
+            const text = chunk.text();
+            if (text) {
+              controller.enqueue(encoder.encode(JSON.stringify({ _chunk: text }) + '\n'));
+            }
+          }
+
+          // Signal completion
+          controller.enqueue(encoder.encode(JSON.stringify({ _done: true }) + '\n'));
+          controller.close();
+        } catch (err) {
+          controller.enqueue(encoder.encode(JSON.stringify({ _error: err.message }) + '\n'));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+      },
     });
   } catch (err) {
     console.error('Film analysis error:', err);
