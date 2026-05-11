@@ -52,7 +52,7 @@ async function uploadFileToGemini(filePath, mimeType, displayName) {
    1. Start session → get upload URI
    2. Stream bytes directly from source URL to that URI            */
 async function streamUploadToGemini(videoUrl, mimeType, displayName) {
-  // Step 1: Fetch video from Supabase (streaming — not buffered)
+  // Step 1: Fetch video from Supabase (streaming)
   const videoRes = await fetch(videoUrl);
   if (!videoRes.ok) throw new Error('Cannot access video from storage');
 
@@ -60,7 +60,7 @@ async function streamUploadToGemini(videoUrl, mimeType, displayName) {
   if (!contentLength) throw new Error('Video source did not provide content-length');
 
   const fileSize = parseInt(contentLength, 10);
-  console.log(`Streaming ${(fileSize / 1024 / 1024).toFixed(1)}MB directly to Google...`);
+  console.log(`Streaming ${(fileSize / 1024 / 1024).toFixed(1)}MB to Google via chunked upload...`);
 
   // Step 2: Initiate resumable upload session with Google
   const initRes = await fetch(`${GEMINI_UPLOAD_URL}?key=${GEMINI_API_KEY}`, {
@@ -83,29 +83,59 @@ async function streamUploadToGemini(videoUrl, mimeType, displayName) {
   const uploadUri = initRes.headers.get('x-goog-upload-url');
   if (!uploadUri) throw new Error('No upload URI returned from Google');
 
-  // Step 3: Read the full video body and upload in one shot
-  // We buffer in memory since Vercel functions have ~1-4GB RAM (more than /tmp)
-  const videoBuffer = Buffer.from(await videoRes.arrayBuffer());
+  // Step 3: Stream in 8MB chunks — constant ~50MB RAM regardless of video size
+  const CHUNK_SIZE = 8 * 1024 * 1024; // 8MB chunks
+  const reader = videoRes.body.getReader();
+  let buffer = Buffer.alloc(0);
+  let offset = 0;
+  let done = false;
+  let finalResult = null;
 
-  const uploadRes = await fetch(uploadUri, {
-    method: 'POST',
-    headers: {
-      'Content-Length': String(fileSize),
-      'X-Goog-Upload-Offset': '0',
-      'X-Goog-Upload-Command': 'upload, finalize',
-    },
-    body: videoBuffer,
-  });
+  while (!done) {
+    // Fill buffer to CHUNK_SIZE or until stream ends
+    while (buffer.length < CHUNK_SIZE && !done) {
+      const { value, done: streamDone } = await reader.read();
+      if (streamDone) {
+        done = true;
+        break;
+      }
+      buffer = Buffer.concat([buffer, Buffer.from(value)]);
+    }
 
-  if (!uploadRes.ok) {
-    const errText = await uploadRes.text();
-    throw new Error(`Upload failed: ${uploadRes.status} ${errText}`);
+    if (buffer.length === 0) break;
+
+    const isLast = done || (offset + buffer.length >= fileSize);
+    const chunk = isLast ? buffer : buffer.subarray(0, CHUNK_SIZE);
+    const command = isLast ? 'upload, finalize' : 'upload';
+
+    const chunkRes = await fetch(uploadUri, {
+      method: 'POST',
+      headers: {
+        'Content-Length': String(chunk.length),
+        'X-Goog-Upload-Offset': String(offset),
+        'X-Goog-Upload-Command': command,
+      },
+      body: chunk,
+    });
+
+    if (!chunkRes.ok) {
+      const errText = await chunkRes.text();
+      throw new Error(`Chunk upload failed at offset ${offset}: ${chunkRes.status} ${errText}`);
+    }
+
+    offset += chunk.length;
+    buffer = isLast ? Buffer.alloc(0) : buffer.subarray(CHUNK_SIZE);
+
+    if (isLast) {
+      finalResult = await chunkRes.json();
+    }
+
+    console.log(`Uploaded ${(offset / 1024 / 1024).toFixed(1)}MB / ${(fileSize / 1024 / 1024).toFixed(1)}MB`);
   }
 
-  const result = await uploadRes.json();
-  const file = result.file;
+  if (!finalResult?.file) throw new Error('Upload completed but no file returned');
 
-  return pollUntilReady(file);
+  return pollUntilReady(finalResult.file);
 }
 
 /* ── Poll Google until the file is processed ──────────────────── */
