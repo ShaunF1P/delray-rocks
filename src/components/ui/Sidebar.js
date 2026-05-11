@@ -23,7 +23,7 @@ const coachMenuItems = [
   { label: 'Analytics', href: '/coach/analytics', icon: BarChart3 },
   { label: 'Parent Reports', href: '/coach/reports', icon: FileText, badge: 'AI' },
   { label: 'Fundraising', href: '/coach/fundraising', icon: DollarSign },
-  { label: 'Live Game', href: '/coach/live', icon: Zap, badge: 'NEW' },
+  { label: 'Live Game', href: '/coach/live', icon: Zap },
   { label: 'Settings', href: '/coach/settings', icon: Settings },
 ];
 
