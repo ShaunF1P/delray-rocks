@@ -194,6 +194,15 @@ export default function FilmRoomPage() {
           clipEnd: film.clip_end_seconds,
         }),
       });
+
+      // Handle non-JSON responses (Vercel timeout returns HTML)
+      const contentType = uploadRes.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        if (uploadRes.status === 504) {
+          throw new Error('Upload timed out — the video is too large for cloud processing. Use the clip trimmer to analyze 30-60 second segments instead.');
+        }
+        throw new Error(`Server error (${uploadRes.status}). Try a shorter clip.`);
+      }
       const uploadData = await uploadRes.json();
       if (uploadData.error) throw new Error(uploadData.error);
 
