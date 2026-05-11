@@ -1,0 +1,14 @@
+{
+  "name": "delray-film-service",
+  "version": "1.0.0",
+  "description": "Delray Rocks Film Processing API (Cloud Run)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  }
+}
