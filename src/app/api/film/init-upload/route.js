@@ -1,44 +1,87 @@
 import { NextResponse } from 'next/server';
 import { GoogleAIFileManager, FileState } from '@google/generative-ai/server';
-import { createWriteStream } from 'fs';
-import { unlink, mkdir } from 'fs/promises';
-import { pipeline } from 'stream/promises';
-import { Readable } from 'stream';
+import { unlink, mkdir, stat } from 'fs/promises';
 import { execFile } from 'child_process';
 import path from 'path';
 import os from 'os';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Resolve the FFmpeg binary path from the npm package
-const FFMPEG_PATH = path.join(process.cwd(), 'node_modules', '@ffmpeg-installer', 'win32-x64', 'ffmpeg.exe');
+/* ── FFmpeg binary resolution ─────────────────────────────────────
+   Works on Vercel (linux) and local dev (win32).                 */
+function getFFmpegPath() {
+  if (process.platform === 'win32') {
+    return path.join(process.cwd(), 'node_modules', '@ffmpeg-installer', 'win32-x64', 'ffmpeg.exe');
+  }
+  // Linux (Vercel serverless)
+  return path.join(process.cwd(), 'node_modules', '@ffmpeg-installer', 'linux-x64', 'ffmpeg');
+}
 
-// Trim a video file using FFmpeg (stream-copy = instant, no re-encoding)
-function trimVideo(inputPath, outputPath, startSeconds, endSeconds) {
+/* ── Trim a clip using FFmpeg reading DIRECTLY from URL ───────────
+   FFmpeg fetches only the bytes it needs from the Supabase URL.
+   The full video is NEVER downloaded to disk.                     */
+function trimFromUrl(videoUrl, outputPath, startSeconds, endSeconds) {
   return new Promise((resolve, reject) => {
     const duration = endSeconds - startSeconds;
-    execFile(FFMPEG_PATH, [
+    const ffmpegPath = getFFmpegPath();
+    execFile(ffmpegPath, [
       '-y',
       '-ss', String(startSeconds),
-      '-i', inputPath,
+      '-i', videoUrl,            // Read directly from URL — no local download
       '-t', String(duration),
       '-c', 'copy',
       '-avoid_negative_ts', 'make_zero',
+      '-movflags', '+faststart',
       outputPath,
-    ], (error, stdout, stderr) => {
+    ], { timeout: 120000 }, (error, stdout, stderr) => {
       if (error) reject(new Error(`FFmpeg error: ${error.message}\n${stderr}`));
       else resolve();
     });
   });
 }
 
+/* ── Upload a small file to Gemini via the SDK ────────────────── */
+async function uploadToGemini(filePath, mimeType, displayName) {
+  const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
+  const uploadResult = await fileManager.uploadFile(filePath, {
+    mimeType,
+    displayName,
+  });
+
+  // Poll until Google finishes processing
+  let file = uploadResult.file;
+  while (file.state === FileState.PROCESSING) {
+    await new Promise(r => setTimeout(r, 5000));
+    file = await fileManager.getFile(file.name);
+  }
+
+  if (file.state === FileState.FAILED) {
+    throw new Error('Google video processing failed');
+  }
+
+  return file;
+}
+
+/* ── Clean temp directory ─────────────────────────────────────── */
+async function cleanTempDir(tempDir) {
+  try {
+    const { readdir } = await import('fs/promises');
+    const files = await readdir(tempDir);
+    for (const f of files) {
+      await unlink(path.join(tempDir, f)).catch(() => {});
+    }
+  } catch {}
+}
+
+// Increase serverless timeout for video processing
+export const maxDuration = 60;
+
 export async function POST(request) {
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 503 });
   }
 
-  let tempFilePath = null;
-  let trimmedFilePath = null;
+  let clipPath = null;
 
   try {
     const { videoUrl, clipStart, clipEnd } = await request.json();
@@ -46,79 +89,55 @@ export async function POST(request) {
 
     const isClip = clipStart != null && clipEnd != null;
 
-    // 1. Download video from Supabase to temp file (stream to disk)
-    const videoRes = await fetch(videoUrl);
-    if (!videoRes.ok) throw new Error('Cannot access video from storage');
-
-    const mimeType = videoRes.headers.get('content-type') || 'video/mp4';
-    const contentLength = parseInt(videoRes.headers.get('content-length') || '0', 10);
-
-    // Guard: Vercel /tmp is 512MB — reject files too large for serverless
-    if (contentLength > 450 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Video too large for cloud processing. Use clips under 450MB.' }, { status: 413 });
+    if (!isClip) {
+      return NextResponse.json(
+        { error: 'Please create a clip (set start/end times) before analyzing. Full-video analysis is not supported in cloud mode.' },
+        { status: 400 }
+      );
     }
 
+    const clipDuration = clipEnd - clipStart;
+    if (clipDuration > 120) {
+      return NextResponse.json(
+        { error: 'Clip too long — max 2 minutes. Use shorter segments for best analysis quality.' },
+        { status: 400 }
+      );
+    }
+
+    // 1. Prepare temp directory (only holds the small trimmed clip)
     const tempDir = path.join(os.tmpdir(), 'delray-films');
     await mkdir(tempDir, { recursive: true });
+    await cleanTempDir(tempDir);
 
-    // Clean up any old temp files to prevent ENOSPC
-    try {
-      const { readdir } = await import('fs/promises');
-      const oldFiles = await readdir(tempDir);
-      for (const f of oldFiles) {
-        await unlink(path.join(tempDir, f)).catch(() => {});
-      }
-    } catch {}
+    clipPath = path.join(tempDir, `clip-${Date.now()}.mp4`);
 
-    tempFilePath = path.join(tempDir, `film-${Date.now()}.mp4`);
+    // 2. FFmpeg reads directly from the Supabase URL — only downloads the clip bytes
+    console.log(`Trimming clip from URL: ${clipStart}s to ${clipEnd}s (${clipDuration}s)`);
+    await trimFromUrl(videoUrl, clipPath, clipStart, clipEnd);
 
-    const nodeStream = Readable.fromWeb(videoRes.body);
-    const fileStream = createWriteStream(tempFilePath);
-    await pipeline(nodeStream, fileStream);
+    // Verify clip was created and check size
+    const clipStat = await stat(clipPath);
+    console.log(`Clip created: ${(clipStat.size / 1024 / 1024).toFixed(1)}MB`);
 
-    // 2. If this is a clip, trim with FFmpeg (instant stream-copy, no re-encoding)
-    let uploadFilePath = tempFilePath;
-    if (isClip) {
-      trimmedFilePath = path.join(tempDir, `clip-${Date.now()}.mp4`);
-      console.log(`Trimming clip: ${clipStart}s to ${clipEnd}s (${clipEnd - clipStart}s)`);
-      await trimVideo(tempFilePath, trimmedFilePath, clipStart, clipEnd);
-      uploadFilePath = trimmedFilePath;
-      console.log('Clip trimmed successfully');
-    }
+    // 3. Upload the small clip to Gemini
+    console.log('Uploading trimmed clip to Google...');
+    const file = await uploadToGemini(
+      clipPath,
+      'video/mp4',
+      `clip-${clipStart}s-to-${clipEnd}s`
+    );
 
-    // 3. Upload to Google using official SDK
-    console.log(`Uploading ${isClip ? 'trimmed clip' : 'full video'} to Google...`);
-    const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
-    const uploadResult = await fileManager.uploadFile(uploadFilePath, {
-      mimeType,
-      displayName: isClip ? `clip-${clipStart}s-to-${clipEnd}s` : 'game-film-full',
-    });
-
-    // 4. Poll until Google finishes processing
-    let file = uploadResult.file;
-    while (file.state === FileState.PROCESSING) {
-      await new Promise(r => setTimeout(r, 5000));
-      const statusResult = await fileManager.getFile(file.name);
-      file = statusResult;
-    }
-
-    if (file.state === FileState.FAILED) {
-      throw new Error('Google video processing failed');
-    }
-
-    // 5. Clean up temp files
-    await unlink(tempFilePath).catch(() => {});
-    if (trimmedFilePath) await unlink(trimmedFilePath).catch(() => {});
+    // 4. Clean up
+    await unlink(clipPath).catch(() => {});
 
     return NextResponse.json({
       fileUri: file.uri,
-      mimeType: file.mimeType || mimeType,
+      mimeType: file.mimeType || 'video/mp4',
       fileName: file.name,
-      trimmed: isClip,
+      trimmed: true,
     });
   } catch (err) {
-    if (tempFilePath) await unlink(tempFilePath).catch(() => {});
-    if (trimmedFilePath) await unlink(trimmedFilePath).catch(() => {});
+    if (clipPath) await unlink(clipPath).catch(() => {});
     console.error('Upload proxy error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
