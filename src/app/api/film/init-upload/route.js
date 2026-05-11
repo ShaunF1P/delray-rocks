@@ -51,8 +51,25 @@ export async function POST(request) {
     if (!videoRes.ok) throw new Error('Cannot access video from storage');
 
     const mimeType = videoRes.headers.get('content-type') || 'video/mp4';
+    const contentLength = parseInt(videoRes.headers.get('content-length') || '0', 10);
+
+    // Guard: Vercel /tmp is 512MB — reject files too large for serverless
+    if (contentLength > 450 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Video too large for cloud processing. Use clips under 450MB.' }, { status: 413 });
+    }
+
     const tempDir = path.join(os.tmpdir(), 'delray-films');
     await mkdir(tempDir, { recursive: true });
+
+    // Clean up any old temp files to prevent ENOSPC
+    try {
+      const { readdir } = await import('fs/promises');
+      const oldFiles = await readdir(tempDir);
+      for (const f of oldFiles) {
+        await unlink(path.join(tempDir, f)).catch(() => {});
+      }
+    } catch {}
+
     tempFilePath = path.join(tempDir, `film-${Date.now()}.mp4`);
 
     const nodeStream = Readable.fromWeb(videoRes.body);
