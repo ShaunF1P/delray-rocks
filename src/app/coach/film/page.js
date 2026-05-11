@@ -179,101 +179,54 @@ export default function FilmRoomPage() {
         position: p.position,
       }));
 
-      // Step 2: Upload video to Google
+      // Step 2: Upload video to Google via our server
       const isClip = film.clip_start_seconds != null;
+      toast.loading(isClip
+        ? `Trimming clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)}) and uploading...`
+        : 'Uploading video to AI engine...', { id: 'analysis-progress' });
+
+      const uploadRes = await fetch('/api/film/init-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoUrl: film.video_url,
+          clipStart: film.clip_start_seconds,
+          clipEnd: film.clip_end_seconds,
+        }),
+      });
+
       let uploadData;
+      const ct = uploadRes.headers.get('content-type') || '';
 
-      if (isClip) {
-        /* ── CLIP: Server trims + uploads (small, fast, no timeout) ── */
-        toast.loading(`Trimming clip (${formatTime(film.clip_start_seconds)}-${formatTime(film.clip_end_seconds)}) and uploading...`, { id: 'analysis-progress' });
-
-        const uploadRes = await fetch('/api/film/init-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            videoUrl: film.video_url,
-            clipStart: film.clip_start_seconds,
-            clipEnd: film.clip_end_seconds,
-          }),
-        });
-        const ct = uploadRes.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) {
-          throw new Error(uploadRes.status === 504
-            ? 'Clip upload timed out. Try a shorter segment.'
-            : `Server error (${uploadRes.status}).`);
-        }
+      if (ct.includes('application/json')) {
+        // Clip mode: simple JSON response
         uploadData = await uploadRes.json();
         if (uploadData.error) throw new Error(uploadData.error);
-
       } else {
-        /* ── FULL VIDEO: Browser uploads directly to Google ─────────
-           Bypasses Vercel entirely. No timeout. No disk. No RAM.
-           Browser → Google (direct), unlimited time.                */
-        toast.loading('Preparing upload...', { id: 'analysis-progress' });
+        // Full video mode: streaming NDJSON with progress
+        const reader = uploadRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
 
-        // 2a. Fetch the video to get its size
-        const headRes = await fetch(film.video_url, { method: 'HEAD' });
-        const fileSize = parseInt(headRes.headers.get('content-length') || '0', 10);
-        if (!fileSize) throw new Error('Could not determine video file size');
-
-        // 2b. Get a resumable upload URI from our server (instant, no video data)
-        const urlRes = await fetch('/api/film/get-upload-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileSize, mimeType: 'video/mp4', displayName: film.title }),
-        });
-        const urlData = await urlRes.json();
-        if (urlData.error) throw new Error(urlData.error);
-
-        // 2c. Download video and upload directly to Google in chunks
-        toast.loading(`Uploading ${(fileSize / 1024 / 1024).toFixed(0)}MB to AI engine...`, { id: 'analysis-progress' });
-        const videoRes = await fetch(film.video_url);
-        const videoBlob = await videoRes.blob();
-
-        const CHUNK_SIZE = 8 * 1024 * 1024; // 8MB
-        let offset = 0;
-        let finalResult = null;
-
-        while (offset < fileSize) {
-          const end = Math.min(offset + CHUNK_SIZE, fileSize);
-          const chunk = videoBlob.slice(offset, end);
-          const isLast = end >= fileSize;
-
-          const chunkRes = await fetch(urlData.uploadUri, {
-            method: 'POST',
-            headers: {
-              'Content-Length': String(end - offset),
-              'X-Goog-Upload-Offset': String(offset),
-              'X-Goog-Upload-Command': isLast ? 'upload, finalize' : 'upload',
-            },
-            body: chunk,
-          });
-
-          if (!chunkRes.ok) throw new Error(`Upload failed at ${Math.round(offset/1024/1024)}MB`);
-          if (isLast) finalResult = await chunkRes.json();
-
-          offset = end;
-          const pct = Math.round((offset / fileSize) * 100);
-          toast.loading(`Uploading to AI engine... ${pct}%`, { id: 'analysis-progress' });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const msg = JSON.parse(line);
+              if (msg.error) throw new Error(msg.error);
+              if (msg._progress) toast.loading(msg._progress, { id: 'analysis-progress' });
+              if (msg._done) uploadData = msg;
+            } catch (e) {
+              if (e.message && !e.message.includes('JSON')) throw e;
+            }
+          }
         }
-
-        if (!finalResult?.file) throw new Error('Upload completed but no file returned');
-
-        // 2d. Poll until Google finishes processing the video
-        toast.loading('Google is processing video...', { id: 'analysis-progress' });
-        let file = finalResult.file;
-        while (file.state === 'PROCESSING') {
-          await new Promise(r => setTimeout(r, 5000));
-          const statusRes = await fetch('/api/film/file-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName: file.name }),
-          });
-          file = await statusRes.json();
-        }
-        if (file.state === 'FAILED') throw new Error('Google video processing failed');
-
-        uploadData = { fileUri: file.uri, mimeType: file.mimeType || 'video/mp4' };
+        if (!uploadData) throw new Error('Upload failed — no result received');
       }
 
       // Step 3: Run Gemini analysis with roster + speed mode (STREAMING)

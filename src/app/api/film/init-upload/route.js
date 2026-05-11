@@ -182,12 +182,11 @@ export async function POST(request) {
     const isClip = clipStart != null && clipEnd != null;
 
     if (isClip) {
-      /* ── CLIP MODE ──────────────────────────────────────────────
-         FFmpeg reads from URL, writes only the small clip to /tmp */
+      /* ── CLIP MODE (fast, synchronous) ─────────────────────────── */
       const clipDuration = clipEnd - clipStart;
       if (clipDuration > 120) {
         return NextResponse.json(
-          { error: 'Clip too long — max 2 minutes. Use shorter segments for best analysis quality.' },
+          { error: 'Clip too long — max 2 minutes.' },
           { status: 400 }
         );
       }
@@ -197,8 +196,6 @@ export async function POST(request) {
       await cleanTempDir(tempDir);
 
       clipPath = path.join(tempDir, `clip-${Date.now()}.mp4`);
-
-      console.log(`Trimming clip from URL: ${clipStart}s to ${clipEnd}s (${clipDuration}s)`);
       await trimFromUrl(videoUrl, clipPath, clipStart, clipEnd);
 
       const clipStat = await stat(clipPath);
@@ -215,16 +212,116 @@ export async function POST(request) {
       });
 
     } else {
-      /* ── FULL VIDEO MODE ────────────────────────────────────────
-         Stream from Supabase → Google. No disk. No /tmp.          */
-      console.log('Full video mode: streaming directly to Google...');
-      const file = await streamUploadToGemini(videoUrl, 'video/mp4', 'game-film-full');
+      /* ── FULL VIDEO MODE (streaming response) ──────────────────
+         Streams progress lines to keep connection alive past 60s.
+         Client reads NDJSON, final line has the result.             */
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            const send = (obj) => controller.enqueue(encoder.encode(JSON.stringify(obj) + '\n'));
 
-      return NextResponse.json({
-        fileUri: file.uri,
-        mimeType: file.mimeType || 'video/mp4',
-        fileName: file.name,
-        trimmed: false,
+            // Step 1: Fetch video from Supabase
+            send({ _progress: 'Downloading video from storage...' });
+            const videoRes = await fetch(videoUrl);
+            if (!videoRes.ok) throw new Error('Cannot access video from storage');
+
+            const contentLength = videoRes.headers.get('content-length');
+            if (!contentLength) throw new Error('Video source did not provide content-length');
+            const fileSize = parseInt(contentLength, 10);
+            send({ _progress: `Video size: ${(fileSize / 1024 / 1024).toFixed(0)}MB` });
+
+            // Step 2: Initiate Google resumable upload
+            const UPLOAD_URL = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
+            const initRes = await fetch(`${UPLOAD_URL}?key=${GEMINI_API_KEY}`, {
+              method: 'POST',
+              headers: {
+                'X-Goog-Upload-Protocol': 'resumable',
+                'X-Goog-Upload-Command': 'start',
+                'X-Goog-Upload-Header-Content-Length': String(fileSize),
+                'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ file: { displayName: 'game-film-full' } }),
+            });
+            if (!initRes.ok) throw new Error(`Google init failed: ${initRes.status}`);
+            const uploadUri = initRes.headers.get('x-goog-upload-url');
+            if (!uploadUri) throw new Error('No upload URI from Google');
+
+            // Step 3: Stream chunks from Supabase to Google (8MB at a time)
+            const CHUNK_SIZE = 8 * 1024 * 1024;
+            const reader = videoRes.body.getReader();
+            let buffer = Buffer.alloc(0);
+            let offset = 0;
+            let done = false;
+            let finalResult = null;
+
+            while (!done) {
+              while (buffer.length < CHUNK_SIZE && !done) {
+                const { value, done: streamDone } = await reader.read();
+                if (streamDone) { done = true; break; }
+                buffer = Buffer.concat([buffer, Buffer.from(value)]);
+              }
+              if (buffer.length === 0) break;
+
+              const isLast = done || (offset + buffer.length >= fileSize);
+              const chunk = isLast ? buffer : buffer.subarray(0, CHUNK_SIZE);
+
+              const chunkRes = await fetch(uploadUri, {
+                method: 'POST',
+                headers: {
+                  'Content-Length': String(chunk.length),
+                  'X-Goog-Upload-Offset': String(offset),
+                  'X-Goog-Upload-Command': isLast ? 'upload, finalize' : 'upload',
+                },
+                body: chunk,
+              });
+              if (!chunkRes.ok) throw new Error(`Chunk failed at ${offset}`);
+
+              offset += chunk.length;
+              buffer = isLast ? Buffer.alloc(0) : buffer.subarray(CHUNK_SIZE);
+              if (isLast) finalResult = await chunkRes.json();
+
+              const pct = Math.round((offset / fileSize) * 100);
+              send({ _progress: `Uploading to Google... ${pct}%` });
+            }
+
+            if (!finalResult?.file) throw new Error('No file from Google');
+
+            // Step 4: Poll until Google processes the video
+            send({ _progress: 'Google is processing video...' });
+            const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
+            let file = finalResult.file;
+            while (file.state === 'PROCESSING' || file.state === FileState.PROCESSING) {
+              await new Promise(r => setTimeout(r, 5000));
+              file = await fileManager.getFile(file.name);
+              send({ _progress: 'Still processing...' });
+            }
+            if (file.state === 'FAILED' || file.state === FileState.FAILED) {
+              throw new Error('Google video processing failed');
+            }
+
+            // Final result
+            send({
+              fileUri: file.uri,
+              mimeType: file.mimeType || 'video/mp4',
+              fileName: file.name,
+              trimmed: false,
+              _done: true,
+            });
+            controller.close();
+          } catch (err) {
+            controller.enqueue(encoder.encode(JSON.stringify({ error: err.message }) + '\n'));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
       });
     }
 
