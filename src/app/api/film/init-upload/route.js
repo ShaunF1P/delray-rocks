@@ -6,6 +6,7 @@ import path from 'path';
 import os from 'os';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_UPLOAD_URL = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
 
 /* ── FFmpeg binary resolution ─────────────────────────────────────
    Works on Vercel (linux) and local dev (win32).                 */
@@ -13,13 +14,11 @@ function getFFmpegPath() {
   if (process.platform === 'win32') {
     return path.join(process.cwd(), 'node_modules', '@ffmpeg-installer', 'win32-x64', 'ffmpeg.exe');
   }
-  // Linux (Vercel serverless)
   return path.join(process.cwd(), 'node_modules', '@ffmpeg-installer', 'linux-x64', 'ffmpeg');
 }
 
 /* ── Trim a clip using FFmpeg reading DIRECTLY from URL ───────────
-   FFmpeg fetches only the bytes it needs from the Supabase URL.
-   The full video is NEVER downloaded to disk.                     */
+   FFmpeg fetches only the bytes it needs from the Supabase URL.   */
 function trimFromUrl(videoUrl, outputPath, startSeconds, endSeconds) {
   return new Promise((resolve, reject) => {
     const duration = endSeconds - startSeconds;
@@ -27,7 +26,7 @@ function trimFromUrl(videoUrl, outputPath, startSeconds, endSeconds) {
     execFile(ffmpegPath, [
       '-y',
       '-ss', String(startSeconds),
-      '-i', videoUrl,            // Read directly from URL — no local download
+      '-i', videoUrl,
       '-t', String(duration),
       '-c', 'copy',
       '-avoid_negative_ts', 'make_zero',
@@ -40,22 +39,85 @@ function trimFromUrl(videoUrl, outputPath, startSeconds, endSeconds) {
   });
 }
 
-/* ── Upload a small file to Gemini via the SDK ────────────────── */
-async function uploadToGemini(filePath, mimeType, displayName) {
+/* ── Upload local file to Gemini via SDK ──────────────────────── */
+async function uploadFileToGemini(filePath, mimeType, displayName) {
   const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
-  const uploadResult = await fileManager.uploadFile(filePath, {
-    mimeType,
-    displayName,
+  const uploadResult = await fileManager.uploadFile(filePath, { mimeType, displayName });
+  return pollUntilReady(uploadResult.file);
+}
+
+/* ── Stream full video from URL to Gemini (resumable upload) ─────
+   Supabase → our server (pipe) → Google. No disk, no /tmp.
+   Uses Google's resumable upload protocol:
+   1. Start session → get upload URI
+   2. Stream bytes directly from source URL to that URI            */
+async function streamUploadToGemini(videoUrl, mimeType, displayName) {
+  // Step 1: Fetch video from Supabase (streaming — not buffered)
+  const videoRes = await fetch(videoUrl);
+  if (!videoRes.ok) throw new Error('Cannot access video from storage');
+
+  const contentLength = videoRes.headers.get('content-length');
+  if (!contentLength) throw new Error('Video source did not provide content-length');
+
+  const fileSize = parseInt(contentLength, 10);
+  console.log(`Streaming ${(fileSize / 1024 / 1024).toFixed(1)}MB directly to Google...`);
+
+  // Step 2: Initiate resumable upload session with Google
+  const initRes = await fetch(`${GEMINI_UPLOAD_URL}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'X-Goog-Upload-Protocol': 'resumable',
+      'X-Goog-Upload-Command': 'start',
+      'X-Goog-Upload-Header-Content-Length': String(fileSize),
+      'X-Goog-Upload-Header-Content-Type': mimeType,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ file: { displayName } }),
   });
 
-  // Poll until Google finishes processing
-  let file = uploadResult.file;
-  while (file.state === FileState.PROCESSING) {
+  if (!initRes.ok) {
+    const errText = await initRes.text();
+    throw new Error(`Failed to initiate upload: ${initRes.status} ${errText}`);
+  }
+
+  const uploadUri = initRes.headers.get('x-goog-upload-url');
+  if (!uploadUri) throw new Error('No upload URI returned from Google');
+
+  // Step 3: Read the full video body and upload in one shot
+  // We buffer in memory since Vercel functions have ~1-4GB RAM (more than /tmp)
+  const videoBuffer = Buffer.from(await videoRes.arrayBuffer());
+
+  const uploadRes = await fetch(uploadUri, {
+    method: 'POST',
+    headers: {
+      'Content-Length': String(fileSize),
+      'X-Goog-Upload-Offset': '0',
+      'X-Goog-Upload-Command': 'upload, finalize',
+    },
+    body: videoBuffer,
+  });
+
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    throw new Error(`Upload failed: ${uploadRes.status} ${errText}`);
+  }
+
+  const result = await uploadRes.json();
+  const file = result.file;
+
+  return pollUntilReady(file);
+}
+
+/* ── Poll Google until the file is processed ──────────────────── */
+async function pollUntilReady(file) {
+  const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
+
+  while (file.state === FileState.PROCESSING || file.state === 'PROCESSING') {
     await new Promise(r => setTimeout(r, 5000));
     file = await fileManager.getFile(file.name);
   }
 
-  if (file.state === FileState.FAILED) {
+  if (file.state === FileState.FAILED || file.state === 'FAILED') {
     throw new Error('Google video processing failed');
   }
 
@@ -73,7 +135,7 @@ async function cleanTempDir(tempDir) {
   } catch {}
 }
 
-// Increase serverless timeout for video processing
+// Max serverless timeout (Vercel Hobby = 60s, Pro = 300s)
 export const maxDuration = 60;
 
 export async function POST(request) {
@@ -89,53 +151,53 @@ export async function POST(request) {
 
     const isClip = clipStart != null && clipEnd != null;
 
-    if (!isClip) {
-      return NextResponse.json(
-        { error: 'Please create a clip (set start/end times) before analyzing. Full-video analysis is not supported in cloud mode.' },
-        { status: 400 }
-      );
+    if (isClip) {
+      /* ── CLIP MODE ──────────────────────────────────────────────
+         FFmpeg reads from URL, writes only the small clip to /tmp */
+      const clipDuration = clipEnd - clipStart;
+      if (clipDuration > 120) {
+        return NextResponse.json(
+          { error: 'Clip too long — max 2 minutes. Use shorter segments for best analysis quality.' },
+          { status: 400 }
+        );
+      }
+
+      const tempDir = path.join(os.tmpdir(), 'delray-films');
+      await mkdir(tempDir, { recursive: true });
+      await cleanTempDir(tempDir);
+
+      clipPath = path.join(tempDir, `clip-${Date.now()}.mp4`);
+
+      console.log(`Trimming clip from URL: ${clipStart}s to ${clipEnd}s (${clipDuration}s)`);
+      await trimFromUrl(videoUrl, clipPath, clipStart, clipEnd);
+
+      const clipStat = await stat(clipPath);
+      console.log(`Clip created: ${(clipStat.size / 1024 / 1024).toFixed(1)}MB`);
+
+      const file = await uploadFileToGemini(clipPath, 'video/mp4', `clip-${clipStart}s-to-${clipEnd}s`);
+      await unlink(clipPath).catch(() => {});
+
+      return NextResponse.json({
+        fileUri: file.uri,
+        mimeType: file.mimeType || 'video/mp4',
+        fileName: file.name,
+        trimmed: true,
+      });
+
+    } else {
+      /* ── FULL VIDEO MODE ────────────────────────────────────────
+         Stream from Supabase → Google. No disk. No /tmp.          */
+      console.log('Full video mode: streaming directly to Google...');
+      const file = await streamUploadToGemini(videoUrl, 'video/mp4', 'game-film-full');
+
+      return NextResponse.json({
+        fileUri: file.uri,
+        mimeType: file.mimeType || 'video/mp4',
+        fileName: file.name,
+        trimmed: false,
+      });
     }
 
-    const clipDuration = clipEnd - clipStart;
-    if (clipDuration > 120) {
-      return NextResponse.json(
-        { error: 'Clip too long — max 2 minutes. Use shorter segments for best analysis quality.' },
-        { status: 400 }
-      );
-    }
-
-    // 1. Prepare temp directory (only holds the small trimmed clip)
-    const tempDir = path.join(os.tmpdir(), 'delray-films');
-    await mkdir(tempDir, { recursive: true });
-    await cleanTempDir(tempDir);
-
-    clipPath = path.join(tempDir, `clip-${Date.now()}.mp4`);
-
-    // 2. FFmpeg reads directly from the Supabase URL — only downloads the clip bytes
-    console.log(`Trimming clip from URL: ${clipStart}s to ${clipEnd}s (${clipDuration}s)`);
-    await trimFromUrl(videoUrl, clipPath, clipStart, clipEnd);
-
-    // Verify clip was created and check size
-    const clipStat = await stat(clipPath);
-    console.log(`Clip created: ${(clipStat.size / 1024 / 1024).toFixed(1)}MB`);
-
-    // 3. Upload the small clip to Gemini
-    console.log('Uploading trimmed clip to Google...');
-    const file = await uploadToGemini(
-      clipPath,
-      'video/mp4',
-      `clip-${clipStart}s-to-${clipEnd}s`
-    );
-
-    // 4. Clean up
-    await unlink(clipPath).catch(() => {});
-
-    return NextResponse.json({
-      fileUri: file.uri,
-      mimeType: file.mimeType || 'video/mp4',
-      fileName: file.name,
-      trimmed: true,
-    });
   } catch (err) {
     if (clipPath) await unlink(clipPath).catch(() => {});
     console.error('Upload proxy error:', err);
