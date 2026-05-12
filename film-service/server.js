@@ -130,32 +130,24 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Clip trimming with FFmpeg
-// Downloads → trims → uploads ONLY the clip to Google
+// Clip trimming with FFmpeg (FAST — streams from URL, no full download)
+// FFmpeg seeks directly to the clip position via HTTP range requests
 // ═══════════════════════════════════════════════════════════════
 async function trimAndUploadClip(videoUrl, clipStart, clipEnd) {
   const duration = clipEnd - clipStart;
-  const tmpInput = path.join(os.tmpdir(), `input-${Date.now()}.mp4`);
   const tmpClip = path.join(os.tmpdir(), `clip-${Date.now()}.mp4`);
 
   try {
-    // Download full video to temp (Cloud Run has up to 2GB in-memory tmpfs)
-    console.log('Downloading video for trimming...');
-    const res = await fetch(videoUrl);
-    if (!res.ok) throw new Error('Cannot download video');
-    const buffer = Buffer.from(await res.arrayBuffer());
-    writeFileSync(tmpInput, buffer);
-    console.log(`Downloaded ${(buffer.length / 1024 / 1024).toFixed(0)}MB`);
-
-    // FFmpeg trim — creates a standalone clip with NO reference to the rest
-    console.log(`FFmpeg trimming ${clipStart}s to ${clipEnd}s (${duration}s)...`);
+    // FFmpeg streams directly from URL — only downloads the clip segment
+    // -ss BEFORE -i = fast input seeking (uses HTTP range requests)
+    console.log(`FFmpeg trimming ${clipStart}s to ${clipEnd}s (${duration}s) directly from URL...`);
     execSync(
-      `ffmpeg -y -ss ${clipStart} -i "${tmpInput}" -t ${duration} -c copy -avoid_negative_ts make_zero "${tmpClip}"`,
-      { timeout: 120000, stdio: 'pipe' }
+      `ffmpeg -y -ss ${clipStart} -i "${videoUrl}" -t ${duration} -c copy -avoid_negative_ts make_zero "${tmpClip}"`,
+      { timeout: 180000, stdio: 'pipe' }
     );
 
     const clipSize = statSync(tmpClip).size;
-    console.log(`Clip created: ${(clipSize / 1024 / 1024).toFixed(1)}MB`);
+    console.log(`Clip created: ${(clipSize / 1024 / 1024).toFixed(1)}MB (only downloaded clip portion)`);
 
     // Upload ONLY the trimmed clip to Google
     const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
@@ -176,7 +168,6 @@ async function trimAndUploadClip(videoUrl, clipStart, clipEnd) {
 
     return file;
   } finally {
-    try { unlinkSync(tmpInput); } catch {}
     try { unlinkSync(tmpClip); } catch {}
   }
 }
