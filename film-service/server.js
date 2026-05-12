@@ -323,17 +323,33 @@ Be concise. Opponent: ${opponent || 'Unknown'}`,
 
 // ═══════════════════════════════════════════════════════════════
 // GET /status/:filmId — Check analysis status (for polling)
+// Auto-recovers stale 'processing' status after 15 minutes (OOM/crash safety net)
 // ═══════════════════════════════════════════════════════════════
 app.get('/status/:filmId', async (req, res) => {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('game_films')
-      .select('ai_status, ai_analysis, ai_analysis_type, ai_analyzed_at')
+      .select('ai_status, ai_analysis, ai_analysis_type, ai_analyzed_at, updated_at')
       .eq('id', req.params.filmId)
       .single();
 
     if (error) throw error;
+
+    // Auto-recover stale processing: if stuck for >15 min, mark as failed
+    if (data.ai_status === 'processing' && data.updated_at) {
+      const staleMs = Date.now() - new Date(data.updated_at).getTime();
+      if (staleMs > 15 * 60 * 1000) {
+        console.log(`[${req.params.filmId}] Stale processing detected (${Math.round(staleMs / 60000)}min) — resetting`);
+        await supabase.from('game_films').update({
+          ai_status: 'failed',
+          ai_analysis: 'Analysis timed out. Please try again.',
+        }).eq('id', req.params.filmId);
+        data.ai_status = 'failed';
+        data.ai_analysis = 'Analysis timed out. Please try again.';
+      }
+    }
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
