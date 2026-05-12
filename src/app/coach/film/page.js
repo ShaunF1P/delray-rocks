@@ -45,6 +45,8 @@ export default function FilmRoomPage() {
   const [clipEnd, setClipEnd] = useState(0);
   const [clipTitle, setClipTitle] = useState('');
   const [savingClip, setSavingClip] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const progressTimerRef = useRef(null);
   const [uploadForm, setUploadForm] = useState({
     title: '', description: '', film_type: 'game', opponent: '',
     film_date: new Date().toISOString().split('T')[0],
@@ -156,10 +158,40 @@ export default function FilmRoomPage() {
 
   const FILM_API = 'https://delray-film-service-489554556909.us-east1.run.app';
 
-  // Poll for background analysis results every 15 seconds
+  // Simulated progress bar — accelerates through stages
+  function startProgressSimulation() {
+    setAnalysisProgress(0);
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    const startTime = Date.now();
+    progressTimerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      // Logarithmic curve: fast start, slows down, never reaches 95% until done
+      // ~30% at 15s, ~50% at 30s, ~70% at 60s, ~85% at 120s, ~92% at 180s
+      const pct = Math.min(92, 100 * (1 - Math.exp(-elapsed / 60)));
+      setAnalysisProgress(Math.round(pct));
+    }, 500);
+  }
+
+  function stopProgressSimulation(completed = true) {
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = null;
+    if (completed) {
+      setAnalysisProgress(100);
+      setTimeout(() => setAnalysisProgress(0), 3000);
+    } else {
+      setAnalysisProgress(0);
+    }
+  }
+
+  // Poll for background analysis results every 10 seconds
   useEffect(() => {
     const processingFilms = films.filter(f => f.ai_status === 'processing');
     if (processingFilms.length === 0) return;
+
+    // Start progress if we're viewing a processing film
+    if (selectedFilm && processingFilms.some(f => f.id === selectedFilm.id) && !progressTimerRef.current) {
+      startProgressSimulation();
+    }
 
     const interval = setInterval(async () => {
       let updated = false;
@@ -172,21 +204,20 @@ export default function FilmRoomPage() {
             setFilms(prev => prev.map(f => f.id === film.id
               ? { ...f, ...data }
               : f));
-            // If the user is viewing this film, update the selected film too
             setSelectedFilm(prev => prev?.id === film.id ? { ...prev, ...data } : prev);
             if (data.ai_status === 'complete') {
-              toast.success(`Analysis ready: ${film.title} 🏈`);
-              // If viewing this film, show the analysis
+              stopProgressSimulation(true);
+              toast.success(`Analysis complete: ${film.title} 🏈`);
               if (selectedFilm?.id === film.id) setAnalysis(data.ai_analysis);
             } else {
+              stopProgressSimulation(false);
               toast.error(`Analysis failed for ${film.title}`);
             }
           }
         } catch {}
       }
-      // If any updated, do a full refresh to get clean state
       if (updated) loadFilms();
-    }, 15000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [films, selectedFilm, loadFilms]);
@@ -241,6 +272,7 @@ export default function FilmRoomPage() {
         ? { ...f, ai_status: 'processing' }
         : f));
       setSelectedFilm(prev => prev ? { ...prev, ai_status: 'processing' } : prev);
+      startProgressSimulation();
 
       toast.success('Analysis started! You can navigate away — results will appear when ready. 🏈', { id: 'analysis-progress' });
 
@@ -377,8 +409,8 @@ export default function FilmRoomPage() {
                       <img src={film.thumbnail_url} alt={film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />
                     ) : <cfg.Icon size={48} color={`var(--${cfg.color})`} />}
                     {film.video_url && (
-                      <div style={{ position: 'absolute', bottom: 8, left: 8, padding: '2px 8px', background: 'rgba(16,107,58,0.9)', borderRadius: 'var(--radius-full)', fontSize: '0.6rem', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Brain size={10} /> AI Ready
+                      <div style={{ position: 'absolute', bottom: 8, left: 8, padding: '2px 8px', background: film.ai_status === 'processing' ? 'rgba(202,138,4,0.9)' : film.ai_analysis ? 'rgba(16,107,58,0.9)' : 'rgba(100,100,100,0.8)', borderRadius: 'var(--radius-full)', fontSize: '0.6rem', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {film.ai_status === 'processing' ? <><Loader2 size={10} className="spin" /> Analyzing...</> : film.ai_analysis ? <><CheckCircle size={10} /> Analyzed</> : <><Brain size={10} /> AI Ready</>}
                       </div>
                     )}
                   </div>
@@ -662,8 +694,27 @@ export default function FilmRoomPage() {
 
                       {/* Status indicator */}
                       {selectedFilm.ai_status === 'processing' && (
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-gold)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Loader2 size={12} className="spin" /> Analysis in progress — you can navigate away
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-gold)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+                              <Loader2 size={12} className="spin" /> Analyzing film...
+                            </span>
+                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-gold)', fontWeight: 700 }}>
+                              {analysisProgress}%
+                            </span>
+                          </div>
+                          <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${analysisProgress}%`,
+                              height: '100%',
+                              background: 'linear-gradient(90deg, var(--rocks-gold), #f59e0b)',
+                              borderRadius: 99,
+                              transition: 'width 0.5s ease-out',
+                            }} />
+                          </div>
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: 3 }}>
+                            {analysisProgress < 30 ? 'Preparing video...' : analysisProgress < 60 ? 'Running AI analysis...' : analysisProgress < 90 ? 'Generating report...' : 'Almost done...'}
+                          </div>
                         </div>
                       )}
                       {selectedFilm.ai_status === 'failed' && (
@@ -672,16 +723,25 @@ export default function FilmRoomPage() {
                         </div>
                       )}
                       {selectedFilm.ai_analysis && selectedFilm.ai_status !== 'processing' && selectedFilm.ai_status !== 'failed' && (
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-green-light)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <CheckCircle size={12} /> Saved analysis available
-                          {selectedFilm.ai_analyzed_at && <span style={{ color: 'var(--text-dim)' }}>({new Date(selectedFilm.ai_analyzed_at).toLocaleDateString()})</span>}
+                        <div style={{ marginBottom: 8 }}>
+                          {analysisProgress === 100 ? (
+                            <div style={{ marginBottom: 6 }}>
+                              <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+                                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, var(--rocks-green), var(--rocks-green-light))', borderRadius: 99, transition: 'width 0.5s ease-out' }} />
+                              </div>
+                            </div>
+                          ) : null}
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-green-light)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <CheckCircle size={12} /> Analysis complete
+                            {selectedFilm.ai_analyzed_at && <span style={{ color: 'var(--text-dim)' }}>({new Date(selectedFilm.ai_analyzed_at).toLocaleDateString()})</span>}
+                          </div>
                         </div>
                       )}
 
                       <div style={{ display: 'flex', gap: 4 }}>
                         <Button variant="primary" size="sm" icon={analyzing || selectedFilm.ai_status === 'processing' ? <Loader2 size={14} className="spin" /> : <Brain size={14} />}
                           onClick={() => runAnalysis(selectedFilm)} disabled={analyzing || selectedFilm.ai_status === 'processing'} style={{ flex: 1 }}>
-                          {analyzing ? 'Starting...' : selectedFilm.ai_status === 'processing' ? 'Processing...' : selectedFilm.ai_analysis ? 'View Saved' : 'Run AI Analysis'}
+                          {analyzing ? 'Starting...' : selectedFilm.ai_status === 'processing' ? `Analyzing ${analysisProgress}%` : selectedFilm.ai_analysis ? 'View Saved' : 'Run AI Analysis'}
                         </Button>
                         {(selectedFilm.ai_analysis || selectedFilm.ai_status === 'failed') && (
                           <Button variant="ghost" size="sm" onClick={() => runAnalysis(selectedFilm, true)} disabled={analyzing || selectedFilm.ai_status === 'processing'} title="Re-run analysis">
