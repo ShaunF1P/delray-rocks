@@ -18,12 +18,14 @@ const GEMINI_UPLOAD_URL = 'https://generativelanguage.googleapis.com/upload/v1be
 app.use(cors({ origin: ['https://dr.f1rstposition.com', 'http://localhost:3000', 'http://localhost:3002'] }));
 app.use(express.json({ limit: '1mb' }));
 
+const WebSocket = require('ws');
+
 // Supabase admin client (service role — can write to any row)
 function getSupabase() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) throw new Error('Supabase not configured');
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    realtime: { enabled: false },
     auth: { persistSession: false },
+    realtime: { transport: WebSocket },
   });
 }
 
