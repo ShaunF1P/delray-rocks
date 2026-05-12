@@ -115,24 +115,66 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
 
     console.log(`[${filmId}] Google file ready: ${geminiFile.uri}`);
 
-    // ── STEP 2: Run Gemini analysis ────────────────────────────
+    // ── STEP 2: TWO-PASS ANALYSIS ──────────────────────────────
     const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
     const effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
-    const prompt = buildPrompt(effectiveType, { roster, opponent, filmType, isClip, clipStart, clipEnd });
-
-    console.log(`[${filmId}] Running ${GEMINI_MODEL} analysis (${effectiveType})...`);
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
-    const contentParts = [
-      { text: prompt },
-      { fileData: { mimeType: geminiFile.mimeType || 'video/mp4', fileUri: geminiFile.uri } },
-    ];
+    const videoRef = { fileData: { mimeType: geminiFile.mimeType || 'video/mp4', fileUri: geminiFile.uri } };
 
-    const streamResult = await model.generateContentStream(contentParts);
+    // ── PASS 1: Raw observations (no interpretation) ────────────
+    console.log(`[${filmId}] Pass 1: Raw observation scan (${GEMINI_MODEL})...`);
+
+    const observationPrompt = `You are a VIDEO OBSERVATION MACHINE. Your ONLY job is to describe what you LITERALLY see in this football video, frame by frame. Do NOT interpret, do NOT analyze, do NOT call plays. Just describe.
+
+CRITICAL RULES:
+- Objects flying through the air: Describe their SIZE, SHAPE, COLOR, and TRAJECTORY. A football is brown/leather, oval, and is thrown by a player. A BIRD is small, has wings, and moves independently. A shadow or debris is NOT a football. LABEL EACH AIRBORNE OBJECT.
+- For EACH player visible, describe: position on field, body movement (running, blocking, standing), direction, physical appearance (helmet color, jersey color, guardian cap if any, cleats).
+- For the BALL: Where is it at each moment? Who is holding it? Does it LEAVE a player's hands? If so, HOW — thrown forward (pass), handed off (run), pitched backward (lateral)?
+- For the QB: Does the QB's arm go forward in a throwing motion? Or does the QB hand the ball to another player? Be SPECIFIC.
+- POST-PLAY: What do refs do? Where do teams line up next?
+
+Format your observations as:
+TIMESTAMP 0:00-0:01 — [what you see]
+TIMESTAMP 0:01-0:02 — [what you see]
+...continue for entire clip
+
+Be extremely literal. "A dark object flies across the upper frame" NOT "the quarterback throws a pass."`;
+
+    const pass1Result = await model.generateContentStream([
+      { text: observationPrompt },
+      videoRef,
+    ]);
+    let rawObservations = '';
+    for await (const chunk of pass1Result.stream) {
+      const text = chunk.text();
+      if (text) rawObservations += text;
+    }
+
+    console.log(`[${filmId}] Pass 1 complete (${rawObservations.length} chars). Starting Pass 2...`);
+
+    // ── PASS 2: Analysis from observations ──────────────────────
+    const analysisPrompt = buildPrompt(effectiveType, { roster, opponent, filmType, isClip, clipStart, clipEnd });
+
+    const pass2Prompt = `${analysisPrompt}
+
+=== RAW OBSERVATIONS FROM FIRST REVIEW ===
+A separate observer watched this same video frame-by-frame and recorded these literal observations. Use them to VERIFY your analysis. If these observations say the QB handed the ball off (run play), do NOT call it a pass play. If the observations mention a bird or debris in the air, do NOT confuse it with a thrown football.
+
+${rawObservations}
+
+=== END OBSERVATIONS ===
+
+Now watch the video AGAIN yourself and produce your final analysis. Cross-reference against the observations above. If your analysis contradicts the raw observations, trust the observations — they are frame-by-frame literal descriptions.`;
+
+    const pass2Result = await model.generateContentStream([
+      { text: pass2Prompt },
+      videoRef,
+    ]);
     let analysisText = '';
-    for await (const chunk of streamResult.stream) {
+    for await (const chunk of pass2Result.stream) {
       const text = chunk.text();
       if (text) analysisText += text;
     }
