@@ -37,7 +37,7 @@ export default function FilmRoomPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [analysisType, setAnalysisType] = useState('full_breakdown');
-  const [speedMode, setSpeedMode] = useState('flash');
+  const [speedMode, setSpeedMode] = useState('pro');
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const [showClipTrimmer, setShowClipTrimmer] = useState(false);
@@ -682,14 +682,14 @@ export default function FilmRoomPage() {
                           background: speedMode === 'flash' ? 'rgba(253,185,19,0.2)' : 'transparent',
                           borderColor: speedMode === 'flash' ? 'var(--rocks-gold)' : 'var(--border)',
                           color: speedMode === 'flash' ? 'var(--rocks-gold)' : 'var(--text-dim)',
-                        }}>⚡ Flash (Fast)</button>
+                        }}>⚡ Fast (Quick Look)</button>
                         <button onClick={() => setSpeedMode('pro')} style={{
                           flex: 1, padding: '6px 8px', fontSize: 'var(--text-xs)', fontWeight: 600, border: '1px solid', cursor: 'pointer',
                           borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
                           background: speedMode === 'pro' ? 'rgba(16,107,58,0.2)' : 'transparent',
                           borderColor: speedMode === 'pro' ? 'var(--rocks-green-light)' : 'var(--border)',
                           color: speedMode === 'pro' ? 'var(--rocks-green-light)' : 'var(--text-dim)',
-                        }}>🔬 Pro (Deep)</button>
+                        }}>🎯 Accurate (Recommended)</button>
                       </div>
 
                       {/* Status indicator */}
