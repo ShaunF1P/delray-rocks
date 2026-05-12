@@ -71,17 +71,46 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
   const isClip = clipStart != null && clipEnd != null;
 
   try {
-    // ── STEP 1: Upload video to Google ─────────────────────────
+    // ── STEP 1: Get or upload video to Google ───────────────────
     let geminiFile;
 
-    if (isClip) {
-      // CLIP: FFmpeg physically trims the video — Gemini only sees this segment
-      console.log(`[${filmId}] Trimming clip: ${clipStart}s → ${clipEnd}s`);
-      geminiFile = await trimAndUploadClip(videoUrl, clipStart, clipEnd);
-    } else {
-      // FULL VIDEO: Stream directly to Google
-      console.log(`[${filmId}] Streaming full video to Google...`);
-      geminiFile = await streamFullVideo(videoUrl);
+    // Check for cached Google file URI (skip upload on re-runs)
+    const { data: filmRow } = await supabase
+      .from('game_films')
+      .select('gemini_file_uri, gemini_file_name')
+      .eq('id', filmId)
+      .single();
+
+    if (filmRow?.gemini_file_uri && filmRow?.gemini_file_name) {
+      // Verify the cached file is still valid on Google's side
+      try {
+        const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
+        const cachedFile = await fileManager.getFile(filmRow.gemini_file_name);
+        if (cachedFile.state === 'ACTIVE' || cachedFile.state === FileState.ACTIVE) {
+          console.log(`[${filmId}] ⚡ Using cached Google file (skipping upload)`);
+          geminiFile = cachedFile;
+        }
+      } catch {
+        console.log(`[${filmId}] Cached file expired — re-uploading`);
+      }
+    }
+
+    // If no valid cache, upload fresh
+    if (!geminiFile) {
+      if (isClip) {
+        console.log(`[${filmId}] Trimming clip: ${clipStart}s → ${clipEnd}s`);
+        geminiFile = await trimAndUploadClip(videoUrl, clipStart, clipEnd);
+      } else {
+        console.log(`[${filmId}] Streaming full video to Google...`);
+        geminiFile = await streamFullVideo(videoUrl);
+      }
+
+      // Cache the Google file URI for future re-runs
+      await supabase.from('game_films').update({
+        gemini_file_uri: geminiFile.uri,
+        gemini_file_name: geminiFile.name,
+      }).eq('id', filmId);
+      console.log(`[${filmId}] Cached Google file URI for future runs`);
     }
 
     console.log(`[${filmId}] Google file ready: ${geminiFile.uri}`);
