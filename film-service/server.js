@@ -21,7 +21,10 @@ app.use(express.json({ limit: '1mb' }));
 // Supabase admin client (service role — can write to any row)
 function getSupabase() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) throw new Error('Supabase not configured');
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    realtime: { enabled: false },
+    auth: { persistSession: false },
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
