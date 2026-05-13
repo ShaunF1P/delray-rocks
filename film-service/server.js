@@ -127,21 +127,39 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
     // ── PASS 1: Raw observations (no interpretation) ────────────
     console.log(`[${filmId}] Pass 1: Raw observation scan (${GEMINI_MODEL})...`);
 
-    const observationPrompt = `You are a VIDEO OBSERVATION MACHINE. Your ONLY job is to describe what you LITERALLY see in this football video, frame by frame. Do NOT interpret, do NOT analyze, do NOT call plays. Just describe.
+    const observationPrompt = `You are a FORENSIC VIDEO OBSERVER for youth football film. Your ONLY job is to describe what you LITERALLY see. Do NOT interpret plays. Do NOT say "pass" or "run" or "touchdown." Just describe physical movements and object positions.
 
-CRITICAL RULES:
-- Objects flying through the air: Describe their SIZE, SHAPE, COLOR, and TRAJECTORY. A football is brown/leather, oval, and is thrown by a player. A BIRD is small, has wings, and moves independently. A shadow or debris is NOT a football. LABEL EACH AIRBORNE OBJECT.
-- For EACH player visible, describe: position on field, body movement (running, blocking, standing), direction, physical appearance (helmet color, jersey color, guardian cap if any, cleats).
-- For the BALL: Where is it at each moment? Who is holding it? Does it LEAVE a player's hands? If so, HOW — thrown forward (pass), handed off (run), pitched backward (lateral)?
-- For the QB: Does the QB's arm go forward in a throwing motion? Or does the QB hand the ball to another player? Be SPECIFIC.
-- POST-PLAY: What do refs do? Where do teams line up next?
+=== BALL TRACKING (MOST IMPORTANT) ===
+Track the football like a crime scene investigator tracks evidence. For EVERY second:
+1. WHERE is the ball? (In whose hands? On the ground? In the air?)
+2. HOW did it get there? Describe the PHYSICAL TRANSFER:
+   - HANDOFF = One player extends ball, another player takes it with BOTH hands while standing NEXT to the first player. The ball never leaves contact with a player's hands during transfer.
+   - FORWARD PASS = The QB's arm goes FORWARD in a throwing motion, the ball LEAVES his hand, travels through the AIR with NO player touching it, then a DIFFERENT player catches it DOWNFIELD.
+   - PITCH/LATERAL = Ball is tossed BACKWARD or sideways, short distance.
+3. After the ball transfer, WHO is carrying it and WHERE do they go?
 
-Format your observations as:
-TIMESTAMP 0:00-0:01 — [what you see]
-TIMESTAMP 0:01-0:02 — [what you see]
-...continue for entire clip
+=== AIRBORNE OBJECT DETECTION ===
+If you see ANYTHING flying through the air:
+- Is it OVAL/BROWN and was it THROWN BY A PLAYER? → Likely a football
+- Does it have WINGS, move INDEPENDENTLY of any player, or fly in an unusual trajectory? → BIRD or debris, NOT a football
+- Is it SMALL and DARK against the sky? → Could be bird — note uncertainty
+- LABEL IT: "Airborne object: [description] — likely football / likely bird / uncertain"
 
-Be extremely literal. "A dark object flies across the upper frame" NOT "the quarterback throws a pass."`;
+=== PLAYER TRACKING ===
+For each visible player, per second:
+- Physical description (jersey color, helmet, guardian cap color if any, cleats, build)
+- What they are DOING (running, blocking, standing, tackling)
+- Direction of movement
+- Who they are interacting with (blocking whom, tackling whom)
+
+=== FORMAT ===
+Start with: BALL TRACKING SUMMARY — trace the ball from snap to whistle in one paragraph.
+Then: FRAME-BY-FRAME:
+TIMESTAMP 0:00 — [observations]
+TIMESTAMP 0:01 — [observations]
+...continue
+
+End with: POST-PLAY — What do refs signal? Where do teams set up next?`;
 
     const pass1Result = await model.generateContentStream([
       { text: observationPrompt },
@@ -155,19 +173,24 @@ Be extremely literal. "A dark object flies across the upper frame" NOT "the quar
 
     console.log(`[${filmId}] Pass 1 complete (${rawObservations.length} chars). Starting Pass 2...`);
 
-    // ── PASS 2: Analysis from observations ──────────────────────
+    // ── PASS 2: Analysis using observations as ground truth ─────
     const analysisPrompt = buildPrompt(effectiveType, { roster, opponent, filmType, isClip, clipStart, clipEnd });
 
     const pass2Prompt = `${analysisPrompt}
 
-=== RAW OBSERVATIONS FROM FIRST REVIEW ===
-A separate observer watched this same video frame-by-frame and recorded these literal observations. Use them to VERIFY your analysis. If these observations say the QB handed the ball off (run play), do NOT call it a pass play. If the observations mention a bird or debris in the air, do NOT confuse it with a thrown football.
+=== GROUND TRUTH OBSERVATIONS (from frame-by-frame review) ===
+A forensic observer watched this same video frame-by-frame and tracked the ball. Use their observations as GROUND TRUTH to determine the play type:
 
 ${rawObservations}
 
-=== END OBSERVATIONS ===
+=== RUN vs PASS DECISION (use observations above) ===
+Read the BALL TRACKING SUMMARY above. Then apply this logic:
+- If the ball was HANDED from one player to an adjacent player → THIS IS A RUN PLAY. Period.
+- If the ball LEFT a player's hand, flew through the air with no contact, and was caught by a different player downfield → THIS IS A PASS PLAY.
+- If the observer noted a "likely bird" or "uncertain" airborne object → Do NOT assume it was a thrown football.
+- If you're not sure → Say "Play type unclear from this angle" — do NOT guess.
 
-Now watch the video AGAIN yourself and produce your final analysis. Cross-reference against the observations above. If your analysis contradicts the raw observations, trust the observations — they are frame-by-frame literal descriptions.`;
+Now watch the video AGAIN yourself. Your analysis MUST be consistent with the ball tracking observations above. If the observations say handoff, your analysis says run. No exceptions.`;
 
     const pass2Result = await model.generateContentStream([
       { text: pass2Prompt },
@@ -498,6 +521,78 @@ app.get('/status/:filmId', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// POST /correct — Coach correction: re-analyze with ground truth
+// ═══════════════════════════════════════════════════════════════
+app.post('/correct', async (req, res) => {
+  const { filmId, correction, videoUrl, clipStart, clipEnd, filmType, opponent, roster, speedMode } = req.body;
+  if (!filmId || !correction) return res.status(400).json({ error: 'filmId and correction required' });
+
+  const supabase = getSupabase();
+  await supabase.from('game_films').update({ ai_status: 'processing' }).eq('id', filmId);
+  res.status(202).json({ status: 'accepted', filmId });
+
+  // Run correction pipeline in background
+  (async () => {
+    try {
+      // Get the cached Google file URI
+      const { data: filmRow } = await supabase
+        .from('game_films')
+        .select('gemini_file_uri, gemini_file_name, ai_analysis')
+        .eq('id', filmId).single();
+
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+      let videoRefPart = null;
+      if (filmRow?.gemini_file_uri) {
+        videoRefPart = { fileData: { mimeType: 'video/mp4', fileUri: filmRow.gemini_file_uri } };
+      }
+
+      const correctionPrompt = `You are a youth football (8U) film analyst. A HEAD COACH has reviewed your previous analysis and found ERRORS. The coach's correction is GROUND TRUTH — they were at the game and know exactly what happened.
+
+=== YOUR PREVIOUS ANALYSIS ===
+${filmRow?.ai_analysis || 'No previous analysis available.'}
+
+=== COACH'S CORRECTION (THIS IS FACT — DO NOT ARGUE) ===
+${correction}
+
+=== YOUR TASK ===
+Watch the video again with the coach's correction in mind. Rebuild your analysis from scratch, incorporating the coach's correction as absolute fact. For example:
+- If the coach says "This was a run play, not a pass" → Your new analysis must describe a run play
+- If the coach says "#11 blocked for the RB" → Your new analysis must describe #11 as a blocker
+- If the coach says "There was no fumble" → Remove any fumble reference
+
+Produce a CORRECTED analysis that is consistent with what the coach told you. Keep all the good parts of your original analysis, fix what the coach flagged, and add a "Coach's Note" section at the top acknowledging the correction.`;
+
+      const parts = [{ text: correctionPrompt }];
+      if (videoRefPart) parts.push(videoRefPart);
+
+      const result = await model.generateContentStream(parts);
+      let correctedText = '';
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) correctedText += text;
+      }
+
+      await supabase.from('game_films').update({
+        ai_analysis: correctedText,
+        ai_status: 'complete',
+        ai_analyzed_at: new Date().toISOString(),
+      }).eq('id', filmId);
+
+      console.log(`[${filmId}] ✅ Coach correction applied`);
+    } catch (err) {
+      console.error(`[${filmId}] ❌ Correction failed:`, err);
+      await supabase.from('game_films').update({
+        ai_status: 'failed',
+        ai_analysis: `Correction failed: ${err.message}`,
+      }).eq('id', filmId).catch(() => {});
+    }
+  })();
 });
 
 app.listen(PORT, () => console.log(`Film service running on port ${PORT}`));

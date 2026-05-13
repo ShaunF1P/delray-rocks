@@ -47,6 +47,8 @@ export default function FilmRoomPage() {
   const [savingClip, setSavingClip] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const progressTimerRef = useRef(null);
+  const [showCorrectionInput, setShowCorrectionInput] = useState(false);
+  const [correctionText, setCorrectionText] = useState('');
   const [uploadForm, setUploadForm] = useState({
     title: '', description: '', film_type: 'game', opponent: '',
     film_date: new Date().toISOString().split('T')[0],
@@ -748,7 +750,70 @@ export default function FilmRoomPage() {
                             🔄
                           </Button>
                         )}
+                        {selectedFilm.ai_analysis && selectedFilm.ai_status === 'complete' && (
+                          <Button variant="ghost" size="sm" onClick={() => setShowCorrectionInput(!showCorrectionInput)} 
+                            disabled={selectedFilm.ai_status === 'processing'} title="Correct analysis"
+                            style={{ color: showCorrectionInput ? 'var(--rocks-gold)' : undefined }}>
+                            ✍️
+                          </Button>
+                        )}
                       </div>
+
+                      {/* Coach Correction Input */}
+                      {showCorrectionInput && (
+                        <div style={{ marginTop: 8, padding: 10, background: 'rgba(253,185,19,0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(253,185,19,0.2)' }}>
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--rocks-gold)', fontWeight: 600, marginBottom: 6 }}>
+                            ✍️ Coach Correction
+                          </div>
+                          <textarea
+                            value={correctionText}
+                            onChange={(e) => setCorrectionText(e.target.value)}
+                            placeholder="Tell the AI what it got wrong, e.g.: 'This was a run play, not a pass. #11 with the red guardian cap blocked for the RB who ran right.'"
+                            style={{
+                              width: '100%', minHeight: 60, padding: 8, fontSize: 'var(--text-xs)',
+                              background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)',
+                              resize: 'vertical', fontFamily: 'inherit',
+                            }}
+                          />
+                          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                            <Button variant="primary" size="sm" style={{ fontSize: '0.65rem', padding: '4px 10px', background: 'var(--rocks-gold)', color: '#000' }}
+                              disabled={!correctionText.trim() || selectedFilm.ai_status === 'processing'}
+                              onClick={async () => {
+                                try {
+                                  await fetch(`${FILM_API}/correct`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      filmId: selectedFilm.id,
+                                      correction: correctionText,
+                                      videoUrl: selectedFilm.video_url,
+                                      clipStart: selectedFilm.clip_start_seconds,
+                                      clipEnd: selectedFilm.clip_end_seconds,
+                                      filmType: selectedFilm.film_type,
+                                      opponent: selectedFilm.opponent,
+                                      speedMode,
+                                    }),
+                                  });
+                                  setFilms(prev => prev.map(f => f.id === selectedFilm.id ? { ...f, ai_status: 'processing' } : f));
+                                  setSelectedFilm(prev => prev ? { ...prev, ai_status: 'processing' } : prev);
+                                  startProgressSimulation();
+                                  setShowCorrectionInput(false);
+                                  setCorrectionText('');
+                                  toast.success('Correction submitted — re-analyzing now...', { id: 'correction' });
+                                } catch {
+                                  toast.error('Failed to submit correction');
+                                }
+                              }}>
+                              Submit Correction
+                            </Button>
+                            <Button variant="ghost" size="sm" style={{ fontSize: '0.65rem', padding: '4px 10px' }}
+                              onClick={() => { setShowCorrectionInput(false); setCorrectionText(''); }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: '0.5rem' }}>
