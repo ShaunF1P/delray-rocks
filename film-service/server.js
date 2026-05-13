@@ -116,7 +116,7 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
     console.log(`[${filmId}] Google file ready: ${geminiFile.uri}`);
 
     // ── STEP 2: TWO-PASS ANALYSIS ──────────────────────────────
-    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
     const effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -544,7 +544,7 @@ app.post('/correct', async (req, res) => {
         .eq('id', filmId).single();
 
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+      const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
       const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
       let videoRefPart = null;
