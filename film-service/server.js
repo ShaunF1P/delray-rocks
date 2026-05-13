@@ -116,15 +116,19 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
     console.log(`[${filmId}] Google file ready: ${geminiFile.uri}`);
 
     // ── STEP 2: TWO-PASS ANALYSIS ──────────────────────────────
-    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
+    // Model chain: try 3.1 Pro → fallback to 2.5 Pro if preview model fails on video
+    const MODEL_CHAIN = speedMode === 'pro'
+      ? ['gemini-3.1-pro-preview', 'gemini-2.5-pro']
+      : ['gemini-3-flash-preview', 'gemini-2.5-flash'];
     const effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const videoRef = { fileData: { mimeType: geminiFile.mimeType || 'video/mp4', fileUri: geminiFile.uri } };
 
     // ── PASS 1: Raw observations (no interpretation) ────────────
+    let GEMINI_MODEL = MODEL_CHAIN[0];
+    let model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
     console.log(`[${filmId}] Pass 1: Raw observation scan (${GEMINI_MODEL})...`);
 
     const observationPrompt = `You are a FORENSIC VIDEO OBSERVER for youth football film. Your ONLY job is to describe what you LITERALLY see. Do NOT interpret plays. Do NOT say "pass" or "run" or "touchdown." Just describe physical movements and object positions.
@@ -161,14 +165,34 @@ TIMESTAMP 0:01 — [observations]
 
 End with: POST-PLAY — What do refs signal? Where do teams set up next?`;
 
-    const pass1Result = await model.generateContentStream([
-      { text: observationPrompt },
-      videoRef,
-    ]);
+    let pass1Result;
     let rawObservations = '';
-    for await (const chunk of pass1Result.stream) {
-      const text = chunk.text();
-      if (text) rawObservations += text;
+    try {
+      pass1Result = await model.generateContentStream([
+        { text: observationPrompt },
+        videoRef,
+      ]);
+      for await (const chunk of pass1Result.stream) {
+        const text = chunk.text();
+        if (text) rawObservations += text;
+      }
+    } catch (pass1Err) {
+      // If 3.1 Pro fails, fall back to 2.5 Pro
+      if (MODEL_CHAIN.length > 1 && GEMINI_MODEL === MODEL_CHAIN[0]) {
+        GEMINI_MODEL = MODEL_CHAIN[1];
+        console.log(`[${filmId}] ⚠️ ${MODEL_CHAIN[0]} failed (${pass1Err.message}), falling back to ${GEMINI_MODEL}`);
+        model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+        pass1Result = await model.generateContentStream([
+          { text: observationPrompt },
+          videoRef,
+        ]);
+        for await (const chunk of pass1Result.stream) {
+          const text = chunk.text();
+          if (text) rawObservations += text;
+        }
+      } else {
+        throw pass1Err;
+      }
     }
 
     console.log(`[${filmId}] Pass 1 complete (${rawObservations.length} chars). Starting Pass 2...`);
@@ -219,7 +243,7 @@ Now watch the video AGAIN yourself. Your analysis MUST be consistent with the ba
     await supabase.from('game_films').update({
       ai_status: 'failed',
       ai_analysis: `Analysis failed: ${err.message}`,
-    }).eq('id', filmId).catch(() => {});
+    }).eq('id', filmId);
   }
 }
 
@@ -544,8 +568,11 @@ app.post('/correct', async (req, res) => {
         .eq('id', filmId).single();
 
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+      const MODEL_CHAIN = speedMode === 'pro'
+        ? ['gemini-3.1-pro-preview', 'gemini-2.5-pro']
+        : ['gemini-3-flash-preview', 'gemini-2.5-flash'];
+      let modelName = MODEL_CHAIN[0];
+      let model = genAI.getGenerativeModel({ model: modelName });
 
       let videoRefPart = null;
       if (filmRow?.gemini_file_uri) {
@@ -571,11 +598,26 @@ Produce a CORRECTED analysis that is consistent with what the coach told you. Ke
       const parts = [{ text: correctionPrompt }];
       if (videoRefPart) parts.push(videoRefPart);
 
-      const result = await model.generateContentStream(parts);
-      let correctedText = '';
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
-        if (text) correctedText += text;
+      let result, correctedText = '';
+      try {
+        result = await model.generateContentStream(parts);
+        for await (const chunk of result.stream) {
+          const text = chunk.text();
+          if (text) correctedText += text;
+        }
+      } catch (modelErr) {
+        if (MODEL_CHAIN.length > 1 && modelName === MODEL_CHAIN[0]) {
+          modelName = MODEL_CHAIN[1];
+          console.log(`[${filmId}] ⚠️ ${MODEL_CHAIN[0]} failed, falling back to ${modelName}`);
+          model = genAI.getGenerativeModel({ model: modelName });
+          result = await model.generateContentStream(parts);
+          for await (const chunk of result.stream) {
+            const text = chunk.text();
+            if (text) correctedText += text;
+          }
+        } else {
+          throw modelErr;
+        }
       }
 
       await supabase.from('game_films').update({
@@ -584,13 +626,13 @@ Produce a CORRECTED analysis that is consistent with what the coach told you. Ke
         ai_analyzed_at: new Date().toISOString(),
       }).eq('id', filmId);
 
-      console.log(`[${filmId}] ✅ Coach correction applied`);
+      console.log(`[${filmId}] ✅ Coach correction applied (${modelName})`);
     } catch (err) {
       console.error(`[${filmId}] ❌ Correction failed:`, err);
       await supabase.from('game_films').update({
         ai_status: 'failed',
         ai_analysis: `Correction failed: ${err.message}`,
-      }).eq('id', filmId).catch(() => {});
+      }).eq('id', filmId);
     }
   })();
 });
