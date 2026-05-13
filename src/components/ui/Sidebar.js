@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck, BarChart3,
   DollarSign, Settings, Film, Trophy, ChevronLeft, ChevronRight,
-  User, LogOut, Star, Zap, Shield, Activity, FileText, UserCog
+  User, LogOut, Star, Zap, Shield, Activity, FileText, UserCog, BookOpen, Gamepad2
 } from 'lucide-react';
 
 const coachMenuItems = [
@@ -19,6 +19,8 @@ const coachMenuItems = [
   { label: 'Form Analysis', href: '/coach/form-analysis', icon: Activity, badge: 'AI' },
   { label: 'Attendance', href: '/coach/attendance', icon: ClipboardCheck },
   { label: 'Film Room', href: '/coach/film', icon: Film, badge: 'AI' },
+  { label: 'Playbook', href: '/coach/playbook', icon: BookOpen, badge: 'NEW' },
+  { label: 'Sideline', href: '/coach/sideline', icon: Gamepad2, badge: '🏈' },
   { label: 'Highlights', href: '/coach/highlights', icon: Trophy },
   { label: 'Analytics', href: '/coach/analytics', icon: BarChart3 },
   { label: 'Parent Reports', href: '/coach/reports', icon: FileText, badge: 'AI' },
