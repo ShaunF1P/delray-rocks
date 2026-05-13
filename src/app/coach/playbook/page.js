@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, Search, Edit2, Trash2, X, Save } from 'lucide-react';
+import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2 } from 'lucide-react';
+import PlayDiagram from '@/components/PlayDiagram';
 
 export default function PlaybookPage() {
   const [formations, setFormations] = useState([]);
@@ -13,6 +14,7 @@ export default function PlaybookPage() {
   const [search, setSearch] = useState('');
   const [editingPlay, setEditingPlay] = useState(null);
   const [showAddPlay, setShowAddPlay] = useState(false);
+  const [focusedPlay, setFocusedPlay] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -155,6 +157,9 @@ export default function PlaybookPage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => setFocusedPlay(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }} title="View diagram">
+                        <Maximize2 size={12} color="var(--rocks-green-light)" />
+                      </button>
                       <button onClick={() => setEditingPlay(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                         <Edit2 size={12} color="var(--text-dim)" />
                       </button>
@@ -162,6 +167,17 @@ export default function PlaybookPage() {
                         <Trash2 size={12} color="rgba(239,68,68,0.5)" />
                       </button>
                     </div>
+                  </div>
+                  {/* Mini Diagram */}
+                  <div style={{ marginTop: 8, marginBottom: 4 }}>
+                    <PlayDiagram
+                      formationName={formation?.name}
+                      play={p}
+                      isDefense={['blitz','zone','man'].includes(p.play_type)}
+                      width={260}
+                      height={160}
+                      animated={true}
+                    />
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>
                     {p.description}
@@ -202,6 +218,68 @@ export default function PlaybookPage() {
             onSave={savePlay}
             onClose={() => { setEditingPlay(null); setShowAddPlay(false); }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Focused Play Full View */}
+      <AnimatePresence>
+        {focusedPlay && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+            onClick={() => setFocusedPlay(null)}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+              onClick={e => e.stopPropagation()}
+              style={{ width: 900, maxHeight: '90vh', overflow: 'auto', background: '#0d1117', border: '1px solid var(--border)', borderRadius: 16, padding: 0 }}>
+              <div style={{ display: 'flex', gap: 0 }}>
+                {/* Diagram */}
+                <div style={{ flex: '0 0 500px', padding: 24, background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <PlayDiagram
+                    formationName={formations.find(f => f.id === focusedPlay.formation_id)?.name}
+                    play={focusedPlay}
+                    isDefense={['blitz','zone','man'].includes(focusedPlay.play_type)}
+                    width={450}
+                    height={340}
+                    animated={true}
+                  />
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>Click ▶ to animate routes</div>
+                </div>
+                {/* Details */}
+                <div style={{ flex: 1, padding: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{focusedPlay.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
+                        {formations.find(f => f.id === focusedPlay.formation_id)?.name} • {focusedPlay.play_type} • {focusedPlay.direction || 'varies'}
+                      </div>
+                    </div>
+                    <button onClick={() => setFocusedPlay(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <X size={20} color="var(--text-dim)" />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>
+                    {focusedPlay.description}
+                  </div>
+                  {focusedPlay.assignments && Object.keys(focusedPlay.assignments).length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--rocks-gold)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Player Assignments</div>
+                      {Object.entries(focusedPlay.assignments).map(([pos, task]) => (
+                        <div key={pos} style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6, padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, borderLeft: '2px solid var(--rocks-gold)' }}>
+                          <span style={{ fontWeight: 700, color: '#fff', marginRight: 6 }}>{pos}</span>{task}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {focusedPlay.tags?.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, marginTop: 12, flexWrap: 'wrap' }}>
+                      {focusedPlay.tags.map(t => (
+                        <span key={t} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--text-dim)' }}>#{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
