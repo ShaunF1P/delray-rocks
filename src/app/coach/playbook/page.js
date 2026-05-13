@@ -290,8 +290,27 @@ function FocusedPlayViewer({ play, formations, onClose }) {
   const [teachPos, setTeachPos] = useState(null);
   const [teaching, setTeaching] = useState(null);
   const [loadingTeach, setLoadingTeach] = useState(false);
+  const [roster, setRoster] = useState([]);
+  const [lineup, setLineup] = useState({});
   const posKeys = Object.keys(play.assignments || {});
   const formationName = formations.find(f => f.id === play.formation_id)?.name;
+
+  useEffect(() => {
+    async function loadRoster() {
+      const supabase = createClient();
+      const { data } = await supabase.from('players').select('id, first_name, last_name, jersey_number, position').order('jersey_number');
+      if (data) setRoster(data);
+    }
+    loadRoster();
+  }, []);
+
+  function assignPlayer(posKey, playerId) {
+    if (!playerId) { setLineup(prev => { const n = { ...prev }; delete n[posKey]; return n; }); return; }
+    const player = roster.find(p => p.id === playerId);
+    if (player) setLineup(prev => ({ ...prev, [posKey]: { name: player.first_name, jersey: `#${player.jersey_number || ''}`, playerId: player.id, fullName: `${player.first_name} ${player.last_name}` } }));
+  }
+
+  const playerOverrides = lineup;
 
   async function loadTeaching(posKey) {
     setTeachPos(posKey);
@@ -323,13 +342,13 @@ function FocusedPlayViewer({ play, formations, onClose }) {
             <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{formationName} • {play.play_type} • {play.direction || 'varies'}</div>
           </div>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-            {['diagram', 'learn', 'assignments'].map(t => (
+            {['diagram', 'lineup', 'learn', 'assignments'].map(t => (
               <button key={t} onClick={() => setTab(t)} style={{
                 padding: '6px 12px', fontSize: 11, fontWeight: 600, border: '1px solid', borderRadius: 6, cursor: 'pointer',
                 background: tab === t ? 'rgba(0,154,68,0.15)' : 'transparent',
                 borderColor: tab === t ? '#009A44' : 'rgba(255,255,255,0.1)',
                 color: tab === t ? '#4ADE80' : 'rgba(255,255,255,0.4)',
-              }}>{t === 'diagram' ? '📐 Diagram' : t === 'learn' ? '🎓 Watch & Learn' : '📋 Assignments'}</button>
+              }}>{t === 'diagram' ? '📐 Diagram' : t === 'lineup' ? '👕 Lineup' : t === 'learn' ? '🎓 Watch & Learn' : '📋 Assignments'}</button>
             ))}
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8 }}>
               <X size={18} color="var(--text-dim)" />
@@ -342,7 +361,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
           <div style={{ padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <PlayDiagram formationName={formationName} play={play}
               isDefense={['blitz','zone','man'].includes(play.play_type)}
-              width={600} height={420} animated={true} />
+              width={600} height={420} animated={true} playerOverrides={playerOverrides} />
             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>Click players to highlight • Toggle 🏃 Motion / 📐 Routes • Hit ▶ to animate</div>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: 16, maxWidth: 600, textAlign: 'center' }}>{play.description}</div>
           </div>
@@ -456,6 +475,99 @@ function FocusedPlayViewer({ play, formations, onClose }) {
                 <div style={{ fontSize: 13 }}>Pick a position above to see what that player needs to do</div>
               </div>
             )}
+          </div>
+        )}
+        {/* LINEUP TAB */}
+        {tab === 'lineup' && (
+          <div style={{ padding: 20 }}>
+            <div style={{ display: 'flex', gap: 20 }}>
+              {/* Live diagram with player names */}
+              <div style={{ flex: '0 0 450px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <PlayDiagram formationName={formationName} play={play}
+                  isDefense={['blitz','zone','man'].includes(play.play_type)}
+                  width={440} height={320} animated={true} playerOverrides={playerOverrides} />
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 6 }}>
+                  {Object.keys(lineup).length > 0 ? `${Object.keys(lineup).length} of ${posKeys.length} positions assigned` : 'Assign players to see names on diagram'}
+                </div>
+              </div>
+
+              {/* Position assignment list */}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--rocks-gold)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    👕 Set Your Lineup
+                  </div>
+                  {Object.keys(lineup).length > 0 && (
+                    <button onClick={() => setLineup({})} style={{
+                      padding: '3px 10px', fontSize: 10, fontWeight: 600, background: 'rgba(239,68,68,0.1)',
+                      border: '1px solid rgba(239,68,68,0.2)', borderRadius: 4, color: '#EF4444', cursor: 'pointer',
+                    }}>Clear All</button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 340, overflowY: 'auto', paddingRight: 4 }}>
+                  {posKeys.map(pk => {
+                    const assigned = lineup[pk];
+                    const assignment = play.assignments?.[pk] || '';
+                    return (
+                      <div key={pk} style={{
+                        display: 'flex', gap: 8, alignItems: 'center', padding: '6px 10px',
+                        background: assigned ? 'rgba(0,154,68,0.06)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${assigned ? 'rgba(0,154,68,0.15)' : 'rgba(255,255,255,0.06)'}`,
+                        borderRadius: 8,
+                      }}>
+                        {/* Position badge */}
+                        <div style={{
+                          width: 36, textAlign: 'center', fontSize: 11, fontWeight: 800,
+                          color: assigned ? '#4ADE80' : 'rgba(255,255,255,0.5)',
+                        }}>{pk}</div>
+
+                        {/* Player dropdown */}
+                        <select value={assigned?.playerId || ''} onChange={e => assignPlayer(pk, e.target.value)}
+                          style={{
+                            flex: 1, padding: '5px 8px', fontSize: 12,
+                            background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 6, color: assigned ? '#fff' : 'rgba(255,255,255,0.4)', cursor: 'pointer',
+                          }}>
+                          <option value="">— Select Player —</option>
+                          {roster.map(p => (
+                            <option key={p.id} value={p.id}>
+                              #{p.jersey_number || '?'} {p.first_name} {p.last_name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Assignment preview */}
+                        <div style={{ fontSize: 9, color: 'var(--text-dim)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {assignment.substring(0, 25)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Quick-fill: auto-assign by position match */}
+                {roster.length > 0 && Object.keys(lineup).length < posKeys.length && (
+                  <button onClick={() => {
+                    const auto = { ...lineup };
+                    const used = new Set(Object.values(auto).map(v => v.playerId));
+                    posKeys.forEach(pk => {
+                      if (auto[pk]) return;
+                      const match = roster.find(p => !used.has(p.id) && p.position?.toUpperCase() === pk.toUpperCase());
+                      if (match) {
+                        auto[pk] = { name: match.first_name, jersey: `#${match.jersey_number || ''}`, playerId: match.id, fullName: `${match.first_name} ${match.last_name}` };
+                        used.add(match.id);
+                      }
+                    });
+                    setLineup(auto);
+                  }} style={{
+                    marginTop: 10, padding: '6px 14px', fontSize: 11, fontWeight: 600, width: '100%',
+                    background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)',
+                    borderRadius: 6, color: '#60A5FA', cursor: 'pointer',
+                  }}>⚡ Auto-Fill by Position Match</button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
