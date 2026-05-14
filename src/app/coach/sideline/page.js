@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Clock, Target, Shield, Zap, Check } from 'lucide-react';
+import { ChevronLeft, Clock, Target, Shield, Zap, Check, Undo2, Trash2, ThumbsUp, ThumbsDown, Minus, RotateCcw } from 'lucide-react';
 
 export default function SidelinePage() {
   const [formations, setFormations] = useState([]);
@@ -14,6 +14,8 @@ export default function SidelinePage() {
   const [callHistory, setCallHistory] = useState([]);
   const [lastCall, setLastCall] = useState(null);
   const [activeGameFilmId, setActiveGameFilmId] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [confirmUndo, setConfirmUndo] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -52,13 +54,17 @@ export default function SidelinePage() {
       yard_line: gameState.yardLine,
     };
 
-    setLastCall({ ...call, play });
-    setCallHistory(prev => [{ ...call, play, time: new Date() }, ...prev]);
-
+    let dbId = null;
     if (activeGameFilmId) {
       const supabase = createClient();
-      await supabase.from('play_calls').insert(call);
+      const { data } = await supabase.from('play_calls').insert(call).select('id').single();
+      if (data) dbId = data.id;
     }
+
+    const historyEntry = { ...call, play, time: new Date(), dbId, result: null };
+    setLastCall(historyEntry);
+    setCallHistory(prev => [historyEntry, ...prev]);
+    setConfirmUndo(false);
 
     // Auto-advance down
     setGameState(prev => ({
@@ -66,6 +72,43 @@ export default function SidelinePage() {
       down: prev.down < 4 ? prev.down + 1 : 1,
       distance: prev.down < 4 ? Math.max(1, prev.distance - 4) : 10,
     }));
+  }
+
+  async function undoLastCall() {
+    if (callHistory.length === 0) return;
+    const removed = callHistory[0];
+
+    // Delete from DB if it was saved
+    if (removed.dbId) {
+      const supabase = createClient();
+      await supabase.from('play_calls').delete().eq('id', removed.dbId);
+    }
+
+    // Restore game state
+    setGameState({
+      quarter: removed.quarter,
+      down: removed.down,
+      distance: removed.distance,
+      yardLine: removed.yard_line,
+    });
+
+    setCallHistory(prev => prev.slice(1));
+    setLastCall(callHistory.length > 1 ? callHistory[1] : null);
+    setConfirmUndo(false);
+  }
+
+  async function deleteHistoryItem(index) {
+    const item = callHistory[index];
+    if (item.dbId) {
+      const supabase = createClient();
+      await supabase.from('play_calls').delete().eq('id', item.dbId);
+    }
+    setCallHistory(prev => prev.filter((_, i) => i !== index));
+    if (index === 0) setLastCall(callHistory.length > 1 ? callHistory[1] : null);
+  }
+
+  function markResult(index, result) {
+    setCallHistory(prev => prev.map((c, i) => i === index ? { ...c, result } : c));
   }
 
   const filteredFormations = formations.filter(f => f.side === side);
@@ -76,6 +119,12 @@ export default function SidelinePage() {
   const runPlays = filteredPlays.filter(p => p.play_type === 'run');
   const passPlays = filteredPlays.filter(p => ['pass', 'trick'].includes(p.play_type));
   const defPlays = filteredPlays.filter(p => ['zone', 'man', 'blitz'].includes(p.play_type));
+
+  // Stats
+  const totalCalls = callHistory.length;
+  const successCalls = callHistory.filter(c => c.result === 'success').length;
+  const failCalls = callHistory.filter(c => c.result === 'fail').length;
+  const successRate = totalCalls > 0 ? Math.round((successCalls / (successCalls + failCalls || 1)) * 100) : 0;
 
   return (
     <div style={{
@@ -99,8 +148,15 @@ export default function SidelinePage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: '#009A44', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             🏈 Sideline Play Caller
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-            {callHistory.length} plays called
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {totalCalls > 0 && (
+              <span style={{ fontSize: 10, color: successRate >= 60 ? '#4ADE80' : successRate >= 40 ? '#FDB913' : '#EF4444', fontWeight: 600 }}>
+                {successRate}% success
+              </span>
+            )}
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+              {totalCalls} plays
+            </span>
           </div>
         </div>
 
@@ -171,7 +227,7 @@ export default function SidelinePage() {
         ))}
       </div>
 
-      {/* Last Call Banner */}
+      {/* Last Call Banner with UNDO */}
       <AnimatePresence>
         {lastCall && (
           <motion.div
@@ -189,12 +245,35 @@ export default function SidelinePage() {
               gap: 8,
             }}>
             <Check size={14} color="#4ADE80" />
-            <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: '#4ADE80', fontWeight: 600, flex: 1 }}>
               Called: {lastCall.play.name}
             </span>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
               {new Date(lastCall.called_at).toLocaleTimeString()}
             </span>
+            {/* Undo button */}
+            {!confirmUndo ? (
+              <button onClick={() => setConfirmUndo(true)} style={{
+                background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 5, padding: '3px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 10, fontWeight: 600, color: '#EF4444',
+              }}>
+                <Undo2 size={10} /> Undo
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={undoLastCall} style={{
+                  background: 'rgba(239,68,68,0.3)', border: '1px solid #EF4444',
+                  borderRadius: 5, padding: '3px 8px', cursor: 'pointer',
+                  fontSize: 10, fontWeight: 700, color: '#fff',
+                }}>Yes, undo</button>
+                <button onClick={() => setConfirmUndo(false)} style={{
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 5, padding: '3px 8px', cursor: 'pointer',
+                  fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.5)',
+                }}>Cancel</button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -306,7 +385,7 @@ export default function SidelinePage() {
         </AnimatePresence>
       </div>
 
-      {/* Call History Drawer */}
+      {/* Play History with Results Tracker */}
       {callHistory.length > 0 && (
         <div style={{
           margin: '0 16px',
@@ -315,23 +394,92 @@ export default function SidelinePage() {
           border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: 10,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            <Clock size={10} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Play History
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              <Clock size={10} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Play History
+              <span style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 6 }}>
+                {successCalls}W / {failCalls}L / {totalCalls - successCalls - failCalls - callHistory.filter(c => c.result === 'neutral').length} ungraded
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={() => setShowHistory(!showHistory)} style={{
+                padding: '2px 8px', fontSize: 9, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.4)',
+              }}>{showHistory ? 'Collapse' : `Show All (${totalCalls})`}</button>
+            </div>
           </div>
-          {callHistory.slice(0, 8).map((c, i) => (
+
+          {(showHistory ? callHistory : callHistory.slice(0, 5)).map((c, i) => (
             <div key={i} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '4px 0', borderBottom: i < 7 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '5px 0', borderBottom: i < (showHistory ? callHistory.length : 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
             }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
-                <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 6 }}>Q{c.quarter}</span>
-                {c.play.name}
+              {/* Result indicator */}
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                background: c.result === 'success' ? '#4ADE80' : c.result === 'fail' ? '#EF4444' : c.result === 'neutral' ? '#FDB913' : 'rgba(255,255,255,0.15)',
+              }} />
+
+              {/* Play info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 4 }}>Q{c.quarter}</span>
+                  {c.play.name}
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+
+              {/* Down/distance */}
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
                 {c.down === 1 ? '1st' : c.down === 2 ? '2nd' : c.down === 3 ? '3rd' : '4th'}&{c.distance}
+              </div>
+
+              {/* Result buttons */}
+              <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                <button onClick={() => markResult(i, 'success')} title="Good play"
+                  style={{
+                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: c.result === 'success' ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.04)',
+                  }}>
+                  <ThumbsUp size={10} color={c.result === 'success' ? '#4ADE80' : 'rgba(255,255,255,0.25)'} />
+                </button>
+                <button onClick={() => markResult(i, 'neutral')} title="Neutral"
+                  style={{
+                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: c.result === 'neutral' ? 'rgba(253,185,19,0.25)' : 'rgba(255,255,255,0.04)',
+                  }}>
+                  <Minus size={10} color={c.result === 'neutral' ? '#FDB913' : 'rgba(255,255,255,0.25)'} />
+                </button>
+                <button onClick={() => markResult(i, 'fail')} title="Bad play"
+                  style={{
+                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: c.result === 'fail' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.04)',
+                  }}>
+                  <ThumbsDown size={10} color={c.result === 'fail' ? '#EF4444' : 'rgba(255,255,255,0.25)'} />
+                </button>
+                <button onClick={() => deleteHistoryItem(i)} title="Delete"
+                  style={{
+                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(255,255,255,0.04)',
+                  }}>
+                  <Trash2 size={9} color="rgba(255,255,255,0.15)" />
+                </button>
               </div>
             </div>
           ))}
+
+          {/* Reset game button */}
+          {callHistory.length > 3 && (
+            <button onClick={() => { if (confirm('Reset all play history for this game?')) { setCallHistory([]); setLastCall(null); } }}
+              style={{
+                marginTop: 8, width: '100%', padding: '5px', fontSize: 10, fontWeight: 600,
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
+                borderRadius: 5, color: 'rgba(239,68,68,0.5)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              }}>
+              <RotateCcw size={10} /> Reset Game
+            </button>
+          )}
         </div>
       )}
     </div>
