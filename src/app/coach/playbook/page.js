@@ -290,6 +290,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
   const [teachPos, setTeachPos] = useState(null);
   const [teaching, setTeaching] = useState(null);
   const [loadingTeach, setLoadingTeach] = useState(false);
+  const [tone, setTone] = useState('encouraging');
   const [roster, setRoster] = useState([]);
   const [lineup, setLineup] = useState({});
   const posKeys = Object.keys(play.assignments || {});
@@ -312,7 +313,8 @@ function FocusedPlayViewer({ play, formations, onClose }) {
 
   const playerOverrides = lineup;
 
-  async function loadTeaching(posKey) {
+  async function loadTeaching(posKey, selectedTone) {
+    const t = selectedTone || tone;
     setTeachPos(posKey);
     setTeaching(null);
     setLoadingTeach(true);
@@ -320,7 +322,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
       const res = await fetch('/api/play-teaching', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playId: play.id, positionKey: posKey }),
+        body: JSON.stringify({ playId: play.id, positionKey: posKey, tone: t }),
       });
       const data = await res.json();
       if (data.teaching) setTeaching(data.teaching);
@@ -389,12 +391,31 @@ function FocusedPlayViewer({ play, formations, onClose }) {
               ))}
             </div>
 
+            {/* Tone Selector */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center' }}>
+              <span style={{ fontSize: 10, color: 'var(--text-dim)', marginRight: 4 }}>Tone:</span>
+              {[
+                { key: 'encouraging', label: '😊 Encouraging', desc: 'Fun & kid-friendly' },
+                { key: 'direct', label: '💪 Direct', desc: 'Firm but helpful' },
+                { key: 'coach', label: '📋 Coach', desc: 'Technical breakdown' },
+              ].map(t => (
+                <button key={t.key} onClick={() => { setTone(t.key); if (teachPos) loadTeaching(teachPos, t.key); }}
+                  title={t.desc}
+                  style={{
+                    padding: '4px 10px', fontSize: 10, fontWeight: 600, border: '1px solid', borderRadius: 5, cursor: 'pointer',
+                    background: tone === t.key ? 'rgba(253,185,19,0.12)' : 'transparent',
+                    borderColor: tone === t.key ? '#FDB913' : 'rgba(255,255,255,0.08)',
+                    color: tone === t.key ? '#FDB913' : 'rgba(255,255,255,0.4)',
+                  }}>{t.label}</button>
+              ))}
+            </div>
+
             {/* Loading */}
             {loadingTeach && (
               <div style={{ textAlign: 'center', padding: 40 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🧠</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#4ADE80' }}>AI Coach is breaking it down...</div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>Generating kid-friendly teaching for {teachPos}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#4ADE80' }}>Coach Assistant is breaking it down...</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>Generating {tone} teaching for {teachPos}</div>
               </div>
             )}
 

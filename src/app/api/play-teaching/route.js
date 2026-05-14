@@ -10,17 +10,19 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_
 
 export async function POST(req) {
   try {
-    const { playId, positionKey } = await req.json();
+    const { playId, positionKey, tone = 'encouraging' } = await req.json();
     if (!playId || !positionKey) return NextResponse.json({ error: 'Missing playId or positionKey' }, { status: 400 });
 
-    // Check cache
-    const { data: existing } = await supabase
-      .from('play_teachings')
-      .select('*')
-      .eq('play_id', playId)
-      .eq('position_key', positionKey)
-      .single();
-    if (existing) return NextResponse.json({ teaching: existing });
+    // Check cache (only for default tone)
+    if (tone === 'encouraging') {
+      const { data: existing } = await supabase
+        .from('play_teachings')
+        .select('*')
+        .eq('play_id', playId)
+        .eq('position_key', positionKey)
+        .single();
+      if (existing) return NextResponse.json({ teaching: existing });
+    }
 
     // Load play data
     const { data: play } = await supabase.from('playbook_plays').select('*, playbook_formations(name, side)').eq('id', playId).single();
@@ -29,7 +31,13 @@ export async function POST(req) {
     const assignment = play.assignments?.[positionKey] || 'No specific assignment listed';
     const formationName = play.playbook_formations?.name || 'Unknown';
 
-    const prompt = `You are a youth football coaching expert teaching 8-year-old kids (8U tackle football).
+    const toneInstructions = {
+      encouraging: `Use simple, fun, exciting language an 8-year-old can understand. Be enthusiastic and encouraging. Example: 'Hey buddy! YOUR job is super important!'`,
+      direct: `Be clear, firm, and helpful. No baby talk — speak to them like a young athlete who can handle real coaching. Example: 'Listen up. On this play, your job is critical. Here's exactly what you need to do.'`,
+      coach: `Use proper football terminology. This is for a coach reviewing assignments, not for reading to kids. Be technical and precise.`,
+    };
+
+    const prompt = `You are a youth football coaching expert for 8U tackle football.
 
 PLAY: "${play.name}"
 FORMATION: "${formationName}"
@@ -42,17 +50,19 @@ THIS PLAYER'S ASSIGNMENT: ${assignment}
 ALL PLAYER ASSIGNMENTS:
 ${Object.entries(play.assignments || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}
 
-Generate a teaching breakdown for an 8-year-old playing the ${positionKey} position on this play. Use simple, fun language they can understand. Be specific about body mechanics and what they should see/do.
+TONE: ${toneInstructions[tone] || toneInstructions.encouraging}
+
+Generate a teaching breakdown for the ${positionKey} position on this play. Be specific about body mechanics and what they should see/do.
 
 Respond in this exact JSON format:
 {
   "title": "Your Job on ${play.name}",
-  "narration": "A 3-4 sentence explanation written TO the kid. Example: 'Hey buddy! On this play, YOUR job is the most important. You're going to...' Make it exciting and encouraging.",
+  "narration": "A 3-4 sentence explanation written in the specified tone.",
   "steps": [
     {
       "step": 1,
       "action": "What to do (2-3 words like 'Get in Stance')",
-      "detail": "Detailed instruction written for an 8-year-old. Include body position, where to look, what to feel.",
+      "detail": "Detailed instruction. Include body position, where to look, what to feel.",
       "visual_prompt": "A detailed prompt to generate an illustration of a youth football player performing this exact action. Include: jersey color (green), age (8 years old), body position, camera angle, field context."
     }
   ],
@@ -62,7 +72,7 @@ Respond in this exact JSON format:
   "weakness_vs": "What defensive look stops this play and what to watch for"
 }
 
-Include 4-6 steps that cover the FULL sequence from pre-snap to finish. Each step should be a key moment.`;
+Include 4-6 steps that cover the FULL sequence from pre-snap to finish.`;
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_KEY}`,

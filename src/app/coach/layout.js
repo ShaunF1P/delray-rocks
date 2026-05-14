@@ -7,7 +7,7 @@ import { getUserWithProfile, signOut, isCoach } from '@/lib/supabase';
 
 export default function CoachLayout({ children }) {
   const [profile, setProfile] = useState(null);
-  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +27,8 @@ export default function CoachLayout({ children }) {
     router.push('/login');
   }
 
+  const marginLeft = sidebarCollapsed ? 72 : 260;
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar
@@ -34,13 +36,16 @@ export default function CoachLayout({ children }) {
         orgName="Delray Rocks"
         userName={profile ? `${profile.first_name} ${profile.last_name}` : 'Coach'}
         onSignOut={handleSignOut}
+        onCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
       />
       <main style={{
         flex: 1,
-        marginLeft: 260,
-        padding: '2rem',
+        marginLeft: marginLeft,
+        padding: '1.5rem',
         minHeight: '100vh',
         transition: 'margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        maxWidth: `calc(100vw - ${marginLeft}px)`,
+        overflow: 'hidden',
       }}>
         {children}
       </main>

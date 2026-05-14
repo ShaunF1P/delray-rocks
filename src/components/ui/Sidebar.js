@@ -16,15 +16,15 @@ const coachMenuItems = [
   { label: 'Coaching Staff', href: '/coach/staff', icon: UserCog },
   { label: 'Events', href: '/coach/events', icon: Calendar },
   { label: 'Evaluate', href: '/coach/evaluate', icon: Star },
-  { label: 'Form Analysis', href: '/coach/form-analysis', icon: Activity, badge: 'AI' },
+  { label: 'Form Analysis', href: '/coach/form-analysis', icon: Activity, badge: 'Eval' },
   { label: 'Attendance', href: '/coach/attendance', icon: ClipboardCheck },
-  { label: 'Film Room', href: '/coach/film', icon: Film, badge: 'AI' },
+  { label: 'Film Room', href: '/coach/film', icon: Film, badge: 'Intel' },
   { label: 'Playbook', href: '/coach/playbook', icon: BookOpen, badge: 'NEW' },
   { label: 'Sideline', href: '/coach/sideline', icon: Gamepad2, badge: '🏈' },
   { label: 'Training', href: '/coach/training', icon: Dumbbell },
   { label: 'Highlights', href: '/coach/highlights', icon: Trophy },
   { label: 'Analytics', href: '/coach/analytics', icon: BarChart3 },
-  { label: 'Parent Reports', href: '/coach/reports', icon: FileText, badge: 'AI' },
+  { label: 'Parent Reports', href: '/coach/reports', icon: FileText },
   { label: 'Fundraising', href: '/coach/fundraising', icon: DollarSign },
   { label: 'Live Game', href: '/coach/live', icon: Zap },
   { label: 'Settings', href: '/coach/settings', icon: Settings },
@@ -40,10 +40,16 @@ const parentMenuItems = [
   { label: 'Registration', href: '/parent/registration', icon: ClipboardCheck },
 ];
 
-export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = 'Coach', onSignOut }) {
+export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = 'Coach', onSignOut, onCollapse }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const menuItems = role === 'coach' ? coachMenuItems : parentMenuItems;
+
+  function toggleCollapse() {
+    const next = !collapsed;
+    setCollapsed(next);
+    onCollapse?.(next);
+  }
 
   return (
     <motion.aside
@@ -222,7 +228,7 @@ export function Sidebar({ role = 'coach', orgName = 'Delray Rocks', userName = '
         )}
 
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={toggleCollapse}
           className="btn btn-ghost"
           style={{
             width: '100%',

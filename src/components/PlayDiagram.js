@@ -83,6 +83,36 @@ const FORMATION_POSITIONS = {
     OLB:{x:30,y:38,role:'skill'},OLB2:{x:70,y:38,role:'skill'},
     CB:{x:12,y:42,role:'skill'},CB2:{x:88,y:42,role:'skill'},FS:{x:50,y:28,role:'skill'},
   },
+  // Special Teams
+  'Kickoff 5-5': {
+    K:{x:50,y:75,role:'skill'},
+    L1:{x:20,y:55,role:'line'},L2:{x:30,y:55,role:'line'},L3:{x:40,y:55,role:'line'},L4:{x:50,y:55,role:'line'},L5:{x:60,y:55,role:'line'},
+    R1:{x:70,y:55,role:'line'},R2:{x:80,y:55,role:'line'},R3:{x:35,y:55,role:'line'},R4:{x:45,y:55,role:'line'},R5:{x:55,y:55,role:'line'},
+  },
+  'Kickoff 6-4': {
+    K:{x:50,y:75,role:'skill'},
+    L1:{x:15,y:55,role:'line'},L2:{x:25,y:55,role:'line'},L3:{x:35,y:55,role:'line'},L4:{x:45,y:55,role:'line'},L5:{x:55,y:55,role:'line'},L6:{x:65,y:55,role:'line'},
+    R1:{x:75,y:55,role:'line'},R2:{x:85,y:55,role:'line'},R3:{x:38,y:45,role:'skill'},R4:{x:62,y:45,role:'skill'},
+  },
+  'Kick Return': {
+    FR:{x:50,y:20,role:'skill'},
+    BL1:{x:25,y:50,role:'line'},BL2:{x:35,y:50,role:'line'},BL3:{x:45,y:50,role:'line'},BL4:{x:55,y:50,role:'line'},BL5:{x:65,y:50,role:'line'},BL6:{x:75,y:50,role:'line'},
+    WG1:{x:15,y:42,role:'skill'},WG2:{x:85,y:42,role:'skill'},
+    UP1:{x:40,y:35,role:'skill'},UP2:{x:60,y:35,role:'skill'},
+  },
+  'Punt Formation': {
+    C:{x:50,y:55,role:'line'},LG:{x:42,y:55,role:'line'},RG:{x:58,y:55,role:'line'},
+    LT:{x:34,y:55,role:'line'},RT:{x:66,y:55,role:'line'},
+    LW:{x:22,y:55,role:'line'},RW:{x:78,y:55,role:'line'},
+    P:{x:50,y:72,role:'skill'},
+    PP1:{x:42,y:62,role:'skill'},PP2:{x:58,y:62,role:'skill'},GNR:{x:12,y:55,role:'skill'},
+  },
+  'Punt Return': {
+    PR:{x:50,y:18,role:'skill'},
+    RL1:{x:30,y:48,role:'line'},RL2:{x:40,y:48,role:'line'},RL3:{x:50,y:48,role:'line'},RL4:{x:60,y:48,role:'line'},RL5:{x:70,y:48,role:'line'},
+    RW1:{x:15,y:42,role:'skill'},RW2:{x:85,y:42,role:'skill'},
+    SP1:{x:35,y:38,role:'skill'},SP2:{x:65,y:38,role:'skill'},SP3:{x:50,y:32,role:'skill'},
+  },
 };
 
 const ROUTE_PATHS = {
