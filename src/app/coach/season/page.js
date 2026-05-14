@@ -54,6 +54,17 @@ export default function SeasonPage() {
   const qtrDist = { 1: 0, 2: 0, 3: 0, 4: 0 };
   playCalls.forEach(pc => { if (pc.quarter) qtrDist[pc.quarter]++; });
 
+  // Success rate
+  const graded = playCalls.filter(pc => pc.result);
+  const successes = playCalls.filter(pc => pc.result === 'success').length;
+  const fails = playCalls.filter(pc => pc.result === 'fail').length;
+  const successRate = graded.length > 0 ? Math.round((successes / graded.length) * 100) : 0;
+
+  // Opponent defense frequency
+  const defFreq = {};
+  playCalls.forEach(pc => { if (pc.opp_defense) defFreq[pc.opp_defense] = (defFreq[pc.opp_defense] || 0) + 1; });
+  const topDefenses = Object.entries(defFreq).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
   const maxFreq = topPlays.length > 0 ? topPlays[0][1] : 1;
 
   return (
@@ -72,12 +83,13 @@ export default function SeasonPage() {
       ) : (
         <>
           {/* Stat Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
               { label: 'Games', value: totalGames, icon: Trophy, color: '#FDB913' },
               { label: 'Total Plays', value: totalPlaysCalled, icon: Zap, color: '#4ADE80' },
+              { label: 'Success Rate', value: `${successRate}%`, icon: TrendingUp, color: successRate >= 60 ? '#4ADE80' : successRate >= 40 ? '#FDB913' : '#EF4444' },
               { label: 'Unique Plays', value: Object.keys(playFreq).length, icon: Target, color: '#60A5FA' },
-              { label: 'Avg Plays/Game', value: totalGames > 0 ? Math.round(totalPlaysCalled / totalGames) : 0, icon: TrendingUp, color: '#A855F7' },
+              { label: 'Defenses Tagged', value: Object.keys(defFreq).length, icon: Shield, color: '#EF4444' },
             ].map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 style={{
@@ -187,6 +199,29 @@ export default function SeasonPage() {
               })}
             </div>
           </div>
+
+          {/* Opponent Defense Frequency */}
+          {topDefenses.length > 0 && (
+            <div style={{
+              padding: 16, borderRadius: 10, marginBottom: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444', marginBottom: 10 }}>🛡️ Opponent Defenses Seen (Season)</div>
+              {topDefenses.map(([def, count]) => {
+                const totalTagged = Object.values(defFreq).reduce((s, v) => s + v, 0);
+                const pct = totalTagged > 0 ? Math.round(count / totalTagged * 100) : 0;
+                return (
+                  <div key={def} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <div style={{ width: 70, fontSize: 11, fontWeight: 600, color: '#fff', textTransform: 'capitalize' }}>{def.replace(/_/g, ' ')}</div>
+                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)' }}>
+                      <div style={{ height: '100%', borderRadius: 4, width: `${pct}%`, background: '#EF4444' }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-dim)', width: 50, textAlign: 'right' }}>{pct}% ({count})</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { FileText, Brain, Download, ChevronDown, ChevronUp, Trophy, AlertTriangle, TrendingUp, Shield } from 'lucide-react';
+import { FileText, Brain, Download, ChevronDown, ChevronUp, Trophy, AlertTriangle, TrendingUp, Shield, Database } from 'lucide-react';
 
 export default function PostGamePage() {
   const [gameInfo, setGameInfo] = useState({ opponent: '', score: '', date: new Date().toISOString().split('T')[0] });
@@ -14,17 +15,33 @@ export default function PostGamePage() {
   async function generateReport() {
     setLoading(true);
     try {
-      // Try to get sideline data from localStorage or paste
+      // Try localStorage first
       let history = [];
       const stored = localStorage.getItem('delray_sideline_history');
       if (stored) {
         history = JSON.parse(stored);
-      } else if (callData) {
-        history = JSON.parse(callData);
+      }
+
+      // Also try DB for richer data
+      const supabase = createClient();
+      const { data: dbCalls } = await supabase
+        .from('play_calls')
+        .select('*, playbook_plays(name, play_type, direction)')
+        .order('called_at', { ascending: false })
+        .limit(100);
+
+      if (dbCalls && dbCalls.length > 0) {
+        const dbHistory = dbCalls.map(c => ({
+          quarter: c.quarter, down: c.down, distance: c.distance,
+          yard_line: c.yard_line, result: c.result, oppDefense: c.opp_defense,
+          play: { name: c.playbook_plays?.name || 'Unknown', play_type: c.playbook_plays?.play_type || '', direction: c.playbook_plays?.direction || '' },
+        }));
+        // Use whichever has more data
+        if (dbHistory.length > history.length) history = dbHistory;
       }
 
       if (history.length === 0) {
-        alert('No play data found. Use the Sideline module during a game first, or paste play data.');
+        alert('No play data found. Use the Sideline module during a game first.');
         setLoading(false);
         return;
       }

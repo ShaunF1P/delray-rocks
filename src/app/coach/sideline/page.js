@@ -132,21 +132,31 @@ export default function SidelinePage() {
     if (index === 0) setLastCall(callHistory.length > 1 ? callHistory[1] : null);
   }
 
-  function markResult(index, result) {
+  async function markResult(index, result) {
     setCallHistory(prev => {
       const updated = prev.map((c, i) => i === index ? { ...c, result } : c);
       try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
       return updated;
     });
+    const item = callHistory[index];
+    if (item?.dbId) {
+      const supabase = createClient();
+      await supabase.from('play_calls').update({ result }).eq('id', item.dbId);
+    }
   }
 
-  function tagDefense(index, defKey) {
+  async function tagDefense(index, defKey) {
     setCallHistory(prev => {
       const updated = prev.map((c, i) => i === index ? { ...c, oppDefense: defKey } : c);
       try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
       return updated;
     });
     setTaggingIndex(null);
+    const item = callHistory[index];
+    if (item?.dbId) {
+      const supabase = createClient();
+      await supabase.from('play_calls').update({ opp_defense: defKey }).eq('id', item.dbId);
+    }
   }
 
   async function getIntel() {

@@ -71,8 +71,38 @@ export default function ReportsPage() {
     }
   }
 
-  function generateAll() {
-    toast('Batch generation coming soon — generate one at a time for now', { icon: '🔜' });
+  async function generateAll() {
+    if (!confirm(`Generate reports for all ${players.length} players? This may take a minute.`)) return;
+    setGenerating(true);
+    let generated = 0;
+    for (const p of players) {
+      try {
+        const res = await fetch('/api/reports/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            playerName: `${p.first_name} ${p.last_name}`,
+            jerseyNumber: p.jersey_number, position: p.position,
+            age: p.age || 8, attendanceRate: p.attendance_rate || 85,
+            evalScores: p.latest_eval || null, coachNotes: '', weekNumber,
+          }),
+        });
+        const data = await res.json();
+        if (data.report) {
+          const draft = {
+            id: Date.now() + Math.random(), playerId: p.id,
+            playerName: `${p.first_name} ${p.last_name}`,
+            jerseyNumber: p.jersey_number, report: data.report,
+            status: 'draft', createdAt: new Date().toISOString(), weekNumber,
+          };
+          setDrafts(prev => [draft, ...prev]);
+          generated++;
+        }
+      } catch (e) { console.error(`Failed for ${p.first_name}:`, e); }
+    }
+    toast.success(`Generated ${generated}/${players.length} reports`);
+    setTab('drafts');
+    setGenerating(false);
   }
 
   function markSent(id) {

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, Plus, Trash2, Clock, GripVertical, Copy, Download } from 'lucide-react';
+import { ClipboardCheck, Plus, Trash2, Clock, Save, FolderOpen } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const DRILL_TEMPLATES = {
   warmup: [
@@ -78,6 +80,36 @@ export default function PracticePlanPage() {
   const [showDrills, setShowDrills] = useState(null);
   const [customName, setCustomName] = useState('');
   const [customDuration, setCustomDuration] = useState(10);
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { loadSavedPlans(); }, []);
+
+  async function loadSavedPlans() {
+    const supabase = createClient();
+    const { data } = await supabase.from('practice_plans').select('*').order('created_at', { ascending: false });
+    if (data) setSavedPlans(data);
+  }
+
+  async function savePlan() {
+    if (!practiceName) { toast.error('Name the plan first'); return; }
+    setSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase.from('practice_plans').insert({
+      name: practiceName, practice_date: practiceDate,
+      blocks: blocks.map(b => ({ name: b.name, duration: b.duration, type: b.type })),
+      total_minutes: totalMinutes,
+    });
+    if (error) toast.error('Save failed');
+    else { toast.success('Plan saved!'); loadSavedPlans(); }
+    setSaving(false);
+  }
+
+  function loadPlan(plan) {
+    setPracticeName(plan.name);
+    setPracticeDate(plan.practice_date || new Date().toISOString().split('T')[0]);
+    setBlocks((plan.blocks || []).map(b => ({ ...b, id: Date.now() + Math.random() })));
+  }
 
   const totalMinutes = blocks.reduce((sum, b) => sum + b.duration, 0);
   const hours = Math.floor(totalMinutes / 60);
@@ -130,11 +162,16 @@ export default function PracticePlanPage() {
             Build structured practice plans with time blocks
           </p>
         </div>
-        <div style={{ textAlign: 'right' }}>
+        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: '#4ADE80' }}>
             {hours > 0 ? `${hours}h ` : ''}{mins}m
           </div>
           <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Total Duration</div>
+          <button onClick={savePlan} disabled={saving || blocks.length === 0} style={{
+            padding: '4px 12px', fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+            background: 'rgba(0,154,68,0.15)', border: '1px solid rgba(0,154,68,0.3)', color: '#4ADE80',
+            display: 'flex', alignItems: 'center', gap: 4, opacity: blocks.length === 0 ? 0.4 : 1,
+          }}><Save size={10} /> {saving ? 'Saving...' : 'Save Plan'}</button>
         </div>
       </div>
 
@@ -154,6 +191,17 @@ export default function PracticePlanPage() {
             background: 'rgba(0,154,68,0.1)', border: '1px solid rgba(0,154,68,0.2)', color: '#4ADE80',
           }}>{t.name}</button>
         ))}
+        {savedPlans.length > 0 && (
+          <>
+            <span style={{ fontSize: 10, color: 'var(--text-dim)', alignSelf: 'center', marginLeft: 8, marginRight: 4 }}>Saved:</span>
+            {savedPlans.map(p => (
+              <button key={p.id} onClick={() => loadPlan(p)} style={{
+                padding: '4px 10px', fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+                background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', color: '#A855F7',
+              }}>{p.name} ({p.total_minutes}m)</button>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Practice Blocks */}
