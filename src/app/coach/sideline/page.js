@@ -80,7 +80,11 @@ export default function SidelinePage() {
 
     const historyEntry = { ...call, play, time: new Date(), dbId, result: null, oppDefense: null };
     setLastCall(historyEntry);
-    setCallHistory(prev => [historyEntry, ...prev]);
+    setCallHistory(prev => {
+      const updated = [historyEntry, ...prev];
+      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
     setConfirmUndo(false);
 
     // Auto-advance down
@@ -120,16 +124,28 @@ export default function SidelinePage() {
       const supabase = createClient();
       await supabase.from('play_calls').delete().eq('id', item.dbId);
     }
-    setCallHistory(prev => prev.filter((_, i) => i !== index));
+    setCallHistory(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
     if (index === 0) setLastCall(callHistory.length > 1 ? callHistory[1] : null);
   }
 
   function markResult(index, result) {
-    setCallHistory(prev => prev.map((c, i) => i === index ? { ...c, result } : c));
+    setCallHistory(prev => {
+      const updated = prev.map((c, i) => i === index ? { ...c, result } : c);
+      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
   }
 
   function tagDefense(index, defKey) {
-    setCallHistory(prev => prev.map((c, i) => i === index ? { ...c, oppDefense: defKey } : c));
+    setCallHistory(prev => {
+      const updated = prev.map((c, i) => i === index ? { ...c, oppDefense: defKey } : c);
+      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
     setTaggingIndex(null);
   }
 
