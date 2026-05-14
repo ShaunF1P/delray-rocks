@@ -3,7 +3,20 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Clock, Target, Shield, Zap, Check, Undo2, Trash2, ThumbsUp, ThumbsDown, Minus, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Clock, Target, Shield, Zap, Check, Undo2, Trash2, ThumbsUp, ThumbsDown, Minus, RotateCcw, Brain, Eye } from 'lucide-react';
+
+const OPP_DEFENSES = [
+  { key: '4-4', label: '4-4', color: '#EF4444' },
+  { key: '5-3', label: '5-3', color: '#F97316' },
+  { key: '6-2', label: '6-2', color: '#EAB308' },
+  { key: '4-2-5', label: '4-2-5', color: '#60A5FA' },
+  { key: 'blitz', label: 'Blitz', color: '#EC4899' },
+  { key: 'stack', label: 'Stack Box', color: '#A855F7' },
+  { key: 'zone', label: 'Zone', color: '#14B8A6' },
+  { key: 'man', label: 'Man', color: '#F43F5E' },
+  { key: 'spread', label: 'Spread', color: '#6366F1' },
+  { key: 'unknown', label: '???', color: '#6B7280' },
+];
 
 export default function SidelinePage() {
   const [formations, setFormations] = useState([]);
@@ -16,6 +29,10 @@ export default function SidelinePage() {
   const [activeGameFilmId, setActiveGameFilmId] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [confirmUndo, setConfirmUndo] = useState(false);
+  const [taggingIndex, setTaggingIndex] = useState(null);
+  const [intel, setIntel] = useState(null);
+  const [loadingIntel, setLoadingIntel] = useState(false);
+  const [showIntel, setShowIntel] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -61,7 +78,7 @@ export default function SidelinePage() {
       if (data) dbId = data.id;
     }
 
-    const historyEntry = { ...call, play, time: new Date(), dbId, result: null };
+    const historyEntry = { ...call, play, time: new Date(), dbId, result: null, oppDefense: null };
     setLastCall(historyEntry);
     setCallHistory(prev => [historyEntry, ...prev]);
     setConfirmUndo(false);
@@ -109,6 +126,26 @@ export default function SidelinePage() {
 
   function markResult(index, result) {
     setCallHistory(prev => prev.map((c, i) => i === index ? { ...c, result } : c));
+  }
+
+  function tagDefense(index, defKey) {
+    setCallHistory(prev => prev.map((c, i) => i === index ? { ...c, oppDefense: defKey } : c));
+    setTaggingIndex(null);
+  }
+
+  async function getIntel() {
+    setLoadingIntel(true);
+    setShowIntel(true);
+    try {
+      const res = await fetch('/api/game-intel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callHistory }),
+      });
+      const data = await res.json();
+      if (data.analysis) setIntel(data.analysis);
+    } catch (e) { console.error(e); }
+    setLoadingIntel(false);
   }
 
   const filteredFormations = formations.filter(f => f.side === side);
@@ -411,68 +448,96 @@ export default function SidelinePage() {
           </div>
 
           {(showHistory ? callHistory : callHistory.slice(0, 5)).map((c, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '5px 0', borderBottom: i < (showHistory ? callHistory.length : 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-            }}>
-              {/* Result indicator */}
+            <div key={i}>
               <div style={{
-                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                background: c.result === 'success' ? '#4ADE80' : c.result === 'fail' ? '#EF4444' : c.result === 'neutral' ? '#FDB913' : 'rgba(255,255,255,0.15)',
-              }} />
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
+              }}>
+                {/* Result dot */}
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                  background: c.result === 'success' ? '#4ADE80' : c.result === 'fail' ? '#EF4444' : c.result === 'neutral' ? '#FDB913' : 'rgba(255,255,255,0.15)',
+                }} />
 
-              {/* Play info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 4 }}>Q{c.quarter}</span>
-                  {c.play.name}
+                {/* Play info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 4 }}>Q{c.quarter}</span>
+                    {c.play.name}
+                  </div>
+                </div>
+
+                {/* Opponent defense tag */}
+                <button onClick={() => setTaggingIndex(taggingIndex === i ? null : i)} title="Tag opponent defense"
+                  style={{
+                    padding: '1px 6px', fontSize: 9, fontWeight: 600, borderRadius: 3, cursor: 'pointer', flexShrink: 0,
+                    background: c.oppDefense ? `${(OPP_DEFENSES.find(d => d.key === c.oppDefense)?.color || '#6B7280')}22` : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${c.oppDefense ? (OPP_DEFENSES.find(d => d.key === c.oppDefense)?.color || '#6B7280') + '44' : 'rgba(255,255,255,0.08)'}`,
+                    color: c.oppDefense ? OPP_DEFENSES.find(d => d.key === c.oppDefense)?.color || '#fff' : 'rgba(255,255,255,0.3)',
+                  }}>
+                  <Eye size={8} style={{ marginRight: 2, verticalAlign: 'middle' }} />
+                  {c.oppDefense ? OPP_DEFENSES.find(d => d.key === c.oppDefense)?.label : 'Tag'}
+                </button>
+
+                {/* Down */}
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+                  {c.down === 1 ? '1st' : c.down === 2 ? '2nd' : c.down === 3 ? '3rd' : '4th'}&{c.distance}
+                </div>
+
+                {/* Result + delete buttons */}
+                <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                  <button onClick={() => markResult(i, 'success')} style={{
+                    width: 20, height: 20, borderRadius: 3, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: c.result === 'success' ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.04)',
+                  }}><ThumbsUp size={9} color={c.result === 'success' ? '#4ADE80' : 'rgba(255,255,255,0.2)'} /></button>
+                  <button onClick={() => markResult(i, 'fail')} style={{
+                    width: 20, height: 20, borderRadius: 3, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: c.result === 'fail' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.04)',
+                  }}><ThumbsDown size={9} color={c.result === 'fail' ? '#EF4444' : 'rgba(255,255,255,0.2)'} /></button>
+                  <button onClick={() => deleteHistoryItem(i)} style={{
+                    width: 20, height: 20, borderRadius: 3, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(255,255,255,0.04)',
+                  }}><Trash2 size={8} color="rgba(255,255,255,0.12)" /></button>
                 </div>
               </div>
 
-              {/* Down/distance */}
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-                {c.down === 1 ? '1st' : c.down === 2 ? '2nd' : c.down === 3 ? '3rd' : '4th'}&{c.distance}
-              </div>
-
-              {/* Result buttons */}
-              <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                <button onClick={() => markResult(i, 'success')} title="Good play"
-                  style={{
-                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: c.result === 'success' ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.04)',
-                  }}>
-                  <ThumbsUp size={10} color={c.result === 'success' ? '#4ADE80' : 'rgba(255,255,255,0.25)'} />
-                </button>
-                <button onClick={() => markResult(i, 'neutral')} title="Neutral"
-                  style={{
-                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: c.result === 'neutral' ? 'rgba(253,185,19,0.25)' : 'rgba(255,255,255,0.04)',
-                  }}>
-                  <Minus size={10} color={c.result === 'neutral' ? '#FDB913' : 'rgba(255,255,255,0.25)'} />
-                </button>
-                <button onClick={() => markResult(i, 'fail')} title="Bad play"
-                  style={{
-                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: c.result === 'fail' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.04)',
-                  }}>
-                  <ThumbsDown size={10} color={c.result === 'fail' ? '#EF4444' : 'rgba(255,255,255,0.25)'} />
-                </button>
-                <button onClick={() => deleteHistoryItem(i)} title="Delete"
-                  style={{
-                    width: 22, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(255,255,255,0.04)',
-                  }}>
-                  <Trash2 size={9} color="rgba(255,255,255,0.15)" />
-                </button>
-              </div>
+              {/* Expandable defense tag picker */}
+              {taggingIndex === i && (
+                <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', padding: '6px 0 4px 12px' }}>
+                  {OPP_DEFENSES.map(d => (
+                    <button key={d.key} onClick={() => tagDefense(i, d.key)}
+                      style={{
+                        padding: '3px 8px', fontSize: 9, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+                        background: c.oppDefense === d.key ? `${d.color}33` : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${c.oppDefense === d.key ? d.color : 'rgba(255,255,255,0.08)'}`,
+                        color: d.color,
+                      }}>{d.label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
 
+          {/* Coach Intel Button */}
+          {callHistory.length >= 3 && (
+            <button onClick={getIntel} disabled={loadingIntel}
+              style={{
+                marginTop: 8, width: '100%', padding: '8px', fontSize: 11, fontWeight: 700,
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))',
+                border: '1px solid rgba(168,85,247,0.3)',
+                borderRadius: 6, color: '#A855F7', cursor: loadingIntel ? 'wait' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                letterSpacing: '0.03em',
+              }}>
+              <Brain size={14} /> {loadingIntel ? 'Analyzing...' : 'Get Coach Intel'} — {callHistory.filter(c => c.oppDefense).length}/{callHistory.length} tagged
+            </button>
+          )}
+
           {/* Reset game button */}
           {callHistory.length > 3 && (
-            <button onClick={() => { if (confirm('Reset all play history for this game?')) { setCallHistory([]); setLastCall(null); } }}
+            <button onClick={() => { if (confirm('Reset all play history for this game?')) { setCallHistory([]); setLastCall(null); setIntel(null); } }}
               style={{
-                marginTop: 8, width: '100%', padding: '5px', fontSize: 10, fontWeight: 600,
+                marginTop: 4, width: '100%', padding: '5px', fontSize: 10, fontWeight: 600,
                 background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
                 borderRadius: 5, color: 'rgba(239,68,68,0.5)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -482,6 +547,91 @@ export default function SidelinePage() {
           )}
         </div>
       )}
+
+      {/* COACH INTEL PANEL */}
+      <AnimatePresence>
+        {showIntel && intel && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{
+              margin: '12px 16px', padding: '14px',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08))',
+              border: '1px solid rgba(168,85,247,0.2)',
+              borderRadius: 12,
+            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#A855F7', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Brain size={16} /> Coach Intel
+              </div>
+              <button onClick={() => setShowIntel(false)} style={{
+                padding: '2px 8px', fontSize: 9, background: 'none', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 3, color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
+              }}>Close</button>
+            </div>
+
+            {/* Summary */}
+            <div style={{
+              fontSize: 12, color: '#fff', lineHeight: 1.5, padding: '8px 10px', marginBottom: 10,
+              background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.15)', borderRadius: 8,
+            }}>{intel.summary}</div>
+
+            {/* Defense Tendencies */}
+            {intel.defTendencies?.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#EF4444', marginBottom: 4, textTransform: 'uppercase' }}>🛡️ Their Tendencies</div>
+                {intel.defTendencies.map((t, i) => (
+                  <div key={i} style={{
+                    fontSize: 11, color: 'rgba(255,255,255,0.7)', padding: '4px 8px', marginBottom: 3,
+                    background: 'rgba(239,68,68,0.06)', borderRadius: 4, borderLeft: '2px solid #EF4444',
+                  }}>
+                    <span style={{ fontWeight: 700, color: '#fff' }}>{t.look}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: 6 }}>({t.frequency})</span>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>{t.situations}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Recommendations */}
+            {intel.recommendations?.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', marginBottom: 4, textTransform: 'uppercase' }}>✅ Recommended Plays</div>
+                {intel.recommendations.map((r, i) => (
+                  <div key={i} style={{
+                    fontSize: 11, color: 'rgba(255,255,255,0.7)', padding: '4px 8px', marginBottom: 3,
+                    background: 'rgba(74,222,128,0.06)', borderRadius: 4, borderLeft: '2px solid #4ADE80',
+                  }}>
+                    <span style={{ fontWeight: 700, color: '#4ADE80' }}>{r.play}</span> — {r.why}
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>When: {r.when}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Alerts */}
+            {intel.alerts?.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#FDB913', marginBottom: 4, textTransform: 'uppercase' }}>⚠️ Alerts</div>
+                {intel.alerts.map((a, i) => (
+                  <div key={i} style={{
+                    fontSize: 11, color: '#FDB913', padding: '4px 8px', marginBottom: 3,
+                    background: 'rgba(253,185,19,0.06)', borderRadius: 4, borderLeft: '2px solid #FDB913',
+                  }}>{a}</div>
+                ))}
+              </div>
+            )}
+
+            {/* Patterns */}
+            {intel.patterns?.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#60A5FA', marginBottom: 4, textTransform: 'uppercase' }}>📊 Patterns Detected</div>
+                {intel.patterns.map((p, i) => (
+                  <div key={i} style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 2, paddingLeft: 8, borderLeft: '2px solid rgba(96,165,250,0.3)' }}>{p}</div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
