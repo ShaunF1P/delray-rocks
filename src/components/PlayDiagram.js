@@ -127,9 +127,16 @@ const ROUTE_PATHS = {
   'seam':(x,y)=>[{x,y:y-25}],
   'hitch':(x,y)=>[{x,y:y-6},{x,y:y-4}],
   'screen':(x,y,d)=>[{x:x+(d||1)*8,y:y+3}],
-  'block':(x,y)=>[{x,y:y-3}],
-  'pull_right':(x,y)=>[{x:x+6,y},{x:x+12,y:y-5}],
-  'pull_left':(x,y)=>[{x:x-6,y},{x:x-12,y:y-5}],
+  // === OL Blocking Routes (realistic mechanics) ===
+  'block':(x,y)=>[{x,y:y-1.5},{x,y:y-3},{x,y:y-4.5}], // drive block: fire-punch-sustain
+  'pass_set':(x,y)=>[{x,y:y+1},{x,y:y+2},{x,y:y+1.5}], // kick slide back then anchor
+  'combo_right':(x,y)=>[{x:x+1,y:y-2},{x:x+3,y:y-4}], // double team then peel to LB
+  'combo_left':(x,y)=>[{x:x-1,y:y-2},{x:x-3,y:y-4}],
+  'reach_right':(x,y)=>[{x:x+3,y:y-1},{x:x+5,y:y-3}], // lateral step to seal edge
+  'reach_left':(x,y)=>[{x:x-3,y:y-1},{x:x-5,y:y-3}],
+  'down_block':(x,y,d)=>[{x:x+(d||1)*3,y:y-2},{x:x+(d||1)*4,y:y-4}],
+  'pull_right':(x,y)=>[{x:x+4,y:y+1},{x:x+10,y},{x:x+14,y:y-5}],
+  'pull_left':(x,y)=>[{x:x-4,y:y+1},{x:x-10,y},{x:x-14,y:y-5}],
   'run_right':(x,y)=>[{x:x+5,y:y-3},{x:x+15,y:y-8}],
   'run_left':(x,y)=>[{x:x-5,y:y-3},{x:x-15,y:y-8}],
   'run_middle':(x,y)=>[{x,y:y-5},{x,y:y-15}],
@@ -165,7 +172,14 @@ function inferRoute(posKey, assignment) {
   if (a.includes('hand off')||a.includes('fake')||a.includes('snap')) return 'handoff';
   if (a.includes('kick out')) return 'kick_out';
   if (a.includes('lead block')||a.includes('lead on')) return 'lead';
-  if (a.includes('block')||a.includes('drive')||a.includes('down block')||a.includes('zone step')||a.includes('wedge')||a.includes('double team')||a.includes('seal')) return 'block';
+  if (a.includes('pass pro')||a.includes('pass set')||a.includes('protect')) return 'pass_set';
+  if (a.includes('combo')&&(a.includes('right')||a.includes('back'))) return 'combo_right';
+  if (a.includes('combo')&&a.includes('left')) return 'combo_left';
+  if (a.includes('reach')&&a.includes('right')) return 'reach_right';
+  if (a.includes('reach')&&a.includes('left')) return 'reach_left';
+  if (a.includes('down block')) return 'down_block';
+  if (a.includes('double team')) return 'combo_right';
+  if (a.includes('block')||a.includes('drive')||a.includes('zone step')||a.includes('wedge')||a.includes('seal')) return 'block';
   if (a.includes('blitz')&&a.includes('a-gap')) return 'blitz_a';
   if (a.includes('blitz')&&a.includes('b-gap')) return 'blitz_b';
   if (a.includes('zone')||a.includes('hook')||a.includes('drop')) return 'zone_drop';
@@ -178,9 +192,9 @@ export default function PlayDiagram({
   formationName = 'Beast T-Formation', play = null, isDefense = false,
   width = 400, height = 300, playerOverrides = {}, showAssignments = true, animated = true,
 }) {
-  const [mode, setMode] = useState('routes'); // 'routes' or 'motion'
+  const [mode, setMode] = useState('routes'); // 'routes', 'motion', or 'fullSim'
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // 0-1 for motion mode
+  const [progress, setProgress] = useState(0); // 0-1 for motion/fullSim
   const [selectedPositions, setSelectedPositions] = useState(new Set());
   const animRef = useRef(null);
 
@@ -200,7 +214,7 @@ export default function PlayDiagram({
   function startAnim() {
     setIsPlaying(true); setProgress(0);
     const start = Date.now();
-    const dur = mode === 'motion' ? 2500 : 1500;
+    const dur = mode === 'fullSim' ? 3000 : mode === 'motion' ? 2500 : 1500;
     function tick() {
       const elapsed = Date.now() - start;
       const p = Math.min(1, elapsed / dur);
@@ -257,45 +271,64 @@ export default function PlayDiagram({
           const lColor = isDefense ? '#EF4444' : '#FDB913';
           const override = playerOverrides[posKey] || {};
 
-          // In motion mode, calculate current dot position
-          const motionPos = (mode === 'motion' && isPlaying && isSelected && routePoints.length > 0)
-            ? getMotionPos(pos.x, pos.y, routePoints, progress)
-            : null;
+          // In motion/fullSim mode, calculate current dot position
+          // fullSim: linemen fire 0.15s earlier (stagger), skill players start at progress 0.1
+          let motionPos = null;
+          if (isPlaying && isSelected && routePoints.length > 0) {
+            if (mode === 'motion') {
+              motionPos = getMotionPos(pos.x, pos.y, routePoints, progress);
+            } else if (mode === 'fullSim') {
+              const isLine = pos.role === 'line';
+              // Linemen fire immediately, skill players delayed slightly
+              const adjusted = isLine
+                ? Math.min(1, progress * 1.3) // linemen 30% faster start
+                : Math.max(0, (progress - 0.12) / 0.88); // skill players delayed ~12%
+              motionPos = getMotionPos(pos.x, pos.y, routePoints, adjusted);
+            }
+          }
 
           const dotX = motionPos ? motionPos.x : pos.x;
           const dotY = motionPos ? motionPos.y : pos.y;
+          const isLine = pos.role === 'line';
 
           return (
             <g key={posKey} opacity={dimmed ? 0.2 : 1} style={{ transition: 'opacity 200ms' }}>
               {/* Route trail */}
               {routePoints.length > 0 && showAssignments && isSelected && (
                 <>
-                  {/* Ghost trail in motion mode */}
-                  {mode === 'motion' && isPlaying && (
+                  {/* Ghost trail in motion/fullSim mode */}
+                  {(mode === 'motion' || mode === 'fullSim') && isPlaying && (
                     <path
                       d={`M ${pos.x} ${pos.y} ${routePoints.map(p => `L ${p.x} ${p.y}`).join(' ')}`}
-                      fill="none" stroke={lColor} strokeWidth="0.3" strokeDasharray="1,1" opacity="0.3"
+                      fill="none" stroke={isLine ? '#60A5FA' : lColor} strokeWidth="0.3" strokeDasharray="1,1" opacity="0.3"
                     />
                   )}
                   {/* Route line (static or animated path draw) */}
                   {mode === 'routes' && (
                     <motion.path
                       d={`M ${pos.x} ${pos.y} ${routePoints.map(p => `L ${p.x} ${p.y}`).join(' ')}`}
-                      fill="none" stroke={lColor} strokeWidth="0.6"
-                      strokeDasharray={pos.role === 'line' ? '1,1' : 'none'}
+                      fill="none" stroke={isLine ? '#60A5FA' : lColor} strokeWidth={isLine ? '0.5' : '0.6'}
+                      strokeDasharray={isLine ? '1,1' : 'none'}
                       initial={{ pathLength: 0, opacity: 0 }}
                       animate={{ pathLength: isPlaying ? 1 : 0, opacity: isPlaying ? 0.8 : 0.4 }}
                       transition={{ duration: 1.5, ease: 'easeOut' }}
-                      markerEnd="url(#ah)"
+                      markerEnd={isLine ? undefined : 'url(#ah)'}
                     />
+                  )}
+                  {/* fullSim: show blocking impact zone for linemen */}
+                  {mode === 'fullSim' && isLine && isPlaying && progress > 0.3 && (
+                    <circle cx={dotX} cy={dotY} r="3.5"
+                      fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.2)"
+                      strokeWidth="0.3" strokeDasharray="1,1" />
                   )}
                 </>
               )}
 
               {/* Player dot */}
               <circle
-                cx={dotX} cy={dotY} r={isDefense ? 2.2 : 2.8}
-                fill={isDefense ? 'transparent' : (isSelected && !dimmed ? pColor : pColor)}
+                cx={dotX} cy={dotY}
+                r={isDefense ? 2.2 : (mode === 'fullSim' && isLine && isPlaying ? 3.2 : 2.8)}
+                fill={isDefense ? 'transparent' : (mode === 'fullSim' && isLine ? '#3B82F6' : pColor)}
                 stroke={isSelected ? (dimmed ? pColor : '#fff') : pColor}
                 strokeWidth={isSelected && !dimmed ? '0.6' : '0.4'}
                 style={{ cursor: 'pointer', transition: motionPos ? 'none' : 'all 200ms' }}
@@ -328,23 +361,26 @@ export default function PlayDiagram({
 
       {/* Controls */}
       {animated && hasAssignments && (
-        <div style={{ position: 'absolute', bottom: 6, right: 6, display: 'flex', gap: 4, alignItems: 'center' }}>
-          {/* Mode toggle */}
-          <button onClick={() => { stopAnim(); setMode(mode === 'routes' ? 'motion' : 'routes'); }}
-            style={{
-              padding: '3px 8px', fontSize: 9, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
-              background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#FDB913',
-              letterSpacing: '0.03em',
-            }}>
-            {mode === 'routes' ? '🏃 Motion' : '📐 Routes'}
-          </button>
+        <div style={{ position: 'absolute', bottom: 6, right: 6, display: 'flex', gap: 3, alignItems: 'center' }}>
+          {/* Mode cycle: routes → motion → fullSim */}
+          {[{key:'routes',icon:'📐',label:'Routes'},{key:'motion',icon:'🏃',label:'Motion'},{key:'fullSim',icon:'🏟️',label:'Full Sim'}].map(m=>(
+            <button key={m.key} onClick={() => { stopAnim(); setMode(m.key); }}
+              style={{
+                padding: '3px 6px', fontSize: 8, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
+                background: mode === m.key ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.4)',
+                border: `1px solid ${mode === m.key ? (m.key==='fullSim'?'rgba(96,165,250,0.5)':'rgba(253,185,19,0.4)') : 'rgba(255,255,255,0.1)'}`,
+                color: mode === m.key ? (m.key==='fullSim'?'#60A5FA':'#FDB913') : 'rgba(255,255,255,0.4)',
+              }}>
+              {m.icon}
+            </button>
+          ))}
           {/* Play/stop */}
           <button onClick={isPlaying ? stopAnim : startAnim}
             style={{
-              width: 26, height: 26, borderRadius: '50%',
+              width: 24, height: 24, borderRadius: '50%',
               background: isPlaying ? 'rgba(239,68,68,0.8)' : 'rgba(0,154,68,0.8)',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, color: '#fff',
+              fontSize: 10, color: '#fff',
             }}>
             {isPlaying ? '⏹' : '▶'}
           </button>
