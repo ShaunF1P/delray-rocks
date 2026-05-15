@@ -19,25 +19,63 @@ export default function ParentDashboard() {
 
     const supabase = createClient();
     const parentEmail = user.email;
+    const parentId = user.id;
 
-    // Find kids linked to this parent via guardian_email
-    const { data: kids } = await supabase
-      .from('players')
-      .select('*, evaluations(effort, discipline, coachability, created_at)')
-      .ilike('guardian_email', parentEmail)
-      .order('first_name');
+    let kids = [];
 
-    if (kids) setChildren(kids);
+    // Strategy 1: Find kids by guardian_email
+    try {
+      const { data } = await supabase
+        .from('players')
+        .select('*')
+        .ilike('guardian_email', parentEmail)
+        .order('first_name');
+      if (data && data.length > 0) kids = data;
+    } catch (e) {}
+
+    // Strategy 2: If no kids found, try player_guardians junction
+    if (kids.length === 0) {
+      try {
+        const { data: links } = await supabase
+          .from('player_guardians')
+          .select('player_id')
+          .eq('guardian_id', parentId);
+        if (links && links.length > 0) {
+          const playerIds = links.map(l => l.player_id);
+          const { data } = await supabase
+            .from('players')
+            .select('*')
+            .in('id', playerIds)
+            .order('first_name');
+          if (data) kids = data;
+        }
+      } catch (e) {}
+    }
+
+    // Try to load evaluations separately (may not exist)
+    for (let kid of kids) {
+      try {
+        const { data: evals } = await supabase
+          .from('evaluations')
+          .select('effort, discipline, coachability, notes, created_at')
+          .eq('player_id', kid.id)
+          .order('created_at', { ascending: false });
+        kid.evaluations = evals || [];
+      } catch (e) { kid.evaluations = []; }
+    }
+
+    setChildren(kids);
 
     // Upcoming events
-    const { data: evts } = await supabase
-      .from('events')
-      .select('*')
-      .gte('event_date', new Date().toISOString())
-      .order('event_date', { ascending: true })
-      .limit(5);
-
-    if (evts) setEvents(evts);
+    try {
+      const { data: evts } = await supabase
+        .from('events')
+        .select('*')
+        .gte('event_date', new Date().toISOString())
+        .order('event_date', { ascending: true })
+        .limit(5);
+      if (evts) setEvents(evts);
+    } catch (e) {}
     setLoading(false);
   }
 
