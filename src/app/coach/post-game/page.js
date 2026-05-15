@@ -120,6 +120,26 @@ export default function PostGamePage() {
         </motion.div>
       )}
 
+      {/* Loading State */}
+      {loading && !report && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{
+            padding: 40, textAlign: 'center', maxWidth: 600,
+            background: 'rgba(168,85,247,0.04)', border: '1px solid rgba(168,85,247,0.1)', borderRadius: 12,
+          }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#A855F7', marginBottom: 4 }}>Analyzing Game Data...</div>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Crunching play calls, results, and defensive tags</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+            {[0, 1, 2].map(i => (
+              <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
+                style={{ width: 8, height: 8, borderRadius: '50%', background: '#A855F7' }} />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Generated Report */}
       {report && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

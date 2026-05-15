@@ -17,7 +17,7 @@ export default function SeasonPage() {
     const supabase = createClient();
     const [gRes, pcRes, pRes] = await Promise.all([
       supabase.from('game_films').select('*').order('created_at', { ascending: false }),
-      supabase.from('play_calls').select('*').order('called_at', { ascending: false }),
+      supabase.from('play_calls').select('*, playbook_plays(name, play_type, direction)').order('called_at', { ascending: false }),
       supabase.from('playbook_plays').select('id, name, play_type, direction').order('name'),
     ]);
     if (gRes.data) setGames(gRes.data);
@@ -30,10 +30,10 @@ export default function SeasonPage() {
   const totalGames = games.length;
   const totalPlaysCalled = playCalls.length;
 
-  // Play frequency
+  // Play frequency — prefer joined name, fall back to lookup
   const playFreq = {};
   playCalls.forEach(pc => {
-    const name = plays.find(p => p.id === pc.play_id)?.name || 'Unknown';
+    const name = pc.playbook_plays?.name || plays.find(p => p.id === pc.play_id)?.name || 'Unknown';
     if (!playFreq[name]) playFreq[name] = 0;
     playFreq[name]++;
   });
@@ -42,8 +42,8 @@ export default function SeasonPage() {
   // Play type breakdown
   const typeCount = { run: 0, pass: 0, trick: 0, zone: 0, man: 0, blitz: 0 };
   playCalls.forEach(pc => {
-    const play = plays.find(p => p.id === pc.play_id);
-    if (play && typeCount[play.play_type] !== undefined) typeCount[play.play_type]++;
+    const playType = pc.playbook_plays?.play_type || plays.find(p => p.id === pc.play_id)?.play_type;
+    if (playType && typeCount[playType] !== undefined) typeCount[playType]++;
   });
 
   // Down distribution

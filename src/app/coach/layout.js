@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/ui/Sidebar';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { getUserWithProfile, signOut, isCoach } from '@/lib/supabase';
 
 export default function CoachLayout({ children }) {
@@ -47,7 +48,9 @@ export default function CoachLayout({ children }) {
         maxWidth: `calc(100vw - ${marginLeft}px)`,
         overflow: 'hidden',
       }}>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );

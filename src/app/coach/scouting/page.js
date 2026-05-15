@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Brain, Shield, Target, Zap, AlertTriangle, FileText } from 'lucide-react';
+import { Trophy, Brain, Shield, Target, Zap, AlertTriangle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const GEMINI_KEY_CLIENT = null; // Uses server-side API
 
@@ -27,7 +28,7 @@ export default function ScoutingPage() {
         setReport(data.report);
         setPastReports(prev => [{ opponent, date: new Date().toLocaleDateString(), report: data.report }, ...prev]);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); toast.error('Failed to generate report. Try again.'); }
     setLoading(false);
   }
 
@@ -78,6 +79,26 @@ export default function ScoutingPage() {
             }}>
             <Brain size={16} /> {loading ? 'Generating Scouting Report...' : 'Generate Scouting Report'}
           </button>
+        </motion.div>
+      )}
+
+      {/* Loading State */}
+      {loading && !report && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{
+            padding: 40, textAlign: 'center', maxWidth: 600,
+            background: 'rgba(253,185,19,0.04)', border: '1px solid rgba(253,185,19,0.1)', borderRadius: 12,
+          }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🏈</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#FDB913', marginBottom: 4 }}>Analyzing Opponent Intel...</div>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Building game plan against {opponent}</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+            {[0, 1, 2].map(i => (
+              <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
+                style={{ width: 8, height: 8, borderRadius: '50%', background: '#FDB913' }} />
+            ))}
+          </div>
         </motion.div>
       )}
 

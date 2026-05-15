@@ -83,8 +83,8 @@ export default function DepthChartPage() {
   async function saveDepthChart() {
     setSaving(true);
     const supabase = createClient();
-    // Delete existing
-    await supabase.from('depth_chart').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Delete existing entries
+    await supabase.from('depth_chart').delete().gte('created_at', '2000-01-01');
 
     const rows = [];
     Object.entries(depthChart).forEach(([posKey, strings]) => {

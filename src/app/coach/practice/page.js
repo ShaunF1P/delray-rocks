@@ -111,6 +111,15 @@ export default function PracticePlanPage() {
     setBlocks((plan.blocks || []).map(b => ({ ...b, id: Date.now() + Math.random() })));
   }
 
+  async function deletePlan(e, planId) {
+    e.stopPropagation();
+    if (!confirm('Delete this saved plan?')) return;
+    const supabase = createClient();
+    await supabase.from('practice_plans').delete().eq('id', planId);
+    toast.success('Plan deleted');
+    loadSavedPlans();
+  }
+
   const totalMinutes = blocks.reduce((sum, b) => sum + b.duration, 0);
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
@@ -198,7 +207,10 @@ export default function PracticePlanPage() {
               <button key={p.id} onClick={() => loadPlan(p)} style={{
                 padding: '4px 10px', fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
                 background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', color: '#A855F7',
-              }}>{p.name} ({p.total_minutes}m)</button>
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>{p.name} ({p.total_minutes}m)
+                <span onClick={(e) => deletePlan(e, p.id)} style={{ color: 'rgba(239,68,68,0.6)', fontSize: 12, cursor: 'pointer', marginLeft: 2 }}>×</span>
+              </button>
             ))}
           </>
         )}
