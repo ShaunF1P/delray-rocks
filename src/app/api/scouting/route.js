@@ -1,18 +1,42 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export async function POST(req) {
   try {
     const { opponent, notes } = await req.json();
     if (!opponent) return NextResponse.json({ error: 'Opponent name required' }, { status: 400 });
 
+    // Pull previous scouting on this opponent
+    let priorIntel = '';
+    try {
+      const { data: priorReports } = await supabase
+        .from('scouting_reports')
+        .select('report, created_at')
+        .ilike('opponent', `%${opponent}%`)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (priorReports && priorReports.length > 0) {
+        priorIntel = `\n\nPRIOR SCOUTING INTEL (from ${priorReports.length} previous game${priorReports.length > 1 ? 's' : ''}):\n`;
+        priorReports.forEach((r, i) => {
+          const rpt = r.report;
+          priorIntel += `\nGame ${i + 1} (${new Date(r.created_at).toLocaleDateString()}):\n`;
+          if (rpt.overview) priorIntel += `- Overview: ${rpt.overview}\n`;
+          if (rpt.expectedDefense) priorIntel += `- Their Defense: ${rpt.expectedDefense.join('; ')}\n`;
+          if (rpt.warnings) priorIntel += `- Warnings: ${rpt.warnings.join('; ')}\n`;
+        });
+        priorIntel += `\nUse this prior intel to build on what we already know. Note any changes or consistency in their tendencies.`;
+      }
+    } catch(e) { /* no prior data is fine */ }
+
     const prompt = `You are an elite youth football scout and game-planning coordinator for an 8U tackle football team called the Delray Rocks. We run a "Beast" formation offense (Power I / Tight formation) with primarily run plays.
 
 UPCOMING OPPONENT: ${opponent}
 
 SCOUTING NOTES FROM COACHES:
-${notes || 'No specific notes provided. Generate a general youth football scouting report with common 8U tendencies.'}
+${notes || 'No specific notes provided. Generate a general youth football scouting report with common 8U tendencies.'}${priorIntel}
 
 Based on this information, generate a comprehensive pregame scouting report and game plan.
 

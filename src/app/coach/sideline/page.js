@@ -33,6 +33,8 @@ export default function SidelinePage() {
   const [intel, setIntel] = useState(null);
   const [loadingIntel, setLoadingIntel] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
+  const [lineup, setLineup] = useState([]);
+  const [showLineup, setShowLineup] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -41,12 +43,26 @@ export default function SidelinePage() {
 
   async function loadData() {
     const supabase = createClient();
-    const [fRes, pRes] = await Promise.all([
+    const [fRes, pRes, dcRes, rRes] = await Promise.all([
       supabase.from('playbook_formations').select('*').order('sort_order'),
       supabase.from('playbook_plays').select('*').order('sort_order'),
+      supabase.from('depth_chart').select('*').eq('string_num', 1),
+      supabase.from('players').select('id, first_name, last_name, jersey_number, position'),
     ]);
     if (fRes.data) setFormations(fRes.data);
     if (pRes.data) setPlays(pRes.data);
+    // Build lineup from depth chart
+    if (dcRes.data && rRes.data) {
+      const roster = rRes.data;
+      const lu = dcRes.data
+        .filter(d => d.player_id)
+        .map(d => {
+          const p = roster.find(r => r.id === d.player_id);
+          return p ? { pos: d.position_key, name: `${p.first_name} ${p.last_name?.charAt(0)}.`, jersey: p.jersey_number } : null;
+        })
+        .filter(Boolean);
+      setLineup(lu);
+    }
   }
 
   async function loadActiveGame() {
@@ -289,6 +305,35 @@ export default function SidelinePage() {
           </button>
         ))}
       </div>
+
+      {/* Lineup Card */}
+      {lineup.length > 0 && (
+        <div style={{ margin: '8px 16px 0' }}>
+          <button onClick={() => setShowLineup(!showLineup)} style={{
+            width: '100%', padding: '6px 10px', fontSize: 10, fontWeight: 600, borderRadius: 6,
+            background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)',
+            color: '#60A5FA', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <span>👥 1st String Lineup ({lineup.length})</span>
+            <span>{showLineup ? '▲' : '▼'}</span>
+          </button>
+          {showLineup && (
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: 4, padding: '8px 0',
+            }}>
+              {lineup.map((p, i) => (
+                <div key={i} style={{
+                  padding: '3px 8px', fontSize: 10, fontWeight: 600, borderRadius: 4,
+                  background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.15)',
+                  color: '#fff',
+                }}>
+                  <span style={{ color: '#60A5FA' }}>{p.pos}</span> #{p.jersey} {p.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Last Call Banner with UNDO */}
       <AnimatePresence>

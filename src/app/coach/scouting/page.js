@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { Trophy, Brain, Shield, Target, Zap, AlertTriangle } from 'lucide-react';
+import { Trophy, Brain, Shield, Target, Zap, AlertTriangle, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const GEMINI_KEY_CLIENT = null; // Uses server-side API
 
 export default function ScoutingPage() {
   const [opponent, setOpponent] = useState('');
@@ -13,6 +12,14 @@ export default function ScoutingPage() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [pastReports, setPastReports] = useState([]);
+
+  useEffect(() => { loadPastReports(); }, []);
+
+  async function loadPastReports() {
+    const supabase = createClient();
+    const { data } = await supabase.from('scouting_reports').select('*').order('created_at', { ascending: false });
+    if (data) setPastReports(data);
+  }
 
   async function generateScoutingReport() {
     if (!opponent.trim()) return;
@@ -26,7 +33,10 @@ export default function ScoutingPage() {
       const data = await res.json();
       if (data.report) {
         setReport(data.report);
-        setPastReports(prev => [{ opponent, date: new Date().toLocaleDateString(), report: data.report }, ...prev]);
+        // Save to DB
+        const supabase = createClient();
+        await supabase.from('scouting_reports').insert({ opponent, notes, report: data.report });
+        loadPastReports();
       }
     } catch (e) { console.error(e); toast.error('Failed to generate report. Try again.'); }
     setLoading(false);
@@ -184,18 +194,22 @@ export default function ScoutingPage() {
       )}
 
       {/* Past Reports */}
-      {pastReports.length > 1 && !report && (
+      {pastReports.length > 0 && !report && !loading && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase' }}>Previous Reports</div>
-          {pastReports.map((pr, i) => (
-            <button key={i} onClick={() => { setOpponent(pr.opponent); setReport(pr.report); }}
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase' }}>
+            <Clock size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Previous Reports ({pastReports.length})
+          </div>
+          {pastReports.map((pr) => (
+            <button key={pr.id} onClick={() => { setOpponent(pr.opponent); setReport(pr.report); }}
               style={{
                 display: 'block', width: '100%', padding: '8px 12px', marginBottom: 4, textAlign: 'left',
                 background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 6, cursor: 'pointer', color: '#fff', fontSize: 12,
               }}>
               <span style={{ fontWeight: 600 }}>vs {pr.opponent}</span>
-              <span style={{ color: 'var(--text-dim)', marginLeft: 8, fontSize: 10 }}>{pr.date}</span>
+              <span style={{ color: 'var(--text-dim)', marginLeft: 8, fontSize: 10 }}>
+                {new Date(pr.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
             </button>
           ))}
         </div>
