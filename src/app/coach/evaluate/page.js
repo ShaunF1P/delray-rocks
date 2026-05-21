@@ -6,6 +6,7 @@ import { Star, ChevronLeft, ChevronRight, Save, Users, Zap } from 'lucide-react'
 import { Card, Button, Badge, Avatar, PageHeader, PositionBadge } from '@/components/ui/index';
 import { FlexIcon, TargetIcon, PlaybookIcon, LightningIcon, FootballIcon } from '@/components/ui/Icons';
 import { createClient } from '@/lib/supabase';
+import { trackEvaluation } from '@/lib/track';
 import toast from 'react-hot-toast';
 
 const METRICS = [
@@ -60,6 +61,7 @@ export default function EvaluatePage() {
       eval_type: 'practice',
     });
     if (error) { toast.error(error.message); setSaving(false); return; }
+    trackEvaluation(`${player.first_name} ${player.last_name}`);
     toast.success(`${player.first_name} evaluated!`);
     setSaving(false);
 

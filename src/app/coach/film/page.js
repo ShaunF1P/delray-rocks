@@ -6,6 +6,7 @@ import { Film, Upload, Search, Play, Clock, Grid, List, Eye, Trash2, Brain, File
 import { Card, Button, Badge, PageHeader, Modal, EmptyState } from '@/components/ui/index';
 import { FootballIcon, StadiumIcon, LightningIcon, TrophyIcon } from '@/components/ui/Icons';
 import { createClient } from '@/lib/supabase';
+import { trackFilmView, trackFilmUpload, trackFilmAnalysis } from '@/lib/track';
 import toast from 'react-hot-toast';
 
 const FILM_TYPES = [
@@ -143,6 +144,7 @@ export default function FilmRoomPage() {
       }
       setUploadProgress(100);
       toast.success('Film uploaded successfully! 🏈', { id: 'upload-progress' });
+      trackFilmUpload(uploadForm.title);
       setTimeout(() => {
         setShowUpload(false);
         setSelectedFile(null);
@@ -277,6 +279,7 @@ export default function FilmRoomPage() {
       startProgressSimulation();
 
       toast.success('Analysis started! You can navigate away — results will appear when ready. 🏈', { id: 'analysis-progress' });
+      trackFilmAnalysis(film.title);
 
     } catch (err) {
       console.error('Analysis error:', err);
@@ -405,7 +408,7 @@ export default function FilmRoomPage() {
             const cfg = typeConfig(film.film_type);
             return (
               <motion.div key={film.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <Card style={{ cursor: 'pointer', overflow: 'hidden' }} onClick={() => { setSelectedFilm(film); setAnalysis(null); }}>
+                <Card style={{ cursor: 'pointer', overflow: 'hidden' }} onClick={() => { setSelectedFilm(film); setAnalysis(null); trackFilmView(film.title); }}>
                   <div style={{ height: 180, background: 'linear-gradient(135deg, rgba(16,107,58,0.1), rgba(0,154,68,0.05))', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-md)', position: 'relative' }}>
                     {film.thumbnail_url ? (
                       <img src={film.thumbnail_url} alt={film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />

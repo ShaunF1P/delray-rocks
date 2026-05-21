@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Send, Edit3, Trash2, Users, Brain, Check, Copy, ChevronDown } from 'lucide-react';
 import { Card, Button, Badge, PageHeader, Avatar } from '@/components/ui/index';
 import { createClient } from '@/lib/supabase';
+import { trackReportGenerated } from '@/lib/track';
 import toast from 'react-hot-toast';
 
 export default function ReportsPage() {
@@ -64,6 +65,7 @@ export default function ReportsPage() {
       setActiveReport(draft);
       setTab('drafts');
       toast.success(`Report generated for ${p.first_name}`);
+      trackReportGenerated(`${p.first_name} ${p.last_name}`);
     } catch (err) {
       toast.error(err.message);
     } finally {

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Shield, User, Lock, ArrowRight, Eye, EyeOff, MapPin } from 'lucide-react';
 import { FootballIcon } from '@/components/ui/Icons';
 import { signIn, getUserWithProfile, getPortalPath } from '@/lib/supabase';
+import { trackLogin } from '@/lib/track';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -31,6 +32,8 @@ export default function LoginPage() {
 
     const { profile } = await getUserWithProfile();
     const redirectPath = getPortalPath(profile);
+    const displayName = profile ? `${profile.first_name} ${profile.last_name}` : username;
+    trackLogin(displayName);
     toast.success('Welcome back!');
     router.push(redirectPath);
   }
@@ -189,12 +192,13 @@ export default function LoginPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <a
-                href="/forgot-password"
-                style={{ fontSize: 'var(--text-xs)', color: '#009A44', fontWeight: 600 }}
+              <button
+                type="button"
+                onClick={() => toast('Contact Coach Shaun to reset your password', { icon: '🔑' })}
+                style={{ fontSize: 'var(--text-xs)', color: '#009A44', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             <button
@@ -223,9 +227,9 @@ export default function LoginPage() {
             fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
           }}>
             Need an account?{' '}
-            <a href="/signup" style={{ color: '#009A44', fontWeight: 600 }}>
+            <span style={{ color: '#009A44', fontWeight: 600 }}>
               Contact your coach for an invite
-            </a>
+            </span>
           </div>
         </motion.div>
       </div>

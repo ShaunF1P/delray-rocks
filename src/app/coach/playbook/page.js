@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
+import { trackPlaybookView } from '@/lib/track';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2 } from 'lucide-react';
 import PlayDiagram from '@/components/PlayDiagram';
@@ -16,7 +17,7 @@ export default function PlaybookPage() {
   const [showAddPlay, setShowAddPlay] = useState(false);
   const [focusedPlay, setFocusedPlay] = useState(null);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); trackPlaybookView(); }, []);
 
   async function loadData() {
     const supabase = createClient();
