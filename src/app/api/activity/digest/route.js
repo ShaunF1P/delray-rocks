@@ -14,6 +14,16 @@ function getSupabase() {
 }
 
 export async function GET(request) {
+  // Vercel Cron sends Authorization: Bearer <CRON_SECRET>
+  // Allow if CRON_SECRET matches OR if no CRON_SECRET is set (for manual testing)
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 503 });
   }

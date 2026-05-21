@@ -5,6 +5,13 @@ export const metadata = {
   title: 'Delray Rocks — Youth Football Intelligence Platform',
   description: 'The most advanced youth football management and player development platform. AI-powered video analysis, real-time evaluations, and team operations for Delray Rocks Football & Cheerleading.',
   keywords: 'Delray Rocks, youth football, player evaluation, video analysis, team management, Delray Beach',
+  manifest: '/manifest.json',
+  themeColor: '#009A44',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Delray Rocks',
+  },
   openGraph: {
     title: 'Delray Rocks — Youth Football Intelligence Platform',
     description: 'AI-powered youth football management for coaches and parents.',
@@ -16,6 +23,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="apple-touch-icon" href="/dr-logo.jpg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
