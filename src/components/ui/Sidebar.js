@@ -15,6 +15,7 @@ const coachMenuItems = [
   { label: 'Roster', href: '/coach/roster', icon: Users },
   { label: 'Depth Chart', href: '/coach/depth-chart', icon: Shield },
   { label: 'Coaching Staff', href: '/coach/staff', icon: UserCog },
+  { label: 'Awards', href: '/coach/awards', icon: Trophy, badge: 'NEW' },
   { label: 'Events', href: '/coach/events', icon: Calendar },
   { label: 'Practice Plan', href: '/coach/practice', icon: ClipboardCheck, badge: 'NEW' },
   { label: 'Evaluate', href: '/coach/evaluate', icon: Star },
