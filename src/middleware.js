@@ -10,6 +10,7 @@ export async function middleware(request) {
     pathname === '/login' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/activity') || // Allow activity logging without extra auth check (it checks internally)
+    pathname.startsWith('/api/playbook/seed') || // One-time seed endpoint
     pathname.includes('.')
   ) {
     return NextResponse.next();
