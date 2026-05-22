@@ -754,14 +754,21 @@ export async function GET() {
 
     const existingNames = new Set((existingPlays || []).map((p) => p.name));
 
-    // 4. Filter to only new plays
+    // 4. Filter to only new plays and strip columns that may not exist yet
+    const safeColumns = ['name', 'play_type', 'direction', 'description', 'formation_id', 'assignments', 'tags', 'sort_order', 'source'];
     const newPlays = plays
       .filter((p) => !existingNames.has(p.name))
-      .map((p) => ({
-        ...p,
-        source: 'system',
-        is_rotation: false,
-      }));
+      .map((p) => {
+        const safe = { source: 'system' };
+        for (const col of safeColumns) {
+          if (p[col] !== undefined) safe[col] = p[col];
+        }
+        // Append read_key to description if it exists (safe fallback)
+        if (p.read_key) {
+          safe.description = `${p.description}\n\n🔑 Read Key: ${p.read_key}`;
+        }
+        return safe;
+      });
 
     if (newPlays.length === 0) {
       return NextResponse.json({
@@ -790,11 +797,26 @@ export async function GET() {
       }
     }
 
+    // 6. Try to add read_key and is_rotation columns if they exist
+    // (This is a best-effort update — won't fail if columns don't exist)
+    const rpoPlays = plays.filter(p => p.read_key);
+    for (const rpo of rpoPlays) {
+      try {
+        await supabase
+          .from('playbook_plays')
+          .update({ read_key: rpo.read_key, is_rotation: false })
+          .eq('name', rpo.name);
+      } catch (_) {
+        // Column doesn't exist yet — that's fine
+      }
+    }
+
     return NextResponse.json({
       message: `Seeded ${insertedCount} plays successfully.`,
       inserted: insertedCount,
       skipped: plays.length - newPlays.length,
       total_defined: plays.length,
+      note: 'To enable RPO read_key and rotation features, add read_key (text) and is_rotation (boolean default false) columns to the playbook_plays table in Supabase.',
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (err) {
