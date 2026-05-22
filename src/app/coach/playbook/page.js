@@ -22,6 +22,12 @@ function getCleanDescription(play) {
   return (play.description || '').replace(/\n\n\u{1F511} Read Key:.+/su, '').trim();
 }
 
+// DB stores RPOs as play_type='run' with 'rpo' tag (check constraint doesn't allow 'rpo' type)
+function getEffectiveType(play) {
+  if ((play.tags || []).includes('rpo')) return 'rpo';
+  return play.play_type;
+}
+
 export default function PlaybookPage() {
   const [formations, setFormations] = useState([]);
   const [plays, setPlays] = useState([]);
@@ -115,7 +121,7 @@ export default function PlaybookPage() {
       const matchesSearch = search
         ? p.name.toLowerCase().includes(search.toLowerCase()) ||
           p.tags?.some(t => t.includes(search.toLowerCase())) ||
-          (p.play_type || '').toLowerCase().includes(search.toLowerCase())
+          (getEffectiveType(p) || '').toLowerCase().includes(search.toLowerCase())
         : true;
       return matchesFormation && matchesSearch;
     });
@@ -226,7 +232,7 @@ export default function PlaybookPage() {
             {/* Breakdown by type */}
             <div style={{ marginTop: 12 }}>
               {['run', 'pass', 'rpo', 'trick', 'blitz', 'zone', 'man', 'special'].map(t => {
-                const c = plays.filter(p => isInRotation(p) && p.play_type === t).length;
+                const c = plays.filter(p => isInRotation(p) && getEffectiveType(p) === t).length;
                 if (c === 0) return null;
                 return (
                   <div key={t} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 11 }}>
@@ -266,13 +272,13 @@ export default function PlaybookPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                          {typeIcon(p.play_type)} {p.name}
-                          {p.play_type === 'rpo' && (
+                          {typeIcon(getEffectiveType(p))} {p.name}
+                          {getEffectiveType(p) === 'rpo' && (
                             <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(139,92,246,0.15)', color: '#A78BFA', fontWeight: 700 }}>RPO</span>
                           )}
                         </div>
                         <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
-                          {formation?.name} • {p.play_type} {p.direction ? `• ${p.direction}` : ''}
+                          {formation?.name} • {getEffectiveType(p)} {p.direction ? `• ${p.direction}` : ''}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
@@ -300,7 +306,7 @@ export default function PlaybookPage() {
                       <PlayDiagram
                         formationName={formation?.name}
                         play={p}
-                        isDefense={['blitz','zone','man'].includes(p.play_type)}
+                        isDefense={['blitz','zone','man'].includes(getEffectiveType(p))}
                         width={260}
                         height={160}
                         animated={true}
@@ -471,8 +477,8 @@ function PlayEditor({ play, formations, allPlays, onSave, onClose, isTemplate })
               }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                {typeIcon(p.play_type)} {p.name}
-                <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{p.play_type}</span>
+                {typeIcon(getEffectiveType(p))} {p.name}
+                <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{getEffectiveType(p)}</span>
               </button>
             ))}
           </div>
@@ -502,7 +508,7 @@ function PlayEditor({ play, formations, allPlays, onSave, onClose, isTemplate })
             style={{ padding: 10, fontSize: 13, background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', resize: 'vertical' }} />
 
           {/* RPO Read Key */}
-          {form.play_type === 'rpo' && (
+          {(form.play_type === 'rpo' || (form.tags || []).includes('rpo')) && (
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', marginBottom: 4, textTransform: 'uppercase' }}>🔑 RPO Read Key</div>
               <input value={form.read_key || ''} onChange={e => setForm(p => ({ ...p, read_key: e.target.value }))}
@@ -638,9 +644,9 @@ function FocusedPlayViewer({ play, formations, onClose }) {
           <div>
             <div style={{ fontSize: 20, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
               {play.name}
-              {play.play_type === 'rpo' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(139,92,246,0.15)', color: '#A78BFA', fontWeight: 700 }}>RPO</span>}
+              {getEffectiveType(play) === 'rpo' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(139,92,246,0.15)', color: '#A78BFA', fontWeight: 700 }}>RPO</span>}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{formationName} • {play.play_type} • {play.direction || 'varies'}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{formationName} • {getEffectiveType(play)} • {play.direction || 'varies'}</div>
           </div>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             {['diagram', 'lineup', 'learn', 'assignments'].map(t => (
@@ -673,7 +679,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
         {tab === 'diagram' && (
           <div style={{ padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <PlayDiagram formationName={formationName} play={play}
-              isDefense={['blitz','zone','man'].includes(play.play_type)}
+              isDefense={['blitz','zone','man'].includes(getEffectiveType(play))}
               width={600} height={420} animated={true} playerOverrides={playerOverrides} />
             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>Click players to highlight • Toggle 🏃 Motion / 📐 Routes • Hit ▶ to animate</div>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: 16, maxWidth: 600, textAlign: 'center' }}>{play.description}</div>
@@ -811,7 +817,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <PlayDiagram formationName={formationName} play={play}
-                  isDefense={['blitz','zone','man'].includes(play.play_type)}
+                  isDefense={['blitz','zone','man'].includes(getEffectiveType(play))}
                   width={440} height={320} animated={true} playerOverrides={playerOverrides} />
                 <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 6 }}>
                   {Object.keys(lineup).length > 0 ? `${Object.keys(lineup).length} of ${posKeys.length} positions assigned` : 'Assign players to see names on diagram'}
@@ -894,7 +900,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
               <div style={{ flex: '0 0 300px' }}>
                 <PlayDiagram formationName={formationName} play={play}
-                  isDefense={['blitz','zone','man'].includes(play.play_type)}
+                  isDefense={['blitz','zone','man'].includes(getEffectiveType(play))}
                   width={300} height={220} animated={true} />
               </div>
               <div style={{ flex: 1, minWidth: 240 }}>

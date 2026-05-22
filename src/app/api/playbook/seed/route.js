@@ -756,12 +756,20 @@ export async function GET() {
 
     // 4. Filter to only new plays and strip columns that may not exist yet
     const safeColumns = ['name', 'play_type', 'direction', 'description', 'formation_id', 'assignments', 'tags', 'sort_order', 'source'];
+    // DB check constraint only allows: run, pass, trick, blitz, zone, man, special
+    const typeMapping = { rpo: 'run' };
     const newPlays = plays
       .filter((p) => !existingNames.has(p.name))
       .map((p) => {
         const safe = { source: 'system' };
         for (const col of safeColumns) {
           if (p[col] !== undefined) safe[col] = p[col];
+        }
+        // Map play_type if needed (rpo -> run, tagged as rpo)
+        if (typeMapping[safe.play_type]) {
+          if (!safe.tags) safe.tags = [];
+          if (!safe.tags.includes(safe.play_type)) safe.tags = [safe.play_type, ...safe.tags];
+          safe.play_type = typeMapping[safe.play_type];
         }
         // Append read_key to description if it exists (safe fallback)
         if (p.read_key) {
