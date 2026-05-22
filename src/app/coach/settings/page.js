@@ -16,7 +16,7 @@ export default function SettingsPage() {
     team_name: 'Delray Rocks',
     division: '8U',
     season: '2026 Fall',
-    head_coach: 'Coach Shaun',
+    head_coach: 'Coach Gee (Gerard Miller)',
     assistant_coaches: '',
     home_field: 'Pompey Park',
     practice_days: 'Tue, Thu',

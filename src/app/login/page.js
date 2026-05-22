@@ -194,7 +194,7 @@ export default function LoginPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
-                onClick={() => toast('Contact Coach Shaun to reset your password', { icon: '🔑' })}
+                onClick={() => toast('Contact GM Shaun Muhammad to reset your password', { icon: '🔑' })}
                 style={{ fontSize: 'var(--text-xs)', color: '#009A44', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Forgot password?
