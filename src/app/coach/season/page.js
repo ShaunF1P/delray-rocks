@@ -83,7 +83,7 @@ export default function SeasonPage() {
       ) : (
         <>
           {/* Stat Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: 12, marginBottom: 20 }}>
             {[
               { label: 'Games', value: totalGames, icon: Trophy, color: '#FDB913' },
               { label: 'Total Plays', value: totalPlaysCalled, icon: Zap, color: '#4ADE80' },

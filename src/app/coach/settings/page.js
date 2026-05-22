@@ -78,7 +78,7 @@ export default function SettingsPage() {
     <div>
       <PageHeader title="Settings" subtitle="Manage your team and platform configuration" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 'var(--space-xl)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: 'var(--space-xl)' }}>
         {/* Tab Navigation */}
         <Card style={{ padding: 'var(--space-sm)', height: 'fit-content', position: 'sticky', top: 'var(--space-xl)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -198,7 +198,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* GHL Features */}
-                  <div style={{ marginTop: 'var(--space-xl)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)' }}>
+                  <div style={{ marginTop: 'var(--space-xl)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: 'var(--space-md)' }}>
                     {[
                       { label: 'Calendar', desc: 'Scheduling & booking', icon: <Calendar size={16} />, active: true },
                       { label: 'Contacts', desc: 'Parent & player CRM', icon: <User size={16} />, active: false },

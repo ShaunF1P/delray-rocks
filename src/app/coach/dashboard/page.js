@@ -89,7 +89,7 @@ export default function CoachDashboard() {
       </div>
 
       {/* Game Intel Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
         {[
           { icon: Gamepad2, label: 'Plays Called', value: stats.totalPlaysCalled, color: '#4ADE80', href: '/coach/season' },
           { icon: Shield, label: 'Depth Chart', value: `${stats.depthChartFilled} filled`, color: '#60A5FA', href: '/coach/depth-chart' },
@@ -114,7 +114,7 @@ export default function CoachDashboard() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))', gap: 'var(--space-lg)' }}>
         {/* Upcoming Events */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
           <Card>

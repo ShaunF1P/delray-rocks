@@ -86,7 +86,7 @@ export default function AttendancePage() {
       </Card>
 
       {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
         <Card style={{ textAlign: 'center', padding: 'var(--space-md)' }}>
           <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--green)' }}>{presentCount}</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600 }}>Present</div>

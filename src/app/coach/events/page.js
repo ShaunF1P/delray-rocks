@@ -154,7 +154,7 @@ function EventForm({ event, onSave, onCancel }) {
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
       <div className="form-group"><label className="form-label">Event Name *</label><input className="form-input" value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Practice at Pompey Park" /></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: 'var(--space-md)' }}>
         <div className="form-group"><label className="form-label">Type</label>
           <select className="form-input" value={form.type} onChange={e => update('type', e.target.value)}>
             <option value="practice">Practice</option><option value="game">Game</option><option value="meeting">Meeting</option><option value="fundraiser">Fundraiser</option>

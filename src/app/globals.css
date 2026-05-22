@@ -733,29 +733,92 @@ tr:hover td { background: rgba(16, 107, 58, 0.04); }
 @media (max-width: 768px) {
   :root {
     --sidebar-width: 0px;
+    --space-lg: 1rem;
+    --space-xl: 1.25rem;
+    --space-2xl: 1.5rem;
+    --text-xs: 0.625rem;
+    --text-sm: 0.75rem;
+    --text-base: 0.875rem;
   }
 
+  /* Force all multi-column CSS grids to single column */
   .grid-4,
   .grid-3,
   .grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  h1 { font-size: var(--text-3xl); }
-  h2 { font-size: var(--text-2xl); }
-  h3 { font-size: var(--text-xl); }
+  h1 { font-size: var(--text-2xl); }
+  h2 { font-size: var(--text-xl); }
+  h3 { font-size: var(--text-lg); }
 
   .hide-mobile { display: none !important; }
+
+  /* Card system — reduce padding on mobile */
+  .card, .card-flat, .card-glass, .card-highlight {
+    padding: var(--space-md);
+  }
+
+  /* Global fix: any div with inline gridTemplateColumns */
+  /* Force all 2+ column grid containers to wrap at small widths */
+  main div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Allow 2-col auto-fill/auto-fit grids to still work if items are small enough */
+  main div[style*="auto-fill"],
+  main div[style*="auto-fit"] {
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)) !important;
+  }
+
+  /* Tables scroll horizontally */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Flex containers that might overflow */
+  main div[style*="display: flex"][style*="gap"] {
+    flex-wrap: wrap;
+  }
+
+  /* Buttons stack better */
+  .btn { font-size: var(--text-xs); padding: 0.5rem 1rem; }
+  .btn-lg { padding: 0.75rem 1.25rem; font-size: var(--text-sm); }
+
+  /* Modals are full-width on mobile */
+  [style*="position: fixed"][style*="alignItems: center"] > div {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    margin: 0 auto;
+  }
+
+  /* Form inputs are easier to tap */
+  .form-input {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    padding: 0.75rem;
+  }
 }
 
 @media (max-width: 480px) {
   .stat-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Even auto-fill grids go single column on very small screens */
+  main div[style*="auto-fill"],
+  main div[style*="auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  h1 { font-size: var(--text-xl); }
+  h2 { font-size: var(--text-lg); }
 }
 
 /* ── Print ─────────────────────────────────────────────────────── */

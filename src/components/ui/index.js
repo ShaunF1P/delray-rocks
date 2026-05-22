@@ -156,7 +156,7 @@ export function PageHeader({ title, subtitle, actions, breadcrumbs }) {
           <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, letterSpacing: '-0.03em' }}>{title}</h1>
           {subtitle && <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', marginTop: '0.25rem' }}>{subtitle}</p>}
         </div>
-        {actions && <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0 }}>{actions}</div>}
+        {actions && <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap' }}>{actions}</div>}
       </div>
     </div>
   );
@@ -186,8 +186,8 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           position: 'relative',
-          width: '100%', maxWidth: widthMap[size],
-          maxHeight: '85vh', overflow: 'auto',
+          width: '100%', maxWidth: typeof widthMap[size] === 'number' ? Math.min(widthMap[size], window?.innerWidth - 32 || widthMap[size]) : widthMap[size],
+          maxHeight: '90vh', overflow: 'auto',
           background: 'var(--bg-glass-heavy)',
           border: '1px solid var(--border-light)',
           borderRadius: 'var(--radius-xl)',

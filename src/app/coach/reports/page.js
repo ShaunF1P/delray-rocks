@@ -153,7 +153,7 @@ export default function ReportsPage() {
       </div>
 
       {tab === 'generate' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 'var(--space-xl)' }}>
           {/* Left: Player select + config */}
           <Card>
             <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700, marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -245,7 +245,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         /* Drafts tab */
-        <div style={{ display: 'grid', gridTemplateColumns: activeReport ? '300px 1fr' : '1fr', gap: 'var(--space-xl)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: activeReport ? 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))' : '1fr', gap: 'var(--space-xl)' }}>
           {/* Draft list */}
           <Card style={{ maxHeight: '75vh', overflowY: 'auto' }}>
             <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700, marginBottom: 'var(--space-md)' }}>Drafts</h3>

@@ -113,7 +113,7 @@ export default function FundraisingPage() {
       />
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
         {[
           { label: 'Total Raised', value: `$${totalRaised.toLocaleString()}`, color: 'var(--green)', icon: <DollarIcon size={20} /> },
           { label: 'Overall Goal', value: `$${totalGoal.toLocaleString()}`, color: 'var(--rocks-gold)', icon: <TrophyIcon size={20} /> },

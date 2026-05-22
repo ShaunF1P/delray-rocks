@@ -153,7 +153,7 @@ export default function DepthChartPage() {
       {/* Depth Chart Grid */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr 1fr', gap: 8, padding: '0 8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: 8, padding: '0 8px' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Position</div>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', textTransform: 'uppercase' }}>1st String</div>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#60A5FA', textTransform: 'uppercase' }}>2nd String</div>
@@ -163,7 +163,7 @@ export default function DepthChartPage() {
         {positions.map((pos, i) => (
           <motion.div key={pos.key} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
             style={{
-              display: 'grid', gridTemplateColumns: '140px 1fr 1fr 1fr', gap: 8, padding: '6px 8px',
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: 8, padding: '6px 8px',
               background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 8,
             }}>
             <div>

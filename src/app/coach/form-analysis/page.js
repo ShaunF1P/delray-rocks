@@ -229,7 +229,7 @@ export default function FormAnalysisPage() {
         }
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: videoUrl ? '2fr 1fr' : '1fr', gap: 'var(--space-xl)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: videoUrl ? 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))' : '1fr', gap: 'var(--space-xl)' }}>
         {/* Left: Video + Canvas */}
         <div>
           {!videoUrl ? (
@@ -264,7 +264,7 @@ export default function FormAnalysisPage() {
               {/* Drill type selector */}
               <div style={{ marginTop: 'var(--space-xl)' }}>
                 <label className="form-label">DRILL TYPE</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: '0.5rem' }}>
                   {DRILL_TYPES.map(d => (
                     <button key={d.value} onClick={() => setDrillType(d.value)}
                       style={{

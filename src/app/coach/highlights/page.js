@@ -81,7 +81,7 @@ export default function HighlightsPage() {
       />
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
         {[
           { label: 'Total Highlights', value: highlights.length, color: 'var(--rocks-gold)' },
           { label: 'Published', value: publishedCount, color: 'var(--green)' },
