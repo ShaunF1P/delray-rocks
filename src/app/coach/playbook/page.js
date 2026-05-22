@@ -7,6 +7,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2, Star, Copy, RotateCcw } from 'lucide-react';
 import PlayDiagram from '@/components/PlayDiagram';
 
+// Module-level helpers (shared by all components)
+function isInRotation(play) {
+  return (play.tags || []).includes('rotation');
+}
+
+function getReadKey(play) {
+  if (play.read_key) return play.read_key;
+  const match = (play.description || '').match(/\u{1F511} Read Key:\s*(.+)/su);
+  return match ? match[1].trim() : null;
+}
+
+function getCleanDescription(play) {
+  return (play.description || '').replace(/\n\n\u{1F511} Read Key:.+/su, '').trim();
+}
+
 export default function PlaybookPage() {
   const [formations, setFormations] = useState([]);
   const [plays, setPlays] = useState([]);
@@ -37,22 +52,34 @@ export default function PlaybookPage() {
     setPlays(prev => prev.filter(p => p.id !== id));
   }
 
+
   async function toggleRotation(play) {
     const supabase = createClient();
-    const newValue = !play.is_rotation;
-    const { error } = await supabase.from('playbook_plays').update({ is_rotation: newValue }).eq('id', play.id);
+    const currentTags = play.tags || [];
+    const inRotation = currentTags.includes('rotation');
+    const newTags = inRotation
+      ? currentTags.filter(t => t !== 'rotation')
+      : [...currentTags, 'rotation'];
+    const { error } = await supabase.from('playbook_plays').update({ tags: newTags }).eq('id', play.id);
     if (!error) {
-      setPlays(prev => prev.map(p => p.id === play.id ? { ...p, is_rotation: newValue } : p));
+      setPlays(prev => prev.map(p => p.id === play.id ? { ...p, tags: newTags } : p));
     }
   }
 
   async function savePlay(play) {
     const supabase = createClient();
-    if (play.id) {
-      const { data } = await supabase.from('playbook_plays').update(play).eq('id', play.id).select().single();
+    // Embed read_key into description before saving (no DB column needed)
+    let desc = (play.description || '').replace(/\n\n\u{1F511} Read Key:.+/su, '').trim();
+    if (play.read_key && play.read_key.trim()) {
+      desc = `${desc}\n\n\u{1F511} Read Key: ${play.read_key.trim()}`;
+    }
+    // Strip columns that don't exist in DB
+    const { read_key, is_rotation, ...dbPlay } = { ...play, description: desc };
+    if (dbPlay.id) {
+      const { data } = await supabase.from('playbook_plays').update(dbPlay).eq('id', dbPlay.id).select().single();
       if (data) setPlays(prev => prev.map(p => p.id === data.id ? data : p));
     } else {
-      const { id, ...rest } = play; // remove any id for insert
+      const { id, ...rest } = dbPlay;
       const { data } = await supabase.from('playbook_plays').insert(rest).select().single();
       if (data) setPlays(prev => [...prev, data]);
     }
@@ -67,7 +94,7 @@ export default function PlaybookPage() {
       id: undefined, // Will create new
       name: `${play.name} (Copy)`,
       source: 'custom',
-      is_rotation: false,
+      // rotation handled via tags
     });
     setShowAddPlay(true);
   }
@@ -79,7 +106,7 @@ export default function PlaybookPage() {
   const filteredPlays = useMemo(() => {
     return plays.filter(p => {
       if (isRotationView) {
-        if (!p.is_rotation) return false;
+        if (!isInRotation(p)) return false;
       } else {
         const matchFormationSide = formations.some(f => f.id === p.formation_id && f.side === side);
         if (!matchFormationSide && !selectedFormation) return false;
@@ -94,7 +121,7 @@ export default function PlaybookPage() {
     });
   }, [plays, side, selectedFormation, search, formations, isRotationView]);
 
-  const rotationCount = plays.filter(p => p.is_rotation).length;
+  const rotationCount = plays.filter(p => isInRotation(p)).length;
 
   const typeIcon = (t) => t === 'run' ? '🏃' : t === 'pass' ? '🎯' : t === 'trick' ? '🎭' : t === 'rpo' ? '🔄' : t === 'blitz' ? '💥' : t === 'zone' ? '🔷' : t === 'man' ? '👤' : t === 'special' ? '⭐' : '📋';
 
@@ -199,7 +226,7 @@ export default function PlaybookPage() {
             {/* Breakdown by type */}
             <div style={{ marginTop: 12 }}>
               {['run', 'pass', 'rpo', 'trick', 'blitz', 'zone', 'man', 'special'].map(t => {
-                const c = plays.filter(p => p.is_rotation && p.play_type === t).length;
+                const c = plays.filter(p => isInRotation(p) && p.play_type === t).length;
                 if (c === 0) return null;
                 return (
                   <div key={t} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 11 }}>
@@ -232,8 +259,8 @@ export default function PlaybookPage() {
                 const formation = formations.find(f => f.id === p.formation_id);
                 return (
                   <div key={p.id} style={{
-                    padding: 14, background: p.is_rotation ? 'rgba(253,185,19,0.03)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${p.is_rotation ? 'rgba(253,185,19,0.15)' : 'rgba(255,255,255,0.06)'}`,
+                    padding: 14, background: isInRotation(p) ? 'rgba(253,185,19,0.03)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isInRotation(p) ? 'rgba(253,185,19,0.15)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: 10, position: 'relative',
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -250,8 +277,8 @@ export default function PlaybookPage() {
                       </div>
                       <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
                         {/* Star toggle */}
-                        <button onClick={() => toggleRotation(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }} title={p.is_rotation ? 'Remove from rotation' : 'Add to rotation'}>
-                          <Star size={14} color={p.is_rotation ? '#FDB913' : 'var(--text-dim)'} fill={p.is_rotation ? '#FDB913' : 'none'} />
+                        <button onClick={() => toggleRotation(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }} title={isInRotation(p) ? 'Remove from rotation' : 'Add to rotation'}>
+                          <Star size={14} color={isInRotation(p) ? '#FDB913' : 'var(--text-dim)'} fill={isInRotation(p) ? '#FDB913' : 'none'} />
                         </button>
                         {/* Copy as template */}
                         <button onClick={() => startFromTemplate(p)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }} title="Create from template">
@@ -280,17 +307,17 @@ export default function PlaybookPage() {
                       />
                     </div>
                     {/* RPO Read Key */}
-                    {p.read_key && (
+                    {getReadKey(p) && (
                       <div style={{
                         fontSize: 10, color: '#A78BFA', padding: '4px 8px', marginTop: 4,
                         background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)',
                         borderRadius: 6, lineHeight: 1.4,
                       }}>
-                        <span style={{ fontWeight: 700 }}>🔑 Read:</span> {p.read_key}
+                        <span style={{ fontWeight: 700 }}>🔑 Read:</span> {getReadKey(p)}
                       </div>
                     )}
                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>
-                      {p.description}
+                      {getCleanDescription(p)}
                     </div>
                     {p.assignments && Object.keys(p.assignments).length > 0 && (
                       <div style={{ marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 8 }}>
@@ -304,7 +331,7 @@ export default function PlaybookPage() {
                     )}
                     {p.tags?.length > 0 && (
                       <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
-                        {p.tags.map(t => (
+                        {(p.tags || []).filter(t => t !== 'rotation').map(t => (
                           <span key={t} style={{
                             fontSize: 9, padding: '2px 6px', borderRadius: 4,
                             background: 'rgba(255,255,255,0.05)', color: 'var(--text-dim)',
@@ -400,7 +427,7 @@ function PlayEditor({ play, formations, allPlays, onSave, onClose, isTemplate })
       id: undefined,
       name: `${template.name} (Copy)`,
       source: 'custom',
-      is_rotation: false,
+      // rotation handled via tags
     });
     setShowTemplateSelector(false);
   }
@@ -631,14 +658,14 @@ function FocusedPlayViewer({ play, formations, onClose }) {
         </div>
 
         {/* RPO Read Key Banner */}
-        {play.read_key && (
+        {getReadKey(play) && (
           <div style={{
             padding: '10px 20px', background: 'rgba(139,92,246,0.06)',
             borderBottom: '1px solid rgba(139,92,246,0.15)',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: '#A78BFA' }}>🔑 RPO Read:</span>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{play.read_key}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{getReadKey(play)}</span>
           </div>
         )}
 

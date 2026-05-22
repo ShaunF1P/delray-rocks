@@ -797,26 +797,11 @@ export async function GET() {
       }
     }
 
-    // 6. Try to add read_key and is_rotation columns if they exist
-    // (This is a best-effort update — won't fail if columns don't exist)
-    const rpoPlays = plays.filter(p => p.read_key);
-    for (const rpo of rpoPlays) {
-      try {
-        await supabase
-          .from('playbook_plays')
-          .update({ read_key: rpo.read_key, is_rotation: false })
-          .eq('name', rpo.name);
-      } catch (_) {
-        // Column doesn't exist yet — that's fine
-      }
-    }
-
     return NextResponse.json({
       message: `Seeded ${insertedCount} plays successfully.`,
       inserted: insertedCount,
       skipped: plays.length - newPlays.length,
       total_defined: plays.length,
-      note: 'To enable RPO read_key and rotation features, add read_key (text) and is_rotation (boolean default false) columns to the playbook_plays table in Supabase.',
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (err) {
