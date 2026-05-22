@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, User, Shield, Bell, Link2, Calendar, Check, X, ExternalLink, Save } from 'lucide-react';
 import { Card, Button, Badge, PageHeader } from '@/components/ui/index';
 import { FootballIcon, CalendarIcon, ShieldCheckIcon } from '@/components/ui/Icons';
-import { createClient } from '@/lib/supabase';
+import { createClient, getUserWithProfile } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 const GHL_LOCATION_ID = '5qs5M2XozDLuejIacDVD';
@@ -31,10 +31,16 @@ export default function SettingsPage() {
   });
   const [ghlStatus, setGhlStatus] = useState({ connected: false, checking: true });
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    email: 'coach@delrayrocks.org',
+    role: 'Head Coach',
+  });
 
   useEffect(() => {
     // Check GHL connection status
     checkGHL();
+    // Load DB settings dynamically
+    loadDBSettings();
   }, []);
 
   async function checkGHL() {
@@ -49,6 +55,48 @@ export default function SettingsPage() {
       }
     } catch {
       setGhlStatus({ connected: false, checking: false });
+    }
+  }
+
+  async function loadDBSettings() {
+    try {
+      const supabase = createClient();
+      const { data: staff } = await supabase
+        .from('coaching_staff')
+        .select('*')
+        .order('sort_order', { ascending: true });
+        
+      if (staff && staff.length > 0) {
+        const hc = staff.find(c => c.title === 'Head Coach');
+        const assistants = staff.filter(c => c.title !== 'Head Coach').map(c => c.name).join(', ');
+        setTeamSettings(s => ({
+          ...s,
+          head_coach: hc ? `${hc.name} (Coach Gee)` : s.head_coach,
+          assistant_coaches: assistants || s.assistant_coaches,
+        }));
+      }
+      
+      const { user, profile } = await getUserWithProfile();
+      if (user) {
+        let displayRole = 'Coach';
+        if (profile) {
+          if (profile.title) {
+            displayRole = profile.title;
+          } else if (profile.role === 'org_admin') {
+            displayRole = 'General Manager';
+          } else if (profile.role === 'coach') {
+            displayRole = 'Coach';
+          } else {
+            displayRole = profile.role;
+          }
+        }
+        setCurrentUser({
+          email: user.email,
+          role: displayRole,
+        });
+      }
+    } catch (err) {
+      console.error('Error loading settings from DB:', err);
     }
   }
 
@@ -304,11 +352,11 @@ export default function SettingsPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
                   <div className="form-group">
                     <label className="form-label">Email</label>
-                    <input className="form-input" value="coach@delrayrocks.org" disabled style={{ opacity: 0.6 }} />
+                    <input className="form-input" value={currentUser.email} disabled style={{ opacity: 0.6 }} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Role</label>
-                    <input className="form-input" value="Head Coach" disabled style={{ opacity: 0.6 }} />
+                    <input className="form-input" value={currentUser.role} disabled style={{ opacity: 0.6 }} />
                   </div>
                 </div>
                 <div style={{ marginTop: 'var(--space-xl)', padding: 'var(--space-lg)', background: 'rgba(239,68,68,0.05)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239,68,68,0.15)' }}>
