@@ -118,8 +118,8 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
     // ── STEP 2: TWO-PASS ANALYSIS ──────────────────────────────
     // Model chain: try 3.1 Pro → fallback to 2.5 Pro if preview model fails on video
     const MODEL_CHAIN = speedMode === 'pro'
-      ? ['gemini-3.1-pro-preview', 'gemini-2.5-pro']
-      : ['gemini-3-flash-preview', 'gemini-2.5-flash'];
+      ? ['gemini-3.5-pro', 'gemini-3.1-pro']
+      : ['gemini-3.5-flash', 'gemini-3.1-flash'];
     const effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -569,8 +569,8 @@ app.post('/correct', async (req, res) => {
 
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
       const MODEL_CHAIN = speedMode === 'pro'
-        ? ['gemini-3.1-pro-preview', 'gemini-2.5-pro']
-        : ['gemini-3-flash-preview', 'gemini-2.5-flash'];
+        ? ['gemini-3.5-pro', 'gemini-3.1-pro']
+        : ['gemini-3.5-flash', 'gemini-3.1-flash'];
       let modelName = MODEL_CHAIN[0];
       let model = genAI.getGenerativeModel({ model: modelName });
 

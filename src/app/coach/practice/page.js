@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, Plus, Trash2, Clock, Save, FolderOpen } from 'lucide-react';
+import { ClipboardCheck, Plus, Trash2, Clock, Save, FolderOpen, Brain, Loader2, CheckCircle, Edit3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const DRILL_TEMPLATES = {
@@ -83,6 +83,14 @@ export default function PracticePlanPage() {
   const [savedPlans, setSavedPlans] = useState([]);
   const [saving, setSaving] = useState(false);
 
+  // AI Generate state
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPlan, setAiPlan] = useState(null);
+  const [showAiConfig, setShowAiConfig] = useState(false);
+  const [aiDuration, setAiDuration] = useState(90);
+  const [aiOpponent, setAiOpponent] = useState('');
+  const [aiFocusAreas, setAiFocusAreas] = useState([]);
+
   useEffect(() => { loadSavedPlans(); }, []);
 
   async function loadSavedPlans() {
@@ -157,6 +165,74 @@ export default function PracticePlanPage() {
     setBlocks(newBlocks);
   }
 
+  // ===== AI Generate =====
+  async function generateAIPlan() {
+    setAiGenerating(true);
+    setAiPlan(null);
+
+    // Try to pull focus areas from recent post-game report
+    let recentPostGame = null;
+    try {
+      const raw = localStorage.getItem('delray_postgame_report');
+      if (raw) recentPostGame = JSON.parse(raw);
+    } catch (e) {}
+
+    // Build focus areas from post-game data if none manually selected
+    let focusAreas = [...aiFocusAreas];
+    if (focusAreas.length === 0 && recentPostGame) {
+      if (recentPostGame.playerDevelopment) focusAreas.push(...recentPostGame.playerDevelopment);
+      if (recentPostGame.adjustments) focusAreas.push(...recentPostGame.adjustments.slice(0, 2));
+    }
+
+    try {
+      const res = await fetch('/api/practice/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          focus_areas: focusAreas,
+          upcoming_opponent: aiOpponent || undefined,
+          recent_post_game: recentPostGame || undefined,
+          duration_minutes: aiDuration,
+        }),
+      });
+      const data = await res.json();
+      if (data.plan) {
+        setAiPlan(data.plan);
+        toast.success('AI practice plan generated!');
+      } else {
+        toast.error(data.error || 'Failed to generate plan');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to generate AI plan');
+    }
+    setAiGenerating(false);
+  }
+
+  function acceptAIPlan() {
+    if (!aiPlan?.blocks) return;
+    const newBlocks = aiPlan.blocks.map(block => ({
+      name: block.title,
+      duration: block.duration_minutes,
+      type: block.type || 'custom',
+      description: block.description,
+      drills: block.drills,
+      id: Date.now() + Math.random(),
+    }));
+    setBlocks(newBlocks);
+    setPracticeName(`AI Plan — ${new Date().toLocaleDateString()}`);
+    setAiPlan(null);
+    setShowAiConfig(false);
+    toast.success('Plan loaded! You can now edit any block.');
+  }
+
+  // Available focus area options
+  const FOCUS_OPTIONS = [
+    'Run blocking', 'Pass protection', 'Ball security', 'Tackling fundamentals',
+    'Route running', 'Defensive pursuit', 'Special teams', 'Red zone offense',
+    'Goal line defense', 'Option reads', 'QB mechanics', 'Conditioning',
+  ];
+
   // Calculate running clock
   let runningTime = 0;
 
@@ -191,8 +267,8 @@ export default function PracticePlanPage() {
         <input className="form-input" type="date" value={practiceDate} onChange={e => setPracticeDate(e.target.value)} style={{ flex: 1 }} />
       </div>
 
-      {/* Templates */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+      {/* Templates + AI Generate */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: 10, color: 'var(--text-dim)', alignSelf: 'center', marginRight: 4 }}>Templates:</span>
         {TEMPLATES.map(t => (
           <button key={t.name} onClick={() => loadTemplate(t)} style={{
@@ -200,6 +276,19 @@ export default function PracticePlanPage() {
             background: 'rgba(0,154,68,0.1)', border: '1px solid rgba(0,154,68,0.2)', color: '#4ADE80',
           }}>{t.name}</button>
         ))}
+
+        {/* AI Generate Button */}
+        <button onClick={() => setShowAiConfig(!showAiConfig)}
+          style={{
+            padding: '4px 12px', fontSize: 10, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(99,102,241,0.2))',
+            border: '1px solid rgba(168,85,247,0.4)', color: '#A855F7',
+            display: 'flex', alignItems: 'center', gap: 4,
+            marginLeft: 4,
+          }}>
+          <Brain size={12} /> AI Generate
+        </button>
+
         {savedPlans.length > 0 && (
           <>
             <span style={{ fontSize: 10, color: 'var(--text-dim)', alignSelf: 'center', marginLeft: 8, marginRight: 4 }}>Saved:</span>
@@ -216,12 +305,178 @@ export default function PracticePlanPage() {
         )}
       </div>
 
+      {/* ===== AI CONFIG PANEL ===== */}
+      <AnimatePresence>
+        {showAiConfig && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: 'hidden', marginBottom: 16 }}
+          >
+            <div style={{
+              padding: 16,
+              background: 'linear-gradient(135deg, rgba(168,85,247,0.06), rgba(99,102,241,0.06))',
+              border: '1px solid rgba(168,85,247,0.2)',
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#A855F7', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Brain size={16} /> AI Practice Plan Generator
+              </div>
+
+              {/* Duration & Opponent */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>Duration (minutes)</label>
+                  <input type="number" value={aiDuration} onChange={e => setAiDuration(parseInt(e.target.value) || 60)}
+                    style={{
+                      width: '100%', padding: '6px 10px', fontSize: 13, fontWeight: 600,
+                      background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 6, color: '#fff',
+                    }} />
+                </div>
+                <div style={{ flex: 2 }}>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>Upcoming Opponent (optional)</label>
+                  <input value={aiOpponent} onChange={e => setAiOpponent(e.target.value)} placeholder="e.g. Boca Jets"
+                    className="form-input" style={{ width: '100%', padding: '6px 10px', fontSize: 13 }} />
+                </div>
+              </div>
+
+              {/* Focus Areas */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>
+                  Focus Areas {aiFocusAreas.length > 0 && <span style={{ color: '#A855F7' }}>({aiFocusAreas.length} selected)</span>}
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {FOCUS_OPTIONS.map(opt => {
+                    const isActive = aiFocusAreas.includes(opt);
+                    return (
+                      <button key={opt} onClick={() => {
+                        setAiFocusAreas(prev => isActive ? prev.filter(f => f !== opt) : [...prev, opt]);
+                      }}
+                        style={{
+                          padding: '3px 8px', fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+                          background: isActive ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${isActive ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                          color: isActive ? '#A855F7' : 'rgba(255,255,255,0.4)',
+                        }}>{opt}</button>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+                  Leave empty to auto-fill from your last post-game report
+                </div>
+              </div>
+
+              {/* Generate Button */}
+              <button onClick={generateAIPlan} disabled={aiGenerating}
+                style={{
+                  width: '100%', padding: '10px', fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: aiGenerating ? 'wait' : 'pointer',
+                  background: aiGenerating ? 'rgba(168,85,247,0.15)' : 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(99,102,241,0.3))',
+                  border: '1px solid rgba(168,85,247,0.5)', color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}>
+                {aiGenerating ? (
+                  <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Generating with AI…</>
+                ) : (
+                  <><Brain size={16} /> Generate Practice Plan</>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== AI GENERATED PLAN PREVIEW ===== */}
+      <AnimatePresence>
+        {aiPlan && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{
+              padding: 16,
+              background: 'linear-gradient(135deg, rgba(168,85,247,0.08), rgba(74,222,128,0.05))',
+              border: '1px solid rgba(168,85,247,0.25)',
+              borderRadius: 10,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#A855F7', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Brain size={18} /> AI-Generated Plan Preview
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={acceptAIPlan} style={{
+                    padding: '5px 12px', fontSize: 11, fontWeight: 700, borderRadius: 5, cursor: 'pointer',
+                    background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ADE80',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}><CheckCircle size={12} /> Accept & Edit</button>
+                  <button onClick={() => setAiPlan(null)} style={{
+                    padding: '5px 12px', fontSize: 11, fontWeight: 600, borderRadius: 5, cursor: 'pointer',
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.6)',
+                  }}>Dismiss</button>
+                </div>
+              </div>
+
+              {aiPlan.blocks?.map((block, i) => {
+                const color = TYPE_COLORS[block.type] || '#6B7280';
+                return (
+                  <div key={i} style={{
+                    padding: '10px 12px', marginBottom: 6,
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderLeft: `3px solid ${color}`,
+                    borderRadius: 8,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{block.title}</div>
+                      <div style={{ fontSize: 10, color, fontWeight: 600 }}>
+                        {block.duration_minutes}min • {block.type}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6, lineHeight: 1.4 }}>
+                      {block.description}
+                    </div>
+                    {block.drills?.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {block.drills.map((drill, j) => (
+                          <div key={j} style={{
+                            padding: '4px 8px', fontSize: 10, borderRadius: 4,
+                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)',
+                          }}>
+                            <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>{drill.name}</span>
+                            {drill.reps && <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: 6 }}>({drill.reps})</span>}
+                            {drill.description && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>{drill.description}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div style={{ textAlign: 'center', marginTop: 8 }}>
+                <button onClick={acceptAIPlan} style={{
+                  padding: '8px 24px', fontSize: 12, fontWeight: 700, borderRadius: 6, cursor: 'pointer',
+                  background: 'linear-gradient(135deg, rgba(74,222,128,0.25), rgba(0,154,68,0.25))',
+                  border: '1px solid rgba(74,222,128,0.4)', color: '#4ADE80',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                  <Edit3 size={14} /> Accept Plan & Customize
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Practice Blocks */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
         {blocks.length === 0 && (
           <div style={{ padding: 40, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px dashed rgba(255,255,255,0.1)' }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>📋</div>
-            <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>No blocks yet. Add drills or load a template.</div>
+            <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>No blocks yet. Add drills, load a template, or use <strong style={{ color: '#A855F7' }}>AI Generate</strong>.</div>
           </div>
         )}
 
@@ -251,6 +506,11 @@ export default function PracticePlanPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{block.name}</div>
                   <div style={{ fontSize: 9, color, fontWeight: 600, textTransform: 'uppercase' }}>{block.type}</div>
+                  {block.description && (
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 2, lineHeight: 1.3 }}>
+                      {block.description.substring(0, 80)}{block.description.length > 80 ? '…' : ''}
+                    </div>
+                  )}
                 </div>
 
                 {/* Duration */}
@@ -329,6 +589,14 @@ export default function PracticePlanPage() {
           }}><Plus size={12} /> Add</button>
         </div>
       </div>
+
+      {/* CSS for spinner animation */}
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

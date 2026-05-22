@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import { trackPlaybookView } from '@/lib/track';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2, Star, Copy, RotateCcw } from 'lucide-react';
+import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2, Star, Copy, RotateCcw, ClipboardList, Printer } from 'lucide-react';
 import PlayDiagram from '@/components/PlayDiagram';
 
 // Module-level helpers (shared by all components)
@@ -107,7 +107,8 @@ export default function PlaybookPage() {
 
   // Filter logic
   const isRotationView = side === 'rotation';
-  const filteredFormations = formations.filter(f => f.side === (isRotationView ? 'offense' : side));
+  const isCallSheetView = side === 'callsheet';
+  const filteredFormations = formations.filter(f => f.side === (isRotationView || isCallSheetView ? 'offense' : side));
 
   const filteredPlays = useMemo(() => {
     return plays.filter(p => {
@@ -153,18 +154,19 @@ export default function PlaybookPage() {
       {/* Side Toggle + Search */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 0, flexShrink: 0 }}>
-          {['offense', 'defense', 'special_teams', 'rotation'].map((s, i) => (
+          {['offense', 'defense', 'special_teams', 'rotation', 'callsheet'].map((s, i, arr) => (
             <button key={s} onClick={() => { setSide(s); setSelectedFormation(null); }}
               style={{
                 padding: '8px 14px', fontSize: 12, fontWeight: 600, border: '1px solid',
                 cursor: 'pointer', textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 4,
-                borderRadius: i === 0 ? '8px 0 0 8px' : i === 3 ? '0 8px 8px 0' : '0',
-                background: side === s ? (s === 'rotation' ? 'rgba(253,185,19,0.15)' : 'rgba(0,154,68,0.15)') : 'transparent',
-                borderColor: side === s ? (s === 'rotation' ? 'var(--rocks-gold)' : 'var(--rocks-green)') : 'var(--border)',
-                color: side === s ? (s === 'rotation' ? 'var(--rocks-gold)' : 'var(--rocks-green-light)') : 'var(--text-dim)',
+                borderRadius: i === 0 ? '8px 0 0 8px' : i === arr.length - 1 ? '0 8px 8px 0' : '0',
+                background: side === s ? (s === 'rotation' || s === 'callsheet' ? 'rgba(253,185,19,0.15)' : 'rgba(0,154,68,0.15)') : 'transparent',
+                borderColor: side === s ? (s === 'rotation' || s === 'callsheet' ? 'var(--rocks-gold)' : 'var(--rocks-green)') : 'var(--border)',
+                color: side === s ? (s === 'rotation' || s === 'callsheet' ? 'var(--rocks-gold)' : 'var(--rocks-green-light)') : 'var(--text-dim)',
               }}>
               {s === 'rotation' && <Star size={12} fill={side === s ? 'var(--rocks-gold)' : 'none'} />}
-              {s === 'special_teams' ? 'Special' : s === 'rotation' ? `Rotation (${rotationCount})` : s}
+              {s === 'callsheet' && <ClipboardList size={12} />}
+              {s === 'special_teams' ? 'Special' : s === 'rotation' ? `Rotation (${rotationCount})` : s === 'callsheet' ? 'Call Sheet' : s}
             </button>
           ))}
         </div>
@@ -179,6 +181,10 @@ export default function PlaybookPage() {
         </div>
       </div>
 
+      {/* Call Sheet View */}
+      {isCallSheetView ? (
+        <CallSheetView plays={plays} formations={formations} setPlays={setPlays} typeIcon={typeIcon} />
+      ) : (
       <div style={{ display: 'flex', gap: 20 }}>
         {/* Formation List */}
         {!isRotationView && (
@@ -352,6 +358,7 @@ export default function PlaybookPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* Edit/Add Play Modal */}
       <AnimatePresence>
@@ -926,5 +933,371 @@ function FocusedPlayViewer({ play, formations, onClose }) {
         )}
       </motion.div>
     </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME DAY CALL SHEET — Situation-based play organization
+   ═══════════════════════════════════════════════════════════════ */
+const SITUATION_GROUPS = [
+  { label: 'Openers (1st Drive)', tags: ['opener', 'first-drive'] },
+  { label: '1st & 10', tags: ['1st-and-10'] },
+  { label: '2nd & Short', tags: ['2nd-short'] },
+  { label: '2nd & Long', tags: ['2nd-long'] },
+  { label: '3rd & Short', tags: ['3rd-short'] },
+  { label: '3rd & Long', tags: ['3rd-long'] },
+  { label: 'Red Zone', tags: ['red-zone', 'redzone'] },
+  { label: 'Goal Line', tags: ['goal-line', 'goalline'] },
+  { label: '2-Minute', tags: ['2-minute', 'two-minute'] },
+];
+
+const SCRIPT_STORAGE_KEY = 'delray_game_script';
+
+function CallSheetView({ plays, formations, setPlays, typeIcon }) {
+  const [script, setScript] = useState([]);
+  const [dragOverGroup, setDragOverGroup] = useState(null);
+  const [dragOverScript, setDragOverScript] = useState(null);
+
+  // Load script from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SCRIPT_STORAGE_KEY);
+      if (saved) setScript(JSON.parse(saved));
+    } catch (e) { /* ignore */ }
+  }, []);
+
+  // Save script to localStorage
+  function updateScript(newScript) {
+    setScript(newScript);
+    localStorage.setItem(SCRIPT_STORAGE_KEY, JSON.stringify(newScript));
+  }
+
+  // Get rotation plays
+  const rotationPlays = plays.filter(p => isInRotation(p));
+
+  // Map plays to situation groups
+  const allSituationTags = SITUATION_GROUPS.flatMap(g => g.tags);
+
+  function getPlaySituations(play) {
+    const playTags = play.tags || [];
+    const matched = [];
+    SITUATION_GROUPS.forEach(group => {
+      if (group.tags.some(t => playTags.includes(t))) {
+        matched.push(group.label);
+      }
+    });
+    return matched;
+  }
+
+  const unassignedPlays = rotationPlays.filter(p => {
+    const playTags = p.tags || [];
+    return !allSituationTags.some(t => playTags.includes(t));
+  });
+
+  // Drag handlers
+  function handleDragStart(e, play) {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ id: play.id, name: play.name, type: getEffectiveType(play) }));
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  async function handleDropOnGroup(e, group) {
+    e.preventDefault();
+    setDragOverGroup(null);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const play = plays.find(p => p.id === data.id);
+      if (!play) return;
+
+      // Add the first tag from this group to the play
+      const tagToAdd = group.tags[0];
+      const currentTags = play.tags || [];
+      if (currentTags.includes(tagToAdd)) return;
+
+      const newTags = [...currentTags, tagToAdd];
+      const supabase = createClient();
+      const { error } = await supabase.from('playbook_plays').update({ tags: newTags }).eq('id', play.id);
+      if (!error) {
+        setPlays(prev => prev.map(p => p.id === play.id ? { ...p, tags: newTags } : p));
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  async function removeFromGroup(play, groupTag) {
+    const currentTags = play.tags || [];
+    const tagsToRemove = SITUATION_GROUPS.find(g => g.tags.includes(groupTag))?.tags || [groupTag];
+    const newTags = currentTags.filter(t => !tagsToRemove.includes(t));
+    const supabase = createClient();
+    const { error } = await supabase.from('playbook_plays').update({ tags: newTags }).eq('id', play.id);
+    if (!error) {
+      setPlays(prev => prev.map(p => p.id === play.id ? { ...p, tags: newTags } : p));
+    }
+  }
+
+  function handleDropOnScript(e, slotIndex) {
+    e.preventDefault();
+    setDragOverScript(null);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const newScript = [...script];
+      // Fill empty slots up to slotIndex if needed
+      while (newScript.length <= slotIndex) newScript.push(null);
+      newScript[slotIndex] = { id: data.id, name: data.name, type: data.type };
+      updateScript(newScript);
+    } catch (e) { /* ignore */ }
+  }
+
+  function removeFromScript(index) {
+    const newScript = [...script];
+    newScript[index] = null;
+    // Trim trailing nulls
+    while (newScript.length > 0 && newScript[newScript.length - 1] === null) newScript.pop();
+    updateScript(newScript);
+  }
+
+  return (
+    <div className="callsheet-print">
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          nav, header, .no-print, [data-no-print], button:not(.print-visible) { display: none !important; }
+          body { background: #fff !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .callsheet-print { page-break-inside: avoid; font-size: 10px !important; }
+          .callsheet-group { page-break-inside: avoid; border: 1px solid #ccc !important; margin-bottom: 4px !important; padding: 4px !important; background: #fff !important; }
+          .callsheet-group * { color: #000 !important; }
+          .callsheet-group-header { color: #000 !important; border-left-color: #999 !important; }
+          .script-section { page-break-inside: avoid; border: 1px solid #ccc !important; }
+          .script-slot { border-color: #ccc !important; background: #fff !important; }
+          .script-slot * { color: #000 !important; }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }} data-no-print>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--rocks-gold)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ClipboardList size={18} /> Game Day Call Sheet
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+            {rotationPlays.length} plays in rotation • Drag plays to assign situations
+          </div>
+        </div>
+        <button onClick={() => window.print()} style={{
+          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, fontWeight: 600,
+          background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 8,
+          color: 'var(--text-secondary)', cursor: 'pointer',
+        }}>
+          <Printer size={14} /> Print Call Sheet
+        </button>
+      </div>
+
+      {/* Situation Groups Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 10, marginBottom: 20 }}>
+        {SITUATION_GROUPS.map(group => {
+          const groupPlays = rotationPlays.filter(p =>
+            group.tags.some(t => (p.tags || []).includes(t))
+          );
+          const isDragOver = dragOverGroup === group.label;
+
+          return (
+            <div
+              key={group.label}
+              className="callsheet-group"
+              onDragOver={e => { e.preventDefault(); setDragOverGroup(group.label); }}
+              onDragLeave={() => setDragOverGroup(null)}
+              onDrop={e => handleDropOnGroup(e, group)}
+              style={{
+                padding: 12,
+                background: isDragOver ? 'rgba(253,185,19,0.08)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${isDragOver ? 'rgba(253,185,19,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 10,
+                borderLeft: `3px solid ${isDragOver ? '#FDB913' : 'rgba(253,185,19,0.3)'}`,
+                transition: 'all 150ms ease',
+                minHeight: 60,
+              }}
+            >
+              <div className="callsheet-group-header" style={{
+                fontSize: 11, fontWeight: 700, color: 'var(--rocks-gold)',
+                marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <span>{group.label}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'none', letterSpacing: 0 }}>
+                  {groupPlays.length} play{groupPlays.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {groupPlays.length === 0 ? (
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', fontStyle: 'italic', padding: '4px 0' }}>
+                  Drop plays here...
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {groupPlays.map(p => (
+                    <div
+                      key={p.id}
+                      draggable
+                      onDragStart={e => handleDragStart(e, p)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '5px 8px', fontSize: 12,
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: 6, cursor: 'grab',
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-primary)', fontWeight: 500 }}>
+                        <span style={{ fontSize: 11 }}>{typeIcon(getEffectiveType(p))}</span>
+                        {p.name}
+                      </span>
+                      <button
+                        onClick={() => removeFromGroup(p, group.tags.find(t => (p.tags || []).includes(t)))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                        title="Remove from group"
+                      >
+                        <X size={10} color="rgba(239,68,68,0.5)" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Unassigned Rotation Plays */}
+      {unassignedPlays.length > 0 && (
+        <div style={{
+          padding: 12, marginBottom: 20,
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 10,
+          borderLeft: '3px solid var(--text-dim)',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: 'var(--text-dim)',
+            marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em',
+            display: 'flex', justifyContent: 'space-between',
+          }}>
+            <span>Unassigned Rotation Plays</span>
+            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
+              Drag to a situation group above
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {unassignedPlays.map(p => (
+              <div
+                key={p.id}
+                draggable
+                onDragStart={e => handleDragStart(e, p)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '5px 10px', fontSize: 11,
+                  background: 'rgba(253,185,19,0.06)',
+                  border: '1px solid rgba(253,185,19,0.12)',
+                  borderRadius: 6, cursor: 'grab',
+                  color: 'var(--text-secondary)', fontWeight: 500,
+                }}
+              >
+                <span style={{ fontSize: 11 }}>{typeIcon(getEffectiveType(p))}</span>
+                {p.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Script First 15 */}
+      <div className="script-section" style={{
+        padding: 16,
+        background: 'rgba(0,154,68,0.03)',
+        border: '1px solid rgba(0,154,68,0.12)',
+        borderRadius: 12,
+      }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
+        }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--rocks-green-light)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              📋 Script First 15
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
+              Drag plays from above or situation groups into your scripted opener
+            </div>
+          </div>
+          {script.some(s => s !== null) && (
+            <button
+              onClick={() => updateScript([])}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px', fontSize: 11, fontWeight: 600,
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+                borderRadius: 6, color: '#EF4444', cursor: 'pointer',
+              }}
+              data-no-print
+            >
+              <RotateCcw size={10} /> Clear Script
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 6 }}>
+          {Array.from({ length: 15 }, (_, i) => {
+            const entry = script[i] || null;
+            const isDragOverSlot = dragOverScript === i;
+
+            return (
+              <div
+                key={i}
+                className="script-slot"
+                onDragOver={e => { e.preventDefault(); setDragOverScript(i); }}
+                onDragLeave={() => setDragOverScript(null)}
+                onDrop={e => handleDropOnScript(e, i)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '6px 10px',
+                  background: isDragOverSlot ? 'rgba(0,154,68,0.1)' : entry ? 'rgba(255,255,255,0.03)' : 'transparent',
+                  border: `1px ${entry ? 'solid' : 'dashed'} ${isDragOverSlot ? 'rgba(0,154,68,0.4)' : entry ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.06)'}`,
+                  borderRadius: 8,
+                  minHeight: 36,
+                  transition: 'all 100ms ease',
+                }}
+              >
+                {/* Number badge */}
+                <div style={{
+                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                  background: entry ? 'rgba(253,185,19,0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${entry ? 'rgba(253,185,19,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 800,
+                  color: entry ? '#FDB913' : 'var(--text-dim)',
+                }}>
+                  {i + 1}
+                </div>
+
+                {entry ? (
+                  <>
+                    <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 11 }}>{typeIcon(entry.type)}</span>
+                      {entry.name}
+                    </span>
+                    <button
+                      onClick={() => removeFromScript(i)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                      data-no-print
+                    >
+                      <X size={10} color="rgba(239,68,68,0.5)" />
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    {isDragOverSlot ? 'Drop here' : '—'}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -52,7 +52,19 @@ export default function PostGamePage() {
         body: JSON.stringify({ callHistory: history, gameInfo }),
       });
       const data = await res.json();
-      if (data.report) setReport(data.report);
+      if (data.report) {
+        setReport(data.report);
+        // Save for cross-module intelligence (Practice Planner reads this)
+        try {
+          localStorage.setItem('delray_postgame_report', JSON.stringify({
+            report: data.report,
+            opponent: gameInfo.opponent,
+            date: gameInfo.date,
+            score: gameInfo.score,
+            savedAt: new Date().toISOString(),
+          }));
+        } catch (e) { /* localStorage full */ }
+      }
     } catch (e) { console.error(e); alert('Failed to generate report'); }
     setLoading(false);
   }

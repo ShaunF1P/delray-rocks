@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { Trophy, Brain, Shield, Target, Zap, AlertTriangle, Clock } from 'lucide-react';
+import { Trophy, Brain, Shield, Target, Zap, AlertTriangle, Clock, Film } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ScoutingPage() {
@@ -12,6 +12,8 @@ export default function ScoutingPage() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [pastReports, setPastReports] = useState([]);
+  const [filmIntel, setFilmIntel] = useState([]);
+  const [loadingFilms, setLoadingFilms] = useState(false);
 
   useEffect(() => { loadPastReports(); }, []);
 
@@ -19,6 +21,18 @@ export default function ScoutingPage() {
     const supabase = createClient();
     const { data } = await supabase.from('scouting_reports').select('*').order('created_at', { ascending: false });
     if (data) setPastReports(data);
+  }
+
+  async function loadFilmIntel(opponentName) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('game_films')
+      .select('*')
+      .ilike('opponent', `%${opponentName}%`)
+      .not('ai_analysis', 'is', null)
+      .order('film_date', { ascending: false })
+      .limit(5);
+    if (data) setFilmIntel(data);
   }
 
   async function generateScoutingReport() {
@@ -78,6 +92,69 @@ export default function ScoutingPage() {
 • Key players to watch (#12 is fast, #55 blitzes every play)
 • Any weaknesses you've noticed" />
           </div>
+
+          {/* Import from Film */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <button type="button" onClick={() => { if (opponent.trim()) { setLoadingFilms(true); loadFilmIntel(opponent).finally(() => setLoadingFilms(false)); } }}
+              disabled={!opponent.trim() || loadingFilms}
+              style={{
+                padding: '8px 14px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
+                background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)', color: '#60A5FA',
+                display: 'flex', alignItems: 'center', gap: 6,
+                opacity: !opponent.trim() ? 0.4 : 1,
+              }}>
+              <Film size={12} /> {loadingFilms ? 'Searching Films...' : 'Import from Film'}
+            </button>
+          </div>
+
+          {/* Prior Film Intel */}
+          {filmIntel.length > 0 && (
+            <div style={{
+              marginBottom: 12, padding: 12, borderRadius: 8,
+              background: 'rgba(96,165,250,0.04)', border: '1px solid rgba(96,165,250,0.1)',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#60A5FA', marginBottom: 8, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Film size={12} /> Prior Film Intel ({filmIntel.length} film{filmIntel.length !== 1 ? 's' : ''})
+              </div>
+              {filmIntel.map(film => (
+                <div key={film.id} style={{
+                  padding: '8px 10px', marginBottom: 4, borderRadius: 6,
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{film.title}</span>
+                    <span style={{ fontSize: 9, color: 'var(--text-dim)' }}>
+                      {new Date(film.film_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  {film.ai_analysis && (
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      {typeof film.ai_analysis === 'string'
+                        ? film.ai_analysis.slice(0, 200) + '...'
+                        : film.ai_analysis.overview || film.ai_analysis.summary || JSON.stringify(film.ai_analysis).slice(0, 200) + '...'}
+                    </div>
+                  )}
+                  <button type="button" onClick={() => {
+                    const analysis = film.ai_analysis;
+                    let intel = '';
+                    if (typeof analysis === 'string') intel = analysis;
+                    else if (analysis.overview) intel = analysis.overview;
+                    else if (analysis.summary) intel = analysis.summary;
+                    else intel = JSON.stringify(analysis, null, 2);
+                    setNotes(prev => prev ? prev + '\n\n--- Film Intel (' + film.title + ') ---\n' + intel : '--- Film Intel (' + film.title + ') ---\n' + intel);
+                    toast.success('Film intel added to notes');
+                  }} style={{
+                    marginTop: 6, padding: '4px 10px', fontSize: 10, fontWeight: 600, borderRadius: 4,
+                    background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)',
+                    color: '#60A5FA', cursor: 'pointer',
+                  }}>
+                    + Add to Notes
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <button onClick={generateScoutingReport} disabled={loading || !opponent.trim()}
             style={{
               width: '100%', padding: '10px 24px', fontSize: 13, fontWeight: 700,

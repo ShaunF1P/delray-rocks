@@ -57,8 +57,8 @@ export async function POST(request) {
   }
 
   try {
-    const { fileUri, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd, speedMode } = await request.json();
-    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const { fileUri, videoUrl, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd, speedMode } = await request.json();
+    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-3.5-pro' : 'gemini-3.5-flash';
     const rosterContext = buildRosterContext(roster);
     const isClip = clipStart != null && clipEnd != null;
 
@@ -174,6 +174,15 @@ Opponent: ${opponent || 'Unknown'}`,
         fileData: {
           mimeType: mimeType || 'video/mp4',
           fileUri: fileUri,
+        },
+      });
+    } else if (videoUrl) {
+      // For Supabase Storage URLs, pass as file data with URL
+      // Gemini can handle public URLs directly
+      contentParts.push({
+        fileData: {
+          mimeType: mimeType || 'video/mp4',
+          fileUri: videoUrl,
         },
       });
     } else {

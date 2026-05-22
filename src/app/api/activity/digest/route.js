@@ -4,7 +4,7 @@ import { sendTelegramMessage } from '@/lib/telegram';
 import { getActivitySummary, EVENT_EMOJI } from '@/lib/activity';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3.5-flash';
 
 function getSupabase() {
   return createClient(

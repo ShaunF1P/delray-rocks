@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Clock, Target, Shield, Zap, Check, Undo2, Trash2, ThumbsUp, ThumbsDown, Minus, RotateCcw, Brain, Eye } from 'lucide-react';
+import { ChevronLeft, Clock, Target, Shield, Zap, Check, Undo2, Trash2, ThumbsUp, ThumbsDown, Minus, RotateCcw, Brain, Eye, Trophy } from 'lucide-react';
 
 const OPP_DEFENSES = [
   { key: '4-4', label: '4-4', color: '#EF4444' },
@@ -17,6 +17,25 @@ const OPP_DEFENSES = [
   { key: 'spread', label: 'Spread', color: '#6366F1' },
   { key: 'unknown', label: '???', color: '#6B7280' },
 ];
+
+const SCORE_KEY = 'delray_game_score';
+const HISTORY_KEY = 'delray_sideline_history';
+
+function loadPersistedScore() {
+  try {
+    const raw = localStorage.getItem(SCORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function persistScore(score) {
+  try { localStorage.setItem(SCORE_KEY, JSON.stringify(score)); } catch (e) {}
+}
+
+function persistHistory(history) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch (e) {}
+}
 
 export default function SidelinePage() {
   const [formations, setFormations] = useState([]);
@@ -35,6 +54,30 @@ export default function SidelinePage() {
   const [showIntel, setShowIntel] = useState(false);
   const [lineup, setLineup] = useState([]);
   const [showLineup, setShowLineup] = useState(false);
+
+  // ----- Scoreboard state -----
+  const [homeScore, setHomeScore] = useState(0);
+  const [awayScore, setAwayScore] = useState(0);
+  const [opponent, setOpponent] = useState('Visitor');
+  const [scoreLog, setScoreLog] = useState([]);
+  const [showScorePanel, setShowScorePanel] = useState(false);
+
+  // Load persisted score on mount
+  useEffect(() => {
+    const saved = loadPersistedScore();
+    if (saved) {
+      setHomeScore(saved.homeScore || 0);
+      setAwayScore(saved.awayScore || 0);
+      setOpponent(saved.opponent || 'Visitor');
+      setScoreLog(saved.scoreLog || []);
+      if (saved.quarter) setGameState(prev => ({ ...prev, quarter: saved.quarter }));
+    }
+  }, []);
+
+  // Persist score whenever it changes
+  useEffect(() => {
+    persistScore({ homeScore, awayScore, opponent, quarter: gameState.quarter, scoreLog });
+  }, [homeScore, awayScore, opponent, gameState.quarter, scoreLog]);
 
   useEffect(() => {
     loadData();
@@ -76,6 +119,37 @@ export default function SidelinePage() {
     if (data) setActiveGameFilmId(data.id);
   }
 
+  // ----- Score functions -----
+  function addScore(team, points, label) {
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+    const entry = { time: timestamp, team, points, label, quarter: gameState.quarter };
+    if (team === 'home') {
+      setHomeScore(s => s + points);
+    } else {
+      setAwayScore(s => s + points);
+    }
+    setScoreLog(prev => [entry, ...prev]);
+  }
+
+  function undoScore() {
+    if (scoreLog.length === 0) return;
+    const last = scoreLog[0];
+    if (last.team === 'home') {
+      setHomeScore(s => Math.max(0, s - last.points));
+    } else {
+      setAwayScore(s => Math.max(0, s - last.points));
+    }
+    setScoreLog(prev => prev.slice(1));
+  }
+
+  function resetScore() {
+    if (!confirm('Reset the scoreboard? This will clear the score but NOT the play history.')) return;
+    setHomeScore(0);
+    setAwayScore(0);
+    setScoreLog([]);
+  }
+
+  // ----- Play calling -----
   async function callPlay(play) {
     const call = {
       game_film_id: activeGameFilmId,
@@ -98,7 +172,7 @@ export default function SidelinePage() {
     setLastCall(historyEntry);
     setCallHistory(prev => {
       const updated = [historyEntry, ...prev];
-      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      persistHistory(updated);
       return updated;
     });
     setConfirmUndo(false);
@@ -142,19 +216,35 @@ export default function SidelinePage() {
     }
     setCallHistory(prev => {
       const updated = prev.filter((_, i) => i !== index);
-      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      persistHistory(updated);
       return updated;
     });
     if (index === 0) setLastCall(callHistory.length > 1 ? callHistory[1] : null);
   }
 
   async function markResult(index, result) {
+    const item = callHistory[index];
     setCallHistory(prev => {
       const updated = prev.map((c, i) => i === index ? { ...c, result } : c);
-      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      persistHistory(updated);
       return updated;
     });
-    const item = callHistory[index];
+
+    // Auto-detect TD on success: if the play name hints at a scoring play
+    if (result === 'success' && item) {
+      const playName = (item.play?.name || '').toLowerCase();
+      const playDesc = (item.play?.description || '').toLowerCase();
+      const tdKeywords = ['touchdown', 'td', 'score', 'end zone', 'endzone'];
+      const isTDContext = item.yard_line <= 10 || tdKeywords.some(kw => playName.includes(kw) || playDesc.includes(kw));
+      if (isTDContext) {
+        // Auto-add TD for Rocks if it was an offensive play
+        const playType = item.play?.play_type || '';
+        if (['run', 'pass', 'trick'].includes(playType)) {
+          addScore('home', 6, 'TD (auto)');
+        }
+      }
+    }
+
     if (item?.dbId) {
       const supabase = createClient();
       await supabase.from('play_calls').update({ result }).eq('id', item.dbId);
@@ -164,7 +254,7 @@ export default function SidelinePage() {
   async function tagDefense(index, defKey) {
     setCallHistory(prev => {
       const updated = prev.map((c, i) => i === index ? { ...c, oppDefense: defKey } : c);
-      try { localStorage.setItem('delray_sideline_history', JSON.stringify(updated)); } catch(e) {}
+      persistHistory(updated);
       return updated;
     });
     setTaggingIndex(null);
@@ -182,7 +272,15 @@ export default function SidelinePage() {
       const res = await fetch('/api/game-intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ callHistory }),
+        body: JSON.stringify({
+          callHistory,
+          gameScore: {
+            homeScore,
+            awayScore,
+            quarter: gameState.quarter,
+            opponent,
+          },
+        }),
       });
       const data = await res.json();
       if (data.analysis) setIntel(data.analysis);
@@ -205,6 +303,8 @@ export default function SidelinePage() {
   const failCalls = callHistory.filter(c => c.result === 'fail').length;
   const successRate = totalCalls > 0 ? Math.round((successCalls / (successCalls + failCalls || 1)) * 100) : 0;
 
+  const scoreDiff = homeScore - awayScore;
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -213,7 +313,147 @@ export default function SidelinePage() {
       fontFamily: "'Inter', sans-serif",
       paddingBottom: 100,
     }}>
-      {/* Header — Game State */}
+
+      {/* ===== FLOATING SCORE WIDGET BAR ===== */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,20,10,0.85))',
+        borderBottom: '2px solid rgba(253,185,19,0.3)',
+        padding: '8px 16px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 200,
+        backdropFilter: 'blur(24px)',
+      }}>
+        {/* Score Row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          {/* Rocks Score */}
+          <div style={{ textAlign: 'center', minWidth: 60 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#009A44', textTransform: 'uppercase', letterSpacing: '0.12em' }}>ROCKS</div>
+            <motion.div key={homeScore} initial={{ scale: 1.3 }} animate={{ scale: 1 }}
+              style={{ fontSize: 28, fontWeight: 900, color: '#4ADE80', lineHeight: 1 }}>
+              {homeScore}
+            </motion.div>
+          </div>
+
+          {/* Quarter Badge */}
+          <div style={{
+            textAlign: 'center',
+            padding: '4px 12px',
+            background: 'rgba(253,185,19,0.12)',
+            border: '1px solid rgba(253,185,19,0.25)',
+            borderRadius: 8,
+          }}>
+            <div style={{ fontSize: 8, color: 'rgba(253,185,19,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em' }}>QTR</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#FDB913', lineHeight: 1 }}>{gameState.quarter}</div>
+          </div>
+
+          {/* Away Score */}
+          <div style={{ textAlign: 'center', minWidth: 60 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+              {opponent.toUpperCase().substring(0, 8)}
+            </div>
+            <motion.div key={awayScore} initial={{ scale: 1.3 }} animate={{ scale: 1 }}
+              style={{ fontSize: 28, fontWeight: 900, color: 'rgba(255,255,255,0.8)', lineHeight: 1 }}>
+              {awayScore}
+            </motion.div>
+          </div>
+
+          {/* Score diff indicator */}
+          <div style={{
+            fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+            background: scoreDiff > 0 ? 'rgba(74,222,128,0.15)' : scoreDiff < 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+            color: scoreDiff > 0 ? '#4ADE80' : scoreDiff < 0 ? '#EF4444' : 'rgba(255,255,255,0.4)',
+          }}>
+            {scoreDiff > 0 ? `+${scoreDiff}` : scoreDiff < 0 ? scoreDiff : 'TIE'}
+          </div>
+
+          {/* Toggle score panel */}
+          <button onClick={() => setShowScorePanel(!showScorePanel)} style={{
+            padding: '4px 8px', fontSize: 9, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
+            background: showScorePanel ? 'rgba(253,185,19,0.2)' : 'rgba(255,255,255,0.06)',
+            border: `1px solid ${showScorePanel ? 'rgba(253,185,19,0.4)' : 'rgba(255,255,255,0.1)'}`,
+            color: showScorePanel ? '#FDB913' : 'rgba(255,255,255,0.4)',
+          }}>
+            <Trophy size={10} style={{ marginRight: 3, verticalAlign: 'middle' }} />
+            {showScorePanel ? '▲' : '▼'}
+          </button>
+        </div>
+
+        {/* Expandable Score Buttons Panel */}
+        <AnimatePresence>
+          {showScorePanel && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: 'hidden' }}
+            >
+              {/* Opponent name input */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, marginBottom: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>VS</span>
+                <input value={opponent} onChange={e => setOpponent(e.target.value)}
+                  style={{
+                    flex: 1, padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 4, color: '#fff', outline: 'none',
+                  }} placeholder="Opponent name" />
+              </div>
+
+              {/* Score Buttons */}
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                {/* Rocks buttons */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: '#009A44', textTransform: 'uppercase', textAlign: 'center', marginBottom: 3, letterSpacing: '0.1em' }}>ROCKS</div>
+                  <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {[{ pts: 6, label: '+6 TD', bg: '#009A44' }, { pts: 1, label: '+1 XP', bg: '#0d7a3a' }, { pts: 2, label: '+2 PT', bg: '#0d7a3a' }, { pts: 3, label: '+3 FG', bg: '#0d7a3a' }].map(b => (
+                      <button key={b.label} onClick={() => addScore('home', b.pts, b.label)}
+                        style={{
+                          padding: '4px 6px', fontSize: 9, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
+                          background: `${b.bg}33`, border: `1px solid ${b.bg}66`, color: '#4ADE80',
+                        }}>{b.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Away buttons */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', textAlign: 'center', marginBottom: 3, letterSpacing: '0.1em' }}>{opponent.toUpperCase().substring(0, 8)}</div>
+                  <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {[{ pts: 6, label: '+6 TD', bg: '#EF4444' }, { pts: 1, label: '+1 XP', bg: '#B91C1C' }, { pts: 2, label: '+2 PT', bg: '#B91C1C' }, { pts: 3, label: '+3 FG', bg: '#B91C1C' }].map(b => (
+                      <button key={b.label + 'a'} onClick={() => addScore('away', b.pts, b.label)}
+                        style={{
+                          padding: '4px 6px', fontSize: 9, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
+                          background: `${b.bg}22`, border: `1px solid ${b.bg}44`, color: '#EF4444',
+                        }}>{b.label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Undo / Reset row */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 6, justifyContent: 'center' }}>
+                <button onClick={undoScore} disabled={scoreLog.length === 0}
+                  style={{
+                    padding: '3px 10px', fontSize: 9, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+                    background: 'rgba(253,185,19,0.1)', border: '1px solid rgba(253,185,19,0.2)', color: '#FDB913',
+                    opacity: scoreLog.length === 0 ? 0.3 : 1,
+                  }}>
+                  <Undo2 size={9} style={{ marginRight: 3, verticalAlign: 'middle' }} /> Undo Score
+                </button>
+                <button onClick={resetScore}
+                  style={{
+                    padding: '3px 10px', fontSize: 9, fontWeight: 600, borderRadius: 4, cursor: 'pointer',
+                    background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.5)',
+                  }}>
+                  <RotateCcw size={9} style={{ marginRight: 3, verticalAlign: 'middle' }} /> Reset
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ===== GAME STATE HEADER ===== */}
       <div style={{
         background: 'rgba(0,0,0,0.6)',
         borderBottom: '2px solid rgba(0,154,68,0.3)',
@@ -606,7 +846,14 @@ export default function SidelinePage() {
 
           {/* Reset game button */}
           {callHistory.length > 3 && (
-            <button onClick={() => { if (confirm('Reset all play history for this game?')) { setCallHistory([]); setLastCall(null); setIntel(null); } }}
+            <button onClick={() => {
+              if (confirm('Reset all play history for this game?')) {
+                setCallHistory([]);
+                setLastCall(null);
+                setIntel(null);
+                persistHistory([]);
+              }
+            }}
               style={{
                 marginTop: 4, width: '100%', padding: '5px', fontSize: 10, fontWeight: 600,
                 background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',

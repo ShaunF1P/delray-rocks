@@ -4,7 +4,7 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_
 
 export async function POST(req) {
   try {
-    const { callHistory } = await req.json();
+    const { callHistory, gameScore } = await req.json();
     if (!callHistory || callHistory.length < 3) {
       return NextResponse.json({ error: 'Need at least 3 plays to analyze trends' }, { status: 400 });
     }
@@ -22,8 +22,23 @@ export async function POST(req) {
       result: c.result || 'ungraded',
     }));
 
-    const prompt = `You are an elite youth football offensive coordinator analyzing a live game. This is 8U tackle football.
+    // Build score context if available
+    let scoreContext = '';
+    if (gameScore) {
+      const diff = (gameScore.homeScore || 0) - (gameScore.awayScore || 0);
+      const situation = diff > 0 ? `LEADING by ${diff}` : diff < 0 ? `TRAILING by ${Math.abs(diff)}` : 'TIED';
+      scoreContext = `
+CURRENT GAME SCORE:
+- Rocks (Home): ${gameScore.homeScore || 0}
+- ${gameScore.opponent || 'Opponent'} (Away): ${gameScore.awayScore || 0}
+- Quarter: ${gameScore.quarter || '?'}
+- Situation: ${situation}
+- Factor the score and game situation into your play recommendations (e.g., protect a lead, need to score, clock management).
+`;
+    }
 
+    const prompt = `You are an elite youth football offensive coordinator analyzing a live game. This is 8U tackle football.
+${scoreContext}
 Here is the play-by-play data from this game so far (most recent first):
 
 ${plays.map(p => `Play #${p.num}: Q${p.quarter} | ${p.down === 1 ? '1st' : p.down === 2 ? '2nd' : p.down === 3 ? '3rd' : '4th'}&${p.distance} on ${p.yard} | WE RAN: ${p.ourPlay} (${p.ourType} ${p.ourDir}) | THEY SHOWED: ${p.theirDefense} | RESULT: ${p.result}`).join('\n')}
@@ -56,7 +71,7 @@ Respond in this exact JSON format:
 Be specific and actionable. Reference our actual play names from the data. Keep it concise — this is read on the sideline during a game.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

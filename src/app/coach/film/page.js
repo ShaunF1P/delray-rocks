@@ -23,6 +23,207 @@ const ANALYSIS_TYPES = [
   { value: 'quick_summary', label: 'Quick Summary', desc: 'Score, top performers, areas to improve' },
 ];
 
+// Grade color mapping
+const gradeColors = {
+  'A+': '#22c55e', A: '#22c55e', 'A-': '#4ade80',
+  'B+': '#84cc16', B: '#a3e635', 'B-': '#bef264',
+  'C+': '#facc15', C: '#fbbf24', 'C-': '#f59e0b',
+  'D+': '#f97316', D: '#fb923c', 'D-': '#ef4444',
+  F: '#dc2626',
+};
+
+// Detect section type for icon/color
+function sectionMeta(title) {
+  const t = title.toLowerCase();
+  if (t.includes('penalty') || t.includes('infraction') || t.includes('dead ball')) return { icon: '🚩', accent: '#ef4444' };
+  if (t.includes('coaching') || t.includes('recommendation') || t.includes('correction') || t.includes('improvement')) return { icon: '📋', accent: '#f59e0b' };
+  if (t.includes('grade') || t.includes('score') || t.includes('rating')) return { icon: '📊', accent: '#8b5cf6' };
+  if (t.includes('formation') || t.includes('pre-snap') || t.includes('alignment')) return { icon: '🏈', accent: '#3b82f6' };
+  if (t.includes('highlight') || t.includes('standout') || t.includes('player of')) return { icon: '⭐', accent: '#fbbf24' };
+  if (t.includes('play-by-play') || t.includes('play ') || t.includes('execution')) return { icon: '▶️', accent: '#06b6d4' };
+  if (t.includes('offensive') || t.includes('offense')) return { icon: '🏃', accent: '#009A44' };
+  if (t.includes('defensive') || t.includes('defense')) return { icon: '🛡️', accent: '#6366f1' };
+  if (t.includes('summary') || t.includes('overview') || t.includes('result') || t.includes('takeaway')) return { icon: '📝', accent: '#009A44' };
+  return { icon: '📄', accent: 'var(--text-secondary)' };
+}
+
+// Render inline markdown (bold, grades, etc.)
+function renderInline(text) {
+  if (!text) return null;
+  const parts = [];
+  let remaining = text;
+  let key = 0;
+
+  // Process **bold** markers
+  while (remaining.length > 0) {
+    const boldStart = remaining.indexOf('**');
+    if (boldStart === -1) {
+      parts.push(<span key={key++}>{renderGrades(remaining)}</span>);
+      break;
+    }
+    if (boldStart > 0) {
+      parts.push(<span key={key++}>{renderGrades(remaining.slice(0, boldStart))}</span>);
+    }
+    const boldEnd = remaining.indexOf('**', boldStart + 2);
+    if (boldEnd === -1) {
+      parts.push(<span key={key++}>{renderGrades(remaining.slice(boldStart))}</span>);
+      break;
+    }
+    const boldText = remaining.slice(boldStart + 2, boldEnd);
+    parts.push(<strong key={key++} style={{ color: '#fff', fontWeight: 700 }}>{renderGrades(boldText)}</strong>);
+    remaining = remaining.slice(boldEnd + 2);
+  }
+  return parts;
+}
+
+// Detect and render grade badges inline
+function renderGrades(text) {
+  const gradePattern = /\b([A-F][+-]?)\b/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  const testStr = text;
+  while ((match = gradePattern.exec(testStr)) !== null) {
+    const grade = match[1];
+    // Only render as a badge if it matches a grade letter followed by context clues
+    const before = testStr.slice(Math.max(0, match.index - 20), match.index).toLowerCase();
+    const isGradeContext = before.includes('grade') || before.includes('rating') || before.includes(':') || before.includes('—') || /[:\-–]$/.test(before.trim());
+    if (gradeColors[grade] && isGradeContext) {
+      if (match.index > lastIndex) {
+        parts.push(<span key={key++}>{testStr.slice(lastIndex, match.index)}</span>);
+      }
+      parts.push(
+        <span key={key++} style={{
+          display: 'inline-block', padding: '1px 8px', borderRadius: 4, fontWeight: 800, fontSize: '0.7rem',
+          background: `${gradeColors[grade]}22`, color: gradeColors[grade], border: `1px solid ${gradeColors[grade]}44`,
+          marginLeft: 2, marginRight: 2,
+        }}>{grade}</span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+  }
+  if (lastIndex < testStr.length) {
+    parts.push(<span key={key++}>{testStr.slice(lastIndex)}</span>);
+  }
+  return parts.length > 0 ? parts : text;
+}
+
+function StructuredAnalysis({ text }) {
+  if (!text) return null;
+
+  // Parse into sections by ## or ** headers
+  const lines = text.split('\n');
+  const sections = [];
+  let currentSection = { title: '', lines: [] };
+
+  for (const line of lines) {
+    const headerMatch = line.match(/^#{1,3}\s+(.+)/);
+    const boldHeaderMatch = !headerMatch && line.match(/^\*\*(.+?)\*\*\s*$/);
+
+    if (headerMatch || boldHeaderMatch) {
+      if (currentSection.title || currentSection.lines.length > 0) {
+        sections.push({ ...currentSection });
+      }
+      currentSection = { title: (headerMatch?.[1] || boldHeaderMatch?.[1]).replace(/\*\*/g, ''), lines: [] };
+    } else {
+      currentSection.lines.push(line);
+    }
+  }
+  if (currentSection.title || currentSection.lines.length > 0) {
+    sections.push(currentSection);
+  }
+
+  // If no sections were parsed (unstructured text), fall back to simple display
+  if (sections.length <= 1 && !sections[0]?.title) {
+    return (
+      <div style={{ padding: 'var(--space-lg)', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', lineHeight: 1.8, whiteSpace: 'pre-wrap', maxHeight: 600, overflow: 'auto', border: '1px solid var(--border)' }}>
+        {text}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 600, overflow: 'auto', paddingRight: 4 }}>
+      {sections.map((section, i) => {
+        const meta = sectionMeta(section.title);
+        const content = section.lines.join('\n').trim();
+        if (!section.title && !content) return null;
+
+        return (
+          <div key={i} style={{
+            background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border)', overflow: 'hidden',
+          }}>
+            {section.title && (
+              <div style={{
+                padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8,
+                borderBottom: content ? '1px solid var(--border)' : 'none',
+                background: `linear-gradient(135deg, ${meta.accent}08, transparent)`,
+              }}>
+                <span style={{ fontSize: 16 }}>{meta.icon}</span>
+                <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: '#fff', flex: 1 }}>
+                  {section.title}
+                </span>
+              </div>
+            )}
+            {content && (
+              <div style={{ padding: '12px 16px', fontSize: 'var(--text-sm)', lineHeight: 1.7 }}>
+                {content.split('\n').map((line, j) => {
+                  const trimmed = line.trim();
+                  if (!trimmed) return <div key={j} style={{ height: 6 }} />;
+
+                  // Bullet points
+                  const bulletMatch = trimmed.match(/^[-*•]\s+(.*)/);
+                  if (bulletMatch) {
+                    return (
+                      <div key={j} style={{ display: 'flex', gap: 8, marginBottom: 4, paddingLeft: 4 }}>
+                        <span style={{ color: meta.accent, fontWeight: 700, flexShrink: 0 }}>•</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{renderInline(bulletMatch[1])}</span>
+                      </div>
+                    );
+                  }
+
+                  // Numbered items
+                  const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+                  if (numMatch) {
+                    return (
+                      <div key={j} style={{ display: 'flex', gap: 8, marginBottom: 4, paddingLeft: 4 }}>
+                        <span style={{
+                          color: meta.accent, fontWeight: 800, fontSize: '0.65rem', flexShrink: 0,
+                          width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: `${meta.accent}18`, border: `1px solid ${meta.accent}33`,
+                        }}>{numMatch[1]}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{renderInline(numMatch[2])}</span>
+                      </div>
+                    );
+                  }
+
+                  // Sub-headers (lines ending with colon or starting with bold)
+                  if (trimmed.endsWith(':') && trimmed.length < 80) {
+                    return (
+                      <div key={j} style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: 8, marginBottom: 4, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                        {renderInline(trimmed)}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={j} style={{ color: 'var(--text-secondary)', marginBottom: 2 }}>
+                      {renderInline(trimmed)}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function FilmRoomPage() {
   const [films, setFilms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -837,9 +1038,7 @@ export default function FilmRoomPage() {
                       <Button variant="ghost" size="sm" onClick={() => setAnalysis(null)}>Back to Film</Button>
                     </div>
                   </div>
-                  <div style={{ padding: 'var(--space-lg)', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', lineHeight: 1.8, whiteSpace: 'pre-wrap', maxHeight: 500, overflow: 'auto', border: '1px solid var(--border)' }}>
-                    {analysis}
-                  </div>
+                  <StructuredAnalysis text={analysis} />
                 </div>
               )}
             </div>
