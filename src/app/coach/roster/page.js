@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Search, Filter, Grid3X3, List, Edit2, Trash2, Eye, X, Heart, ShieldCheck, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Avatar, PageHeader, PositionBadge, Modal, EmptyState } from '@/components/ui/index';
-import { createClient, POSITION_LABELS, getPlayerAge } from '@/lib/supabase';
+import { createClient, POSITION_LABELS, getPlayerAge, getUserWithProfile } from '@/lib/supabase';
 
 const PHYSICAL_STATUS = {
   not_submitted: { label: 'No Physical', color: 'var(--red)', icon: XCircle },
@@ -23,7 +23,19 @@ export default function RosterPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editPlayer, setEditPlayer] = useState(null);
 
-  useEffect(() => { loadPlayers(); }, []);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [pendingPlayers, setPendingPlayers] = useState([]);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [approvingId, setApprovingId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+
+  const isGMOrHC = currentUser?.role === 'General Manager' || currentUser?.role === 'Head Coach';
+
+  useEffect(() => {
+    loadPlayers();
+    loadCurrentUser();
+  }, []);
 
   async function loadPlayers() {
     const supabase = createClient();
@@ -33,6 +45,49 @@ export default function RosterPage() {
       .order('last_name', { ascending: true });
     if (!error) setPlayers(data || []);
     setLoading(false);
+  }
+
+  async function loadCurrentUser() {
+    try {
+      const { user, profile } = await getUserWithProfile();
+      if (user) {
+        let displayRole = 'Coach';
+        if (profile) {
+          if (profile.title) {
+            displayRole = profile.title;
+          } else if (profile.role === 'org_admin') {
+            displayRole = 'General Manager';
+          } else if (profile.role === 'coach') {
+            displayRole = 'Coach';
+          } else {
+            displayRole = profile.role;
+          }
+        }
+        const coachUser = {
+          id: user.id,
+          email: user.email,
+          role: displayRole,
+          name: profile ? `${profile.first_name} ${profile.last_name}` : 'Coach',
+        };
+        setCurrentUser(coachUser);
+        loadPendingPlayers(coachUser);
+      }
+    } catch (err) {
+      console.error('Error loading user:', err);
+    }
+  }
+
+  async function loadPendingPlayers(userObj) {
+    const supabase = createClient();
+    const isGMOrHCUser = userObj.role === 'General Manager' || userObj.role === 'Head Coach';
+    let query = supabase.from('pending_players').select('*');
+    if (!isGMOrHCUser) {
+      query = query.eq('submitted_by', userObj.id);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (!error) {
+      setPendingPlayers(data || []);
+    }
   }
 
   const filtered = players.filter(p => {
@@ -54,29 +109,185 @@ export default function RosterPage() {
 
   const positions = [...new Set(players.map(p => p.position).filter(Boolean))];
 
-  async function handleDelete(id) {
-    if (!confirm('Remove this player from the roster?')) return;
+  async function handleDelete(id, isPending = false) {
+    const text = isPending ? 'Remove this pending submission?' : 'Remove this player from the roster?';
+    if (!confirm(text)) return;
     const supabase = createClient();
-    const { error } = await supabase.from('players').delete().eq('id', id);
-    if (error) { toast.error('Failed to remove player'); return; }
-    toast.success('Player removed');
+    if (isPending) {
+      const { error } = await supabase.from('pending_players').delete().eq('id', id);
+      if (error) { toast.error('Failed to remove pending player'); return; }
+      toast.success('Pending submission removed');
+    } else {
+      const { error } = await supabase.from('players').delete().eq('id', id);
+      if (error) { toast.error('Failed to remove player'); return; }
+      toast.success('Player removed');
+    }
     loadPlayers();
+    if (currentUser) loadPendingPlayers(currentUser);
   }
 
   async function handleSave(formData) {
     const supabase = createClient();
-    if (editPlayer) {
-      const { error } = await supabase.from('players').update(formData).eq('id', editPlayer.id);
-      if (error) { toast.error(error.message); return; }
-      toast.success('Player updated');
+
+    const cleanName = (str) => {
+      if (!str) return '';
+      return str.trim()
+        .split(/([\s-]+)/)
+        .map(part => {
+          if (part.match(/[\s-]+/)) return part;
+          if (!part) return '';
+          return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+        })
+        .join('');
+    };
+
+    if (formData.first_name) formData.first_name = cleanName(formData.first_name);
+    if (formData.last_name) formData.last_name = cleanName(formData.last_name);
+
+    // Map weight_lbs correctly
+    if (formData.weight_lbs) {
+      formData.weight_lbs = parseFloat(formData.weight_lbs);
     } else {
-      const { error } = await supabase.from('players').insert(formData);
-      if (error) { toast.error(error.message); return; }
-      toast.success('Player added to roster!');
+      delete formData.weight_lbs;
+    }
+
+    if (editPlayer) {
+      if (editPlayer.is_pending) {
+        // Edit a pending player submission
+        const { error } = await supabase
+          .from('pending_players')
+          .update(formData)
+          .eq('id', editPlayer.id);
+        if (error) { toast.error(error.message); return; }
+        toast.success('Pending submission updated');
+      } else {
+        // Edit an active player
+        if (isGMOrHC) {
+          // GM/HC updates directly
+          const { error } = await supabase
+            .from('players')
+            .update(formData)
+            .eq('id', editPlayer.id);
+          if (error) { toast.error(error.message); return; }
+          toast.success('Player updated');
+        } else {
+          // Other coach proposes edit
+          const payload = {
+            ...formData,
+            original_player_id: editPlayer.id,
+            submitted_by: currentUser?.id,
+            submitted_by_name: currentUser?.name || 'Coach',
+            status: 'pending'
+          };
+          const { error } = await supabase
+            .from('pending_players')
+            .insert(payload);
+          if (error) { toast.error(error.message); return; }
+          toast.success('Proposed changes submitted for GM/Head Coach approval!');
+        }
+      }
+    } else {
+      // Add a new player
+      if (isGMOrHC) {
+        // GM/HC adds directly
+        const { error } = await supabase
+          .from('players')
+          .insert(formData);
+        if (error) { toast.error(error.message); return; }
+        toast.success('Player added directly to roster!');
+      } else {
+        // Other coach submits for approval
+        const payload = {
+          ...formData,
+          original_player_id: null,
+          submitted_by: currentUser?.id,
+          submitted_by_name: currentUser?.name || 'Coach',
+          status: 'pending'
+        };
+        const { error } = await supabase
+          .from('pending_players')
+          .insert(payload);
+        if (error) { toast.error(error.message); return; }
+        toast.success('Player submitted to GM/Head Coach for approval!');
+      }
     }
     setShowAddModal(false);
     setEditPlayer(null);
     loadPlayers();
+    if (currentUser) loadPendingPlayers(currentUser);
+  }
+
+  async function handleApprove(pendingPlayer) {
+    setApprovingId(pendingPlayer.id);
+    const supabase = createClient();
+    try {
+      // Exclude metadata fields when inserting/updating the players table
+      const { id, original_player_id, submitted_by, submitted_by_name, status, created_at, ...playerPayload } = pendingPlayer;
+      
+      if (original_player_id) {
+        // This is a proposed edit
+        const { error: updateError } = await supabase
+          .from('players')
+          .update(playerPayload)
+          .eq('id', original_player_id);
+          
+        if (updateError) throw updateError;
+        
+        // Remove from pending_players
+        const { error: deleteError } = await supabase
+          .from('pending_players')
+          .delete()
+          .eq('id', pendingPlayer.id);
+          
+        if (deleteError) throw deleteError;
+        
+        toast.success(`🏈 Approved edits for ${pendingPlayer.first_name} ${pendingPlayer.last_name}!`);
+      } else {
+        // This is a proposed new addition
+        const { error: insertError } = await supabase
+          .from('players')
+          .insert(playerPayload);
+          
+        if (insertError) throw insertError;
+        
+        // Remove from pending_players
+        const { error: deleteError } = await supabase
+          .from('pending_players')
+          .delete()
+          .eq('id', pendingPlayer.id);
+          
+        if (deleteError) throw deleteError;
+        
+        toast.success(`🏈 Approved: ${pendingPlayer.first_name} ${pendingPlayer.last_name} added to active roster!`);
+      }
+      
+      loadPlayers();
+      if (currentUser) loadPendingPlayers(currentUser);
+    } catch (err) {
+      toast.error(`Approval failed: ${err.message}`);
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  async function handleReject(pendingPlayer) {
+    if (!confirm(`Reject changes for ${pendingPlayer.first_name} ${pendingPlayer.last_name}?`)) return;
+    setRejectingId(pendingPlayer.id);
+    const supabase = createClient();
+    try {
+      const { error } = await supabase
+        .from('pending_players')
+        .delete()
+        .eq('id', pendingPlayer.id);
+        
+      if (error) throw error;
+      toast.success('Proposed changes rejected and removed.');
+      if (currentUser) loadPendingPlayers(currentUser);
+    } catch (err) {
+      toast.error(`Rejection failed: ${err.message}`);
+    } finally {
+      setRejectingId(null);
+    }
   }
 
   return (
@@ -84,8 +295,190 @@ export default function RosterPage() {
       <PageHeader
         title="Team Roster"
         subtitle={`${complianceStats.football} football · ${complianceStats.cheer} cheer · ${players.length} total`}
-        actions={<Button variant="primary" icon={<Plus size={16} />} onClick={() => { setEditPlayer(null); setShowAddModal(true); }}>Add Player</Button>}
+        actions={
+          <Button 
+            variant="primary" 
+            icon={<Plus size={16} />} 
+            onClick={() => { setEditPlayer(null); setShowAddModal(true); }}
+          >
+            {isGMOrHC ? 'Add Player' : 'Propose Player'}
+          </Button>
+        }
       />
+
+      {/* Pending Approvals Panel (GM/HC only) */}
+      {isGMOrHC && pendingPlayers.length > 0 && (
+        <Card style={{ marginBottom: 'var(--space-lg)', border: '1px solid var(--rocks-gold)', background: 'rgba(253, 185, 19, 0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 'var(--space-md)', borderBottom: '1px solid var(--border-light)', paddingBottom: 'var(--space-sm)' }}>
+            <span style={{ fontSize: '1.25rem' }}>📋</span>
+            <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--rocks-gold)' }}>
+              Pending Roster Approvals ({pendingPlayers.length})
+            </h3>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginLeft: 'auto' }}>
+              Requires GM or Head Coach approval
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            {pendingPlayers.map(pending => {
+              const isEdit = !!pending.original_player_id;
+              return (
+                <div 
+                  key={pending.id} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: 'var(--space-md)', 
+                    background: 'var(--bg-glass)', 
+                    borderRadius: 'var(--radius-md)', 
+                    border: '1px solid var(--border)',
+                    flexWrap: 'wrap',
+                    gap: 'var(--space-md)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                    <Avatar name={`${pending.first_name} ${pending.last_name}`} size={40} />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>
+                          {pending.first_name} {pending.last_name}
+                        </span>
+                        <Badge variant={isEdit ? 'amber' : 'green'} style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                          {isEdit ? 'Proposed Edit' : 'New Player Request'}
+                        </Badge>
+                        {pending.jersey_number && (
+                          <span style={{ color: 'var(--rocks-green-light)', fontWeight: 800, fontSize: 'var(--text-xs)' }}>
+                            #{pending.jersey_number}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginTop: 4 }}>
+                        {pending.program_type === 'cheerleading' ? '📣 Cheerleading' : '🏈 Football'}
+                        {pending.position && ` · Pos: ${pending.position}`}
+                        {pending.weight_lbs && ` · ${pending.weight_lbs} lbs`}
+                        {pending.date_of_birth && ` · Age ${getPlayerAge(pending.date_of_birth)}`}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span>👤 Submitted by: <strong>{pending.submitted_by_name || 'Coach'}</strong></span>
+                        <span>·</span>
+                        <span>{new Date(pending.created_at).toLocaleDateString()}</span>
+                      </div>
+                      {pending.notes && (
+                        <div style={{ fontSize: 'var(--text-xs)', fontStyle: 'italic', background: 'rgba(255,255,255,0.03)', padding: '4px 8px', borderRadius: 4, marginTop: 6, borderLeft: '2px solid var(--border-light)' }}>
+                          &ldquo;{pending.notes}&rdquo;
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      icon={<Eye size={12} />} 
+                      onClick={() => { setSelectedPlayer(pending); setShowViewModal(true); }}
+                    >
+                      Inspect
+                    </Button>
+                    <Button 
+                      variant="primary" 
+                      size="sm" 
+                      icon={<CheckCircle size={12} />} 
+                      loading={approvingId === pending.id}
+                      onClick={() => handleApprove(pending)}
+                      style={{ background: 'var(--green)', borderColor: 'var(--green)' }}
+                    >
+                      Approve
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      icon={<XCircle size={12} />} 
+                      loading={rejectingId === pending.id}
+                      onClick={() => handleReject(pending)}
+                      style={{ color: 'var(--red)' }}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* My Pending Submissions (Non-GM/HC coaches only) */}
+      {!isGMOrHC && pendingPlayers.length > 0 && (
+        <Card style={{ marginBottom: 'var(--space-lg)', border: '1px solid var(--border-light)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 'var(--space-md)' }}>
+            <span style={{ fontSize: '1.25rem' }}>⏳</span>
+            <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 700 }}>
+              My Pending Submissions ({pendingPlayers.length})
+            </h3>
+            <Badge variant="gold" style={{ fontSize: '0.65rem', marginLeft: 'auto' }}>Awaiting Approval</Badge>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+            {pendingPlayers.map(pending => {
+              const isEdit = !!pending.original_player_id;
+              return (
+                <div 
+                  key={pending.id} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: 'var(--space-sm) var(--space-md)', 
+                    background: 'rgba(255,255,255,0.02)', 
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                        {pending.first_name} {pending.last_name}
+                      </span>
+                      <Badge variant={isEdit ? 'amber' : 'green'} style={{ fontSize: '0.6rem', padding: '0px 4px' }}>
+                        {isEdit ? 'Proposed Edit' : 'New Player'}
+                      </Badge>
+                      {pending.jersey_number && <span style={{ color: 'var(--rocks-green-light)', fontWeight: 700 }}>#{pending.jersey_number}</span>}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', marginTop: 2 }}>
+                      {pending.program_type === 'cheerleading' ? '📣 Cheerleading' : '🏈 Football'}
+                      {pending.position && ` · Pos: ${pending.position}`}
+                      {pending.weight_lbs && ` · ${pending.weight_lbs} lbs`}
+                      {pending.date_of_birth && ` · Age ${getPlayerAge(pending.date_of_birth)}`}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      icon={<Edit2 size={12} />} 
+                      onClick={() => { 
+                        setEditPlayer({ ...pending, is_pending: true }); 
+                        setShowAddModal(true); 
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      icon={<Trash2 size={12} />} 
+                      onClick={() => handleDelete(pending.id, true)}
+                      style={{ color: 'var(--red)' }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Compliance Summary Bar */}
       {players.length > 0 && (
@@ -163,9 +556,11 @@ export default function RosterPage() {
                   <span title={player.registration_paid ? 'Reg: Paid' : 'Reg: Unpaid'} style={{ width: 8, height: 8, borderRadius: '50%', background: player.registration_paid ? 'var(--green)' : 'var(--red)' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: 'var(--space-lg)' }}>
-                  <Button variant="ghost" size="sm" icon={<Eye size={14} />} onClick={() => window.location.href = `/coach/roster/${player.id}`}>View</Button>
+                  <Button variant="ghost" size="sm" icon={<Eye size={14} />} onClick={() => { setSelectedPlayer(player); setShowViewModal(true); }}>View</Button>
                   <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => { setEditPlayer(player); setShowAddModal(true); }}>Edit</Button>
-                  <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => handleDelete(player.id)} style={{ color: 'var(--red)' }} />
+                  {isGMOrHC && (
+                    <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => handleDelete(player.id)} style={{ color: 'var(--red)' }} />
+                  )}
                 </div>
               </Card>
             </motion.div>
@@ -188,8 +583,11 @@ export default function RosterPage() {
                     <td>{player.registration_paid ? <CheckCircle size={14} color="var(--green)" /> : <XCircle size={14} color="var(--red)" />}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditPlayer(player); setShowAddModal(true); }}><Edit2 size={14} /></button>
-                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => handleDelete(player.id)} style={{ color: 'var(--red)' }}><Trash2 size={14} /></button>
+                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setSelectedPlayer(player); setShowViewModal(true); }} title="View Profile"><Eye size={14} /></button>
+                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditPlayer(player); setShowAddModal(true); }} title="Edit Profile"><Edit2 size={14} /></button>
+                        {isGMOrHC && (
+                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => handleDelete(player.id)} style={{ color: 'var(--red)' }} title="Remove Player"><Trash2 size={14} /></button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -199,6 +597,134 @@ export default function RosterPage() {
           </div>
         </Card>
       )}
+
+      {/* View Details Modal */}
+      <Modal 
+        isOpen={showViewModal} 
+        onClose={() => { setShowViewModal(false); setSelectedPlayer(null); }} 
+        title="Player Profile Details" 
+        size="md"
+      >
+        {selectedPlayer && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', borderBottom: '1px solid var(--border-light)', paddingBottom: 'var(--space-md)' }}>
+              <Avatar name={`${selectedPlayer.first_name} ${selectedPlayer.last_name}`} size={64} />
+              <div>
+                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 800 }}>
+                  {selectedPlayer.first_name} {selectedPlayer.last_name}
+                </h3>
+                {selectedPlayer.jersey_number && (
+                  <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--rocks-green-light)' }}>
+                    #{selectedPlayer.jersey_number}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                  {selectedPlayer.position && <PositionBadge position={selectedPlayer.position} />}
+                  <Badge variant={(selectedPlayer.program_type || 'football') === 'football' ? 'green' : 'purple'}>
+                    {(selectedPlayer.program_type || 'football') === 'football' ? '🏈 Football' : '📣 Cheerleading'}
+                  </Badge>
+                  {selectedPlayer.date_of_birth && (
+                    <Badge variant="blue">Age {getPlayerAge(selectedPlayer.date_of_birth)}</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+              <div>
+                <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Date of Birth</h4>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                  {selectedPlayer.date_of_birth ? new Date(selectedPlayer.date_of_birth).toLocaleDateString() : 'Not set'}
+                </div>
+              </div>
+              <div>
+                <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Weight</h4>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                  {selectedPlayer.weight_lbs ? `${selectedPlayer.weight_lbs} lbs` : 'Not set'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-md)' }}>
+              <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--rocks-green-light)', marginBottom: 'var(--space-sm)' }}>
+                📋 Compliance Status
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: 8, borderRadius: 4 }}>
+                  <ShieldCheck size={16} color={selectedPlayer.physical_status === 'completed' ? 'var(--green)' : 'var(--amber)'} />
+                  <div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Physical</div>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+                      {selectedPlayer.physical_status === 'completed' ? 'Cleared' : selectedPlayer.physical_status === 'scheduled' ? 'Scheduled' : 'Missing'}
+                      {selectedPlayer.physical_date && ` (${new Date(selectedPlayer.physical_date).toLocaleDateString()})`}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: 8, borderRadius: 4 }}>
+                  <CheckCircle size={16} color={selectedPlayer.has_state_id ? 'var(--green)' : 'var(--red)'} />
+                  <div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>State ID / Passport</div>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+                      {selectedPlayer.has_state_id ? 'Submitted & Verified' : 'Missing'}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: 8, borderRadius: 4, gridColumn: 'span 2' }}>
+                  <CheckCircle size={16} color={selectedPlayer.registration_paid ? 'var(--green)' : 'var(--red)'} />
+                  <div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Registration Payment</div>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+                      {selectedPlayer.registration_paid ? 'Paid' : 'Unpaid'}
+                      {selectedPlayer.registration_date && ` on ${new Date(selectedPlayer.registration_date).toLocaleDateString()}`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-md)' }}>
+              <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--rocks-gold)', marginBottom: 'var(--space-sm)' }}>
+                Guardian / Contact Details
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                <div>
+                  <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Guardian Name</h4>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                    {selectedPlayer.guardian_name || 'Not set'}
+                  </div>
+                </div>
+                <div>
+                  <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Phone Number</h4>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                    {selectedPlayer.guardian_phone || 'Not set'}
+                  </div>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Email Address</h4>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                    {selectedPlayer.guardian_email || 'Not set'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {selectedPlayer.notes && (
+              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-md)' }}>
+                <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Internal Notes</h4>
+                <p style={{ fontSize: 'var(--text-sm)', whiteSpace: 'pre-wrap', fontStyle: 'italic', background: 'rgba(255,255,255,0.01)', padding: 10, borderRadius: 6, border: '1px dashed var(--border-light)' }}>
+                  {selectedPlayer.notes}
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-md)', marginTop: 'var(--space-sm)' }}>
+              <Button variant="primary" onClick={() => { setShowViewModal(false); setSelectedPlayer(null); }}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Add/Edit Modal */}
       <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setEditPlayer(null); }} title={editPlayer ? 'Edit Player' : 'Add Player'} size="md">
@@ -215,7 +741,7 @@ function PlayerForm({ player, onSave, onCancel }) {
     jersey_number: player?.jersey_number || '',
     position: player?.position || '',
     date_of_birth: player?.date_of_birth || '',
-    weight: player?.weight || '',
+    weight_lbs: player?.weight_lbs || player?.weight || '',
     program_type: player?.program_type || 'football',
     physical_status: player?.physical_status || 'not_submitted',
     physical_date: player?.physical_date || '',
@@ -234,8 +760,8 @@ function PlayerForm({ player, onSave, onCancel }) {
     setSaving(true);
     const payload = { ...form };
     if (payload.jersey_number) payload.jersey_number = parseInt(payload.jersey_number);
-    if (payload.weight) payload.weight = parseFloat(payload.weight);
-    else delete payload.weight;
+    if (payload.weight_lbs) payload.weight_lbs = parseFloat(payload.weight_lbs);
+    else delete payload.weight_lbs;
     if (!payload.jersey_number) delete payload.jersey_number;
     await onSave(payload);
     setSaving(false);
@@ -256,7 +782,7 @@ function PlayerForm({ player, onSave, onCancel }) {
           </select>
         </div>
         <div className="form-group"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={form.date_of_birth} onChange={e => update('date_of_birth', e.target.value)} /></div>
-        <div className="form-group"><label className="form-label">Weight (lbs)</label><input className="form-input" type="number" value={form.weight} onChange={e => update('weight', e.target.value)} /></div>
+        <div className="form-group"><label className="form-label">Weight (lbs)</label><input className="form-input" type="number" value={form.weight_lbs} onChange={e => update('weight_lbs', e.target.value)} /></div>
         <div className="form-group"><label className="form-label">Program</label>
           <select className="form-input" value={form.program_type} onChange={e => update('program_type', e.target.value)}>
             <option value="football">🏈 Football ($175)</option>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { Shield, Users, ChevronDown, Save, RotateCcw, Zap } from 'lucide-react';
@@ -41,6 +41,155 @@ const POSITIONS = {
     { key: 'LS', label: 'Long Snapper' },
   ],
 };
+
+function PlayerSelect({ value, onChange, roster }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleOutsideClick(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isOpen]);
+
+  const selectedPlayer = roster.find(p => p.id === value);
+  const displayName = selectedPlayer 
+    ? `#${selectedPlayer.jersey_number ?? '?'} ${selectedPlayer.first_name} ${selectedPlayer.last_name?.charAt(0)}.` 
+    : '—';
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 50 : 1 }}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          padding: '6px 10px',
+          fontSize: '11px',
+          fontWeight: selectedPlayer ? '700' : '400',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          background: selectedPlayer ? 'rgba(0,154,68,0.15)' : 'rgba(0,0,0,0.45)',
+          border: `1px solid ${selectedPlayer ? 'rgba(0,154,68,0.4)' : 'rgba(255,255,255,0.15)'}`,
+          color: selectedPlayer ? '#fff' : 'rgba(255,255,255,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          outline: 'none',
+          textAlign: 'left',
+          gap: '4px',
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {displayName}
+        </span>
+        <ChevronDown size={10} style={{ opacity: 0.6, flexShrink: 0 }} />
+      </button>
+
+      {/* Dropdown Options List */}
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            width: '220px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            background: '#0B150F',
+            border: '1px solid rgba(16, 107, 58, 0.4)',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+            zIndex: 100,
+            padding: '4px',
+          }}
+        >
+          {/* Clear selection option */}
+          <button
+            type="button"
+            onClick={() => {
+              onChange('');
+              setIsOpen(false);
+            }}
+            style={{
+              width: '100%',
+              padding: '6px 8px',
+              fontSize: '11px',
+              textAlign: 'left',
+              background: !value ? 'rgba(0,154,68,0.15)' : 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              color: !value ? '#4ADE80' : 'rgba(255,255,255,0.6)',
+              cursor: 'pointer',
+              display: 'block',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = !value ? 'rgba(0,154,68,0.15)' : 'transparent';
+            }}
+          >
+            — Clear Position
+          </button>
+          
+          {/* Roster options */}
+          {roster.map(p => {
+            const isCurrent = p.id === value;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  onChange(p.id);
+                  setIsOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  fontSize: '11px',
+                  textAlign: 'left',
+                  background: isCurrent ? 'rgba(0,154,68,0.25)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: isCurrent ? '#4ADE80' : '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '2px',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(0, 154, 68, 0.3)';
+                  e.currentTarget.style.color = '#fff';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = isCurrent ? 'rgba(0,154,68,0.25)' : 'transparent';
+                  e.currentTarget.style.color = isCurrent ? '#4ADE80' : '#fff';
+                }}
+              >
+                <span style={{ fontWeight: '700', color: isCurrent ? '#4ADE80' : '#FDB913' }}>
+                  #{p.jersey_number ?? '?'}
+                </span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.first_name} {p.last_name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DepthChartPage() {
   const [roster, setRoster] = useState([]);
@@ -120,7 +269,7 @@ export default function DepthChartPage() {
 
   function getPlayerName(playerId) {
     const p = roster.find(r => r.id === playerId);
-    return p ? `#${p.jersey_number || '?'} ${p.first_name} ${p.last_name?.charAt(0)}.` : '';
+    return p ? `#${p.jersey_number ?? '?'} ${p.first_name} ${p.last_name?.charAt(0)}.` : '';
   }
 
   function getHigherRatedAlternative(posKey) {
@@ -215,19 +364,12 @@ export default function DepthChartPage() {
               })()}
             </div>
             {[1, 2, 3].map(stringNum => (
-              <div key={stringNum} style={{ position: 'relative' }}>
-                <select value={depthChart[pos.key]?.[stringNum] || ''} onChange={e => setPlayer(pos.key, stringNum, e.target.value)}
-                  style={{
-                    width: '100%', padding: '6px', fontSize: 11, borderRadius: 6, cursor: 'pointer',
-                    background: depthChart[pos.key]?.[stringNum] ? 'rgba(0,154,68,0.08)' : 'rgba(0,0,0,0.3)',
-                    border: `1px solid ${depthChart[pos.key]?.[stringNum] ? 'rgba(0,154,68,0.2)' : 'rgba(255,255,255,0.08)'}`,
-                    color: depthChart[pos.key]?.[stringNum] ? '#fff' : 'rgba(255,255,255,0.3)',
-                  }}>
-                  <option value="">—</option>
-                  {roster.map(p => (
-                    <option key={p.id} value={p.id}>#{p.jersey_number || '?'} {p.first_name} {p.last_name}</option>
-                  ))}
-                </select>
+              <div key={stringNum} style={{ position: 'relative', width: '100%' }}>
+                <PlayerSelect
+                  value={depthChart[pos.key]?.[stringNum] || ''}
+                  onChange={val => setPlayer(pos.key, stringNum, val)}
+                  roster={roster}
+                />
                 {stringNum === 1 && depthChart[pos.key]?.[1] && evalScores[depthChart[pos.key][1]] && (
                   <div style={{
                     position: 'absolute', top: -6, right: -4, padding: '1px 4px', borderRadius: 4,

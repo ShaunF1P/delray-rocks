@@ -129,11 +129,11 @@ export default function ReportsPage() {
     <div>
       <PageHeader
         title="Parent Reports"
-        subtitle="AI-generated weekly development reports — draft, review, then send via GHL"
+        subtitle="AI-generated weekly development reports — draft, review, then send to parents"
         breadcrumbs={[{ label: 'Coach', href: '/coach/dashboard' }, { label: 'Parent Reports' }]}
         actions={
           <Badge variant="green" style={{ fontSize: '0.7rem', padding: '4px 10px' }}>
-            <Brain size={12} style={{ marginRight: 4 }} /> GEMINI PRO
+            <Brain size={12} style={{ marginRight: 4 }} /> AI ENGINE
           </Badge>
         }
       />

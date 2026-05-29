@@ -36,12 +36,20 @@ export default function SettingsPage() {
     role: 'Head Coach',
   });
 
+  const isGM = currentUser.role === 'General Manager';
+
   useEffect(() => {
     // Check GHL connection status
     checkGHL();
     // Load DB settings dynamically
     loadDBSettings();
   }, []);
+
+  useEffect(() => {
+    if (!isGM && activeTab === 'integrations') {
+      setActiveTab('team');
+    }
+  }, [isGM, activeTab]);
 
   async function checkGHL() {
     setGhlStatus({ connected: false, checking: true });
@@ -117,10 +125,10 @@ export default function SettingsPage() {
 
   const tabs = [
     { key: 'team', label: 'Team Profile', icon: <FootballIcon size={16} /> },
-    { key: 'integrations', label: 'Integrations', icon: <Link2 size={16} /> },
+    isGM && { key: 'integrations', label: 'Integrations', icon: <Link2 size={16} /> },
     { key: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { key: 'account', label: 'Account', icon: <User size={16} /> },
-  ];
+  ].filter(Boolean);
 
   return (
     <div>
@@ -204,7 +212,7 @@ export default function SettingsPage() {
           )}
 
           {/* Integrations */}
-          {activeTab === 'integrations' && (
+          {activeTab === 'integrations' && isGM && (
             <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
                 {/* GHL Integration */}
@@ -219,7 +227,7 @@ export default function SettingsPage() {
                         <CalendarIcon size={24} color="white" />
                       </div>
                       <div>
-                        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 4 }}>GoHighLevel (F1rst Position)</h3>
+                        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 4 }}>Scheduling Portal</h3>
                         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', marginBottom: 8 }}>
                           Calendar scheduling, contact management, and automated workflows
                         </p>
@@ -232,7 +240,7 @@ export default function SettingsPage() {
                             <Badge variant="amber">Not Connected</Badge>
                           )}
                           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
-                            Location: {GHL_LOCATION_ID}
+                            Portal ID: {GHL_LOCATION_ID}
                           </span>
                         </div>
                       </div>
@@ -240,7 +248,7 @@ export default function SettingsPage() {
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <Button variant="ghost" size="sm" onClick={checkGHL}>Refresh</Button>
                       <a href={`https://app.f1rstposition.com/v2/location/${GHL_LOCATION_ID}/dashboard`} target="_blank" rel="noopener noreferrer">
-                        <Button variant="secondary" size="sm" icon={<ExternalLink size={12} />}>Open GHL</Button>
+                        <Button variant="secondary" size="sm" icon={<ExternalLink size={12} />}>Open Portal</Button>
                       </a>
                     </div>
                   </div>
@@ -282,8 +290,8 @@ export default function SettingsPage() {
                       <ShieldCheckIcon size={24} color="white" />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 4 }}>Supabase</h3>
-                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)' }}>Database, authentication, and real-time data</p>
+                      <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 4 }}>Core Team Database</h3>
+                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)' }}>Database and authentication engine</p>
                     </div>
                     <Badge variant="green"><Check size={10} /> Connected</Badge>
                   </div>
