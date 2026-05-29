@@ -36,9 +36,15 @@ const POSITIONS = {
   special: [
     { key: 'K', label: 'Kicker' },
     { key: 'P', label: 'Punter' },
-    { key: 'KR', label: 'Kick Returner' },
-    { key: 'PR', label: 'Punt Returner' },
+    { key: 'H', label: 'Holder' },
     { key: 'LS', label: 'Long Snapper' },
+    { key: 'KR1', label: 'Kick Returner 1' },
+    { key: 'KR2', label: 'Kick Returner 2' },
+    { key: 'PR', label: 'Punt Returner' },
+    { key: 'GUN1', label: 'Gunner Left' },
+    { key: 'GUN2', label: 'Gunner Right' },
+    { key: 'UP1', label: 'Upback Left' },
+    { key: 'UP2', label: 'Upback Right' },
   ],
 };
 
