@@ -109,6 +109,25 @@ export default function CoachingStaffPage() {
         }
       />
 
+      {/* Compliance Summary Bar */}
+      {staff.length > 0 && (
+        <Card style={{ marginBottom: 'var(--space-lg)', padding: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-xl)', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Staff Compliance</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: staff.every(c => c.background_check) ? 'var(--green)' : 'var(--amber)' }} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{staff.filter(c => c.background_check).length}/{staff.length}</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Background Checks</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: staff.every(c => c.certification) ? 'var(--green)' : 'var(--amber)' }} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{staff.filter(c => c.certification).length}/{staff.length}</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Certifications Verified</span>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Staff Grid */}
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-lg)' }}>
@@ -170,11 +189,32 @@ export default function CoachingStaffPage() {
                   <Badge variant={getRoleColor(coach.title)} style={{ marginBottom: 8 }}>{coach.title}</Badge>
 
                   {coach.specialty && (
-                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', marginBottom: 12 }}>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', marginBottom: 4 }}>
                       <Shield size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       {coach.specialty}
                     </div>
                   )}
+
+                  {/* Compliance Status */}
+                  <div style={{
+                    display: 'flex',
+                    gap: 8,
+                    justifyContent: 'center',
+                    margin: '8px 12px 12px',
+                    padding: '6px 12px',
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.65rem' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: coach.background_check ? 'var(--green)' : 'var(--red)' }} />
+                      <span style={{ color: coach.background_check ? 'var(--text-primary)' : 'var(--text-dim)' }}>Background</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.65rem' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: coach.certification ? 'var(--green)' : 'var(--red)' }} />
+                      <span style={{ color: coach.certification ? 'var(--text-primary)' : 'var(--text-dim)' }}>Certification</span>
+                    </div>
+                  </div>
 
                   {/* Contact */}
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 'var(--space-sm)' }}>
@@ -223,6 +263,8 @@ function StaffForm({ coach, onSave, onCancel }) {
     email: coach?.email || '',
     headshot_url: coach?.headshot_url || '',
     sort_order: coach?.sort_order || 10,
+    background_check: coach?.background_check || false,
+    certification: coach?.certification || false,
   });
   const [saving, setSaving] = useState(false);
 
@@ -273,6 +315,25 @@ function StaffForm({ coach, onSave, onCancel }) {
         <div className="form-group">
           <label className="form-label">Sort Order</label>
           <input className="form-input" type="number" value={form.sort_order} onChange={e => update('sort_order', parseInt(e.target.value) || 10)} />
+        </div>
+        
+        {/* Compliance Section */}
+        <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-md)', gridColumn: 'span 2' }}>
+          <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 'var(--space-md)', color: 'var(--rocks-green-light)' }}>📋 Compliance</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.background_check} onChange={e => update('background_check', e.target.checked)} style={{ width: 16, height: 16 }} />
+                Background Check Cleared
+              </label>
+            </div>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.certification} onChange={e => update('certification', e.target.checked)} style={{ width: 16, height: 16 }} />
+                Certification Cleared
+              </label>
+            </div>
+          </div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
