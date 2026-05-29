@@ -17,8 +17,8 @@ const POSITIONS = {
     { key: 'LT', label: 'Left Tackle' },
     { key: 'RT', label: 'Right Tackle' },
     { key: 'TE', label: 'Tight End' },
-    { key: 'WR', label: 'Wide Receiver' },
-    { key: 'SE', label: 'Split End' },
+    { key: 'WR1', label: 'Wide Receiver 1' },
+    { key: 'WR2', label: 'Wide Receiver 2' },
   ],
   defense: [
     { key: 'DT1', label: 'Nose Tackle' },
