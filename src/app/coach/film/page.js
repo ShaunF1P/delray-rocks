@@ -323,6 +323,64 @@ export default function FilmRoomPage() {
   const [importedLogName, setImportedLogName] = useState('');
   const [activeRightTab, setActiveRightTab] = useState('analysis');
   const sidelineInputRef = useRef(null);
+  const fullscreenContainerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
+    const container = fullscreenContainerRef.current;
+    if (!container) return;
+
+    if (
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    ) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    } else {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if (container.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+      } else if (container.mozRequestFullScreen) {
+        container.mozRequestFullScreen();
+      } else if (container.msRequestFullscreen) {
+        container.msRequestFullscreen();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      const container = fullscreenContainerRef.current;
+      setIsFullscreen(
+        document.fullscreenElement === container ||
+        document.webkitFullscreenElement === container ||
+        document.mozFullScreenElement === container ||
+        document.msFullscreenElement === container
+      );
+    };
+
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    document.addEventListener('mozfullscreenchange', handleFsChange);
+    document.addEventListener('MSFullscreenChange', handleFsChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+      document.removeEventListener('mozfullscreenchange', handleFsChange);
+      document.removeEventListener('MSFullscreenChange', handleFsChange);
+    };
+  }, []);
 
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
@@ -1240,7 +1298,32 @@ export default function FilmRoomPage() {
               {/* Left Column: Video Player, Trimmer, Details */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
                 {selectedFilm.video_url ? (
-                  <div>
+                  <div 
+                    ref={fullscreenContainerRef}
+                    style={isFullscreen ? {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#000',
+                      width: '100%',
+                      height: '100%',
+                      padding: '20px',
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      position: 'relative'
+                    } : {
+                      position: 'relative'
+                    }}
+                  >
+                    <style dangerouslySetInnerHTML={{ __html: `
+                      video::-webkit-media-controls-fullscreen-button {
+                        display: none !important;
+                      }
+                      video::-webkit-media-controls-toggle-closed-captions-button {
+                        display: none !important;
+                      }
+                    ` }} />
                     <div 
                       ref={videoContainerRef}
                       onMouseDown={handleMouseDown}
@@ -1250,13 +1333,17 @@ export default function FilmRoomPage() {
                       onWheel={handleWheel}
                       style={{ 
                         position: 'relative', 
-                        borderRadius: 'var(--radius-md)', 
+                        borderRadius: isFullscreen ? 0 : 'var(--radius-md)', 
                         overflow: 'hidden', 
                         background: '#000', 
                         width: '100%', 
-                        maxHeight: 400,
+                        height: isFullscreen ? 'calc(100% - 100px)' : 'auto',
+                        maxHeight: isFullscreen ? 'none' : 400,
                         cursor: zoom > 1 && !isDrawingMode ? (isPanning ? 'grabbing' : 'grab') : 'default',
-                        userSelect: 'none'
+                        userSelect: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                     >
                       <video ref={videoRef}
@@ -1264,11 +1351,18 @@ export default function FilmRoomPage() {
                           ? `${selectedFilm.video_url}#t=${selectedFilm.clip_start_seconds},${selectedFilm.clip_end_seconds}`
                           : selectedFilm.video_url}
                         controls 
+                        controlsList="nofullscreen"
                         onLoadedMetadata={initCanvas}
                         onDragStart={(e) => e.preventDefault()}
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
+                          toggleFullscreen();
+                        }}
                         style={{ 
                           width: '100%', 
-                          maxHeight: 400, 
+                          height: isFullscreen ? '100%' : 'auto',
+                          maxHeight: isFullscreen ? 'none' : 400, 
+                          objectFit: 'contain',
                           transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`, 
                           transformOrigin: 'center center',
                           transition: 'transform 0.1s ease'
@@ -1304,7 +1398,24 @@ export default function FilmRoomPage() {
                     </div>
 
                     {/* Telestrator, Speed & Zoom Tool Bar */}
-                    <div style={{
+                    <div style={isFullscreen ? {
+                      position: 'absolute',
+                      bottom: 16,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      zIndex: 100,
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      backdropFilter: 'blur(8px)',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      width: '90%',
+                      maxWidth: 800,
+                      borderRadius: 'var(--radius-md)',
+                      padding: 12,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12
+                    } : {
                       marginTop: 12,
                       padding: 12,
                       background: 'rgba(255,255,255,0.05)',
@@ -1499,6 +1610,26 @@ export default function FilmRoomPage() {
                                 Reset
                               </button>
                             )}
+
+                            <button
+                              onClick={toggleFullscreen}
+                              style={{
+                                padding: '2px 6px',
+                                borderRadius: 'var(--radius-xs)',
+                                background: isFullscreen ? 'rgba(253,185,19,0.15)' : 'rgba(255,255,255,0.1)',
+                                border: '1px solid',
+                                borderColor: isFullscreen ? 'var(--rocks-gold)' : 'rgba(255,255,255,0.2)',
+                                color: isFullscreen ? 'var(--rocks-gold)' : '#fff',
+                                fontSize: 10,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4
+                              }}
+                              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                            >
+                              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                            </button>
                           </div>
                         </div>
                       </div>
