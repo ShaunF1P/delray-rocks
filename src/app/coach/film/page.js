@@ -1440,7 +1440,7 @@ export default function FilmRoomPage() {
 
                     {/* Telestrator, Speed & Zoom Tool Bar */}
                     <div style={
-                      !isToolbarLocked
+                      (!isToolbarLocked || toolbarPos.x !== 0 || toolbarPos.y !== 0)
                         ? {
                             position: 'absolute',
                             bottom: 16,
@@ -1538,9 +1538,6 @@ export default function FilmRoomPage() {
                         <button
                           onClick={() => {
                             setIsToolbarLocked(!isToolbarLocked);
-                            if (!isToolbarLocked) {
-                              setToolbarPos({ x: 0, y: 0 });
-                            }
                           }}
                           style={{
                             padding: '4px 12px',
@@ -1561,6 +1558,31 @@ export default function FilmRoomPage() {
                           {isToolbarLocked ? <Lock size={12} /> : <Unlock size={12} />}
                           {isToolbarLocked ? 'Unlock Panel' : 'Lock Panel'}
                         </button>
+
+                        {(toolbarPos.x !== 0 || toolbarPos.y !== 0) && (
+                          <button
+                            onClick={() => {
+                              setToolbarPos({ x: 0, y: 0 });
+                              setIsToolbarLocked(true);
+                            }}
+                            style={{
+                              padding: '4px 12px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid rgba(255,255,255,0.2)',
+                              background: 'none',
+                              color: '#fff',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title="Return panel to default position"
+                          >
+                            Dock Panel
+                          </button>
+                        )}
 
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginLeft: 12 }}>TELESTRATOR:</span>
                         <button
