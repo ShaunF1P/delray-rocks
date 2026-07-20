@@ -323,6 +323,8 @@ export default function FilmRoomPage() {
   const [importedLogName, setImportedLogName] = useState('');
   const [activeRightTab, setActiveRightTab] = useState('analysis');
   const sidelineInputRef = useRef(null);
+  const [replacingVideoId, setReplacingVideoId] = useState(null);
+  const replaceInputRef = useRef(null);
   const fullscreenContainerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -823,6 +825,126 @@ export default function FilmRoomPage() {
       toast.error(err.message || 'Upload failed', { id: 'upload-progress' });
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleVideoReplacement(e) {
+    const file = e.target.files?.[0];
+    if (!file || !selectedFilm) return;
+
+    setUploading(true);
+    setReplacingVideoId(selectedFilm.id);
+    setUploadProgress(0);
+    setUploadSpeed(0);
+    setEstimatedTime(0);
+    const supabase = createClient();
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.user) {
+        toast.error('You must be logged in to upload. Please refresh and log in again.');
+        setUploading(false);
+        setReplacingVideoId(null);
+        return;
+      }
+      const token = session.access_token;
+
+      let fileToUpload = file;
+
+      if (shouldCompress) {
+        setCompressing(true);
+        setCompressionProgress(0);
+        try {
+          const compressed = await compressVideo(file, {
+            onProgress: (pct) => setCompressionProgress(pct),
+          });
+          fileToUpload = compressed.blob;
+          const ext = compressed.name.split('.').pop();
+          fileToUpload.name = `${file.name.replace(/\.[^.]+$/, '')}-compressed.${ext}`;
+        } catch (compressErr) {
+          console.warn('Compression failed or bypassed, uploading original:', compressErr.message);
+        } finally {
+          setCompressing(false);
+        }
+      }
+
+      const ext = fileToUpload.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+      toast.loading(`Uploading ${(fileToUpload.size / (1024 * 1024)).toFixed(0)}MB...`, { id: 'replace-progress' });
+
+      const newVideoUrl = await new Promise((resolve, reject) => {
+        let lastBytes = 0;
+        let lastTime = Date.now();
+
+        const upload = new tus.Upload(fileToUpload, {
+          endpoint: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${token}`,
+            'x-upsert': 'true',
+          },
+          metadata: {
+            bucketName: 'game-films',
+            objectName: fileName,
+            contentType: fileToUpload.type,
+          },
+          chunkSize: 6 * 1024 * 1024,
+          onError: (err) => {
+            console.error('TUS replacement upload error:', err);
+            reject(err);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(pct);
+
+            const currentTime = Date.now();
+            const timeDiff = (currentTime - lastTime) / 1000;
+            if (timeDiff > 0.5) {
+              const bytesDiff = bytesUploaded - lastBytes;
+              const speed = bytesDiff / timeDiff;
+              const remainingBytes = bytesTotal - bytesUploaded;
+              const remainingTime = speed > 0 ? remainingBytes / speed : 0;
+
+              setUploadSpeed(speed);
+              setEstimatedTime(remainingTime);
+
+              lastBytes = bytesUploaded;
+              lastTime = currentTime;
+            }
+          },
+          onSuccess: () => {
+            const { data: urlData } = supabase.storage.from('game-films').getPublicUrl(fileName);
+            resolve(urlData.publicUrl);
+          },
+        });
+
+        setTusUpload(upload);
+        setUploadPaused(false);
+        upload.start();
+      });
+
+      toast.loading('Updating film record...', { id: 'replace-progress' });
+
+      const { error: updateError } = await supabase
+        .from('game_films')
+        .update({ video_url: newVideoUrl })
+        .eq('id', selectedFilm.id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Video replaced successfully! 🏈', { id: 'replace-progress' });
+
+      setSelectedFilm(prev => prev ? { ...prev, video_url: newVideoUrl } : null);
+      setFilms(prev => prev.map(f => f.id === selectedFilm.id ? { ...f, video_url: newVideoUrl } : f));
+    } catch (err) {
+      console.error('Replacement failed:', err);
+      toast.error(err.message || 'Replacement failed', { id: 'replace-progress' });
+    } finally {
+      setUploading(false);
+      setReplacingVideoId(null);
+      setTusUpload(null);
+      if (replaceInputRef.current) replaceInputRef.current.value = '';
     }
   }
 
@@ -1966,8 +2088,25 @@ export default function FilmRoomPage() {
                     })()}
                   </div>
 
-                  <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <Button variant="secondary" icon={<Scissors size={14} />} size="sm" onClick={openClipTrimmer}>Create Clip</Button>
+                    <input
+                      type="file"
+                      ref={replaceInputRef}
+                      accept="video/*"
+                      style={{ display: 'none' }}
+                      onChange={handleVideoReplacement}
+                    />
+                    <Button
+                      variant="secondary"
+                      icon={<Upload size={14} />}
+                      size="sm"
+                      onClick={() => replaceInputRef.current?.click()}
+                      loading={replacingVideoId === selectedFilm.id && uploading}
+                      disabled={uploading}
+                    >
+                      Replace Video
+                    </Button>
                     <Button variant="ghost" icon={<Trash2 size={14} />} size="sm" onClick={() => { deleteFilm(selectedFilm.id); setSelectedFilm(null); }}>Delete</Button>
                   </div>
                 </div>
