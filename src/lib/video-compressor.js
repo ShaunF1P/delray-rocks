@@ -5,9 +5,9 @@
  */
 export async function compressVideo(file, options = {}) {
   const {
-    targetWidth = 1280,
-    targetHeight = 720,
-    targetBitrate = 1500000, // 1.5 Mbps - excellent for sports analysis
+    targetWidth = 1920,
+    targetHeight = 1080,
+    targetBitrate = 5000000, // 5 Mbps - crisp 1080p, perfect for seeing player numbers
     fps = 30,
     playbackSpeed = 2.0, // Compress at 2x speed
     onProgress = () => {},
