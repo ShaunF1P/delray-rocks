@@ -10,7 +10,7 @@ import { trackFilmView, trackFilmUpload, trackFilmAnalysis } from '@/lib/track';
 import toast from 'react-hot-toast';
 import * as tus from 'tus-js-client';
 import { compressVideo } from '@/lib/video-compressor';
-import { Thermometer, Wind, Sun, CloudRain, Cloud, CloudLightning, Pause, FileText } from 'lucide-react';
+import { Thermometer, Wind, Sun, CloudRain, Cloud, CloudLightning, Pause, FileText, Shield } from 'lucide-react';
 
 const FILM_TYPES = [
   { value: 'game', label: 'Game Film', Icon: StadiumIcon, color: 'red' },
@@ -327,6 +327,53 @@ export default function FilmRoomPage() {
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [containerNode, setContainerNode] = useState(null);
+  const videoContainerRef = useCallback((node) => {
+    setContainerNode(node);
+  }, []);
+
+  const handleWheel = useCallback((e) => {
+    const zoomFactor = 0.15;
+    setZoom(prevZoom => {
+      const newZoom = e.deltaY < 0 ? prevZoom + zoomFactor : prevZoom - zoomFactor;
+      return Math.max(1, Math.min(4, newZoom));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!containerNode) return;
+
+    const handleNativeWheel = (e) => {
+      e.preventDefault();
+      handleWheel(e);
+    };
+
+    containerNode.addEventListener('wheel', handleNativeWheel, { passive: false });
+    return () => {
+      containerNode.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [containerNode, handleWheel]);
+
+  const handleMouseDown = (e) => {
+    if (zoom > 1 && !isDrawingMode) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isPanning && zoom > 1 && !isDrawingMode) {
+      setPanX(e.clientX - panStart.x);
+      setPanY(e.clientY - panStart.y);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [drawColor, setDrawColor] = useState('#ef4444');
@@ -1188,7 +1235,24 @@ export default function FilmRoomPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
                 {selectedFilm.video_url ? (
                   <div>
-                    <div style={{ position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#000', width: '100%', maxHeight: 400 }}>
+                    <div 
+                      ref={videoContainerRef}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseUp}
+                      onWheel={handleWheel}
+                      style={{ 
+                        position: 'relative', 
+                        borderRadius: 'var(--radius-md)', 
+                        overflow: 'hidden', 
+                        background: '#000', 
+                        width: '100%', 
+                        maxHeight: 400,
+                        cursor: zoom > 1 && !isDrawingMode ? (isPanning ? 'grabbing' : 'grab') : 'default',
+                        userSelect: 'none'
+                      }}
+                    >
                       <video ref={videoRef}
                         src={selectedFilm.clip_start_seconds != null
                           ? `${selectedFilm.video_url}#t=${selectedFilm.clip_start_seconds},${selectedFilm.clip_end_seconds}`
