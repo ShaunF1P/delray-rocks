@@ -358,6 +358,12 @@ export default function FilmRoomPage() {
 
   const handleMouseDown = (e) => {
     if (zoom > 1 && !isDrawingMode) {
+      // Ignore click if it falls in the bottom 50px (area where native video controls are rendered)
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
+      if (clickY > rect.height - 50) {
+        return;
+      }
       setIsPanning(true);
       setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
     }
@@ -1259,6 +1265,7 @@ export default function FilmRoomPage() {
                           : selectedFilm.video_url}
                         controls 
                         onLoadedMetadata={initCanvas}
+                        onDragStart={(e) => e.preventDefault()}
                         style={{ 
                           width: '100%', 
                           maxHeight: 400, 
