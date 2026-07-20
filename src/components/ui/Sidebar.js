@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardCheck, BarChart3,
   DollarSign, Settings, Film, Trophy, ChevronLeft, ChevronRight,
   User, LogOut, Star, Zap, Shield, Activity, FileText, UserCog, BookOpen, Gamepad2, Dumbbell,
-  Menu, X
+  Menu, X, Church
 } from 'lucide-react';
 
 const coachMenuItems = [
@@ -33,6 +33,7 @@ const coachMenuItems = [
   { label: 'Highlights', href: '/coach/highlights', icon: Trophy },
   { label: 'Parent Reports', href: '/coach/reports', icon: FileText },
   { label: 'Fundraising', href: '/coach/fundraising', icon: DollarSign },
+  { label: 'Coastal Signups', href: '/coach/coastal', icon: Church, badge: '8U' },
   { label: 'Settings', href: '/coach/settings', icon: Settings },
 ];
 

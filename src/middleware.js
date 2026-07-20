@@ -8,6 +8,8 @@ export async function middleware(request) {
   if (
     pathname === '/' ||
     pathname === '/login' ||
+    pathname === '/coastal' ||
+    pathname === '/api/coastal/signup' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/activity') || // Allow activity logging without extra auth check (it checks internally)
     pathname.startsWith('/api/playbook/seed') || // One-time seed endpoint

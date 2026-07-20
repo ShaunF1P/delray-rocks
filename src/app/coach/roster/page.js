@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, Search, Filter, Grid3X3, List, Edit2, Trash2, Eye, X, Heart, ShieldCheck, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Plus, Search, Filter, Grid3X3, List, Edit2, Trash2, Eye, X, Heart, ShieldCheck, AlertTriangle, CheckCircle, XCircle, Camera } from 'lucide-react';
 import { Card, Button, Badge, Avatar, PageHeader, PositionBadge, Modal, EmptyState } from '@/components/ui/index';
 import { createClient, POSITION_LABELS, getPlayerAge, getUserWithProfile } from '@/lib/supabase';
 
@@ -129,9 +129,13 @@ export default function RosterPage() {
   async function handleSave(formData) {
     const supabase = createClient();
 
-    const cleanName = (str) => {
+    const cleanName = (str, isFirstName = false) => {
       if (!str) return '';
-      return str.trim()
+      const trimmed = str.trim();
+      if (isFirstName && trimmed.toUpperCase() === 'TBD') {
+        return '';
+      }
+      return trimmed
         .split(/([\s-]+)/)
         .map(part => {
           if (part.match(/[\s-]+/)) return part;
@@ -141,8 +145,8 @@ export default function RosterPage() {
         .join('');
     };
 
-    if (formData.first_name) formData.first_name = cleanName(formData.first_name);
-    if (formData.last_name) formData.last_name = cleanName(formData.last_name);
+    if (formData.first_name) formData.first_name = cleanName(formData.first_name, true);
+    if (formData.last_name) formData.last_name = cleanName(formData.last_name, false);
 
     // Map weight_lbs correctly
     if (formData.weight_lbs) {
@@ -337,11 +341,11 @@ export default function RosterPage() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                    <Avatar name={`${pending.first_name} ${pending.last_name}`} size={40} />
+                    <Avatar src={pending.photo_url} name={`${pending.first_name} ${pending.last_name}`} size={40} />
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>
-                          {pending.first_name} {pending.last_name}
+                          {((pending.first_name ? pending.first_name + ' ' : '') + pending.last_name).trim()}
                         </span>
                         <Badge variant={isEdit ? 'amber' : 'green'} style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
                           {isEdit ? 'Proposed Edit' : 'New Player Request'}
@@ -539,13 +543,15 @@ export default function RosterPage() {
           {filtered.map((player, i) => (
             <motion.div key={player.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03, duration: 0.4 }}>
               <Card style={{ textAlign: 'center', padding: 'var(--space-xl) var(--space-lg)' }}>
-                <Avatar name={`${player.first_name} ${player.last_name}`} size={64} />
+                <Avatar src={player.photo_url} name={`${player.first_name} ${player.last_name}`} size={64} />
                 <div style={{ marginTop: 'var(--space-md)' }}>
-                  <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{player.first_name} {player.last_name}</div>
+                  <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{((player.first_name ? player.first_name + ' ' : '') + player.last_name).trim()}</div>
                   {player.jersey_number && <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--rocks-green-light)', marginTop: 4 }}>#{player.jersey_number}</div>}
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: 'var(--space-sm)', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: 'var(--space-sm)', flexWrap: 'wrap', alignItems: 'center' }}>
                   {player.position && <PositionBadge position={player.position} />}
+                  {player.secondary_position && <span style={{ opacity: 0.7 }}><PositionBadge position={player.secondary_position} /></span>}
+                  {player.tertiary_position && <span style={{ opacity: 0.45 }}><PositionBadge position={player.tertiary_position} /></span>}
                   {player.date_of_birth && <Badge variant="blue">Age {getPlayerAge(player.date_of_birth)}</Badge>}
                   {player.program_type === 'cheerleading' && <Badge variant="purple">📣 Cheer</Badge>}
                 </div>
@@ -575,9 +581,15 @@ export default function RosterPage() {
                 {filtered.map(player => (
                   <tr key={player.id}>
                     <td style={{ fontWeight: 800, color: 'var(--rocks-green-light)' }}>{player.jersey_number || '—'}</td>
-                    <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Avatar name={`${player.first_name} ${player.last_name}`} size={32} /><span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{player.first_name} {player.last_name}</span></div></td>
+                    <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Avatar src={player.photo_url} name={`${player.first_name} ${player.last_name}`} size={32} /><span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{((player.first_name ? player.first_name + ' ' : '') + player.last_name).trim()}</span></div></td>
                     <td><Badge variant={(player.program_type || 'football') === 'football' ? 'green' : 'purple'}>{(player.program_type || 'football') === 'football' ? '🏈' : '📣'}</Badge></td>
-                    <td>{player.position ? <PositionBadge position={player.position} /> : '—'}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {player.position ? <PositionBadge position={player.position} /> : '—'}
+                        {player.secondary_position && <span style={{ opacity: 0.7 }}><PositionBadge position={player.secondary_position} /></span>}
+                        {player.tertiary_position && <span style={{ opacity: 0.45 }}><PositionBadge position={player.tertiary_position} /></span>}
+                      </div>
+                    </td>
                     <td><span style={{ color: PHYSICAL_STATUS[player.physical_status || 'not_submitted']?.color, fontWeight: 600, fontSize: 'var(--text-xs)' }}>{PHYSICAL_STATUS[player.physical_status || 'not_submitted']?.label}</span></td>
                     <td>{player.has_state_id ? <CheckCircle size={14} color="var(--green)" /> : <XCircle size={14} color="var(--red)" />}</td>
                     <td>{player.registration_paid ? <CheckCircle size={14} color="var(--green)" /> : <XCircle size={14} color="var(--red)" />}</td>
@@ -608,18 +620,20 @@ export default function RosterPage() {
         {selectedPlayer && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', borderBottom: '1px solid var(--border-light)', paddingBottom: 'var(--space-md)' }}>
-              <Avatar name={`${selectedPlayer.first_name} ${selectedPlayer.last_name}`} size={64} />
+              <Avatar src={selectedPlayer.photo_url} name={`${selectedPlayer.first_name} ${selectedPlayer.last_name}`} size={64} />
               <div>
                 <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 800 }}>
-                  {selectedPlayer.first_name} {selectedPlayer.last_name}
+                  {((selectedPlayer.first_name ? selectedPlayer.first_name + ' ' : '') + selectedPlayer.last_name).trim()}
                 </h3>
                 {selectedPlayer.jersey_number && (
                   <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--rocks-green-light)' }}>
                     #{selectedPlayer.jersey_number}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                   {selectedPlayer.position && <PositionBadge position={selectedPlayer.position} />}
+                  {selectedPlayer.secondary_position && <span style={{ opacity: 0.7 }}><PositionBadge position={selectedPlayer.secondary_position} /></span>}
+                  {selectedPlayer.tertiary_position && <span style={{ opacity: 0.45 }}><PositionBadge position={selectedPlayer.tertiary_position} /></span>}
                   <Badge variant={(selectedPlayer.program_type || 'football') === 'football' ? 'green' : 'purple'}>
                     {(selectedPlayer.program_type || 'football') === 'football' ? '🏈 Football' : '📣 Cheerleading'}
                   </Badge>
@@ -641,6 +655,18 @@ export default function RosterPage() {
                 <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Weight</h4>
                 <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
                   {selectedPlayer.weight_lbs ? `${selectedPlayer.weight_lbs} lbs` : 'Not set'}
+                </div>
+              </div>
+              <div>
+                <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Secondary Position</h4>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                  {selectedPlayer.secondary_position || 'None'}
+                </div>
+              </div>
+              <div>
+                <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Tertiary Position</h4>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                  {selectedPlayer.tertiary_position || 'None'}
                 </div>
               </div>
             </div>
@@ -751,12 +777,45 @@ function PlayerForm({ player, onSave, onCancel }) {
     guardian_phone: player?.guardian_phone || '',
     guardian_email: player?.guardian_email || '',
     notes: player?.notes || '',
+    secondary_position: player?.secondary_position || '',
+    tertiary_position: player?.tertiary_position || '',
+    photo_url: player?.photo_url || '',
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const supabase = createClient();
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('player-photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('player-photos')
+        .getPublicUrl(filePath);
+
+      update('photo_url', publicUrl);
+      toast.success('Photo uploaded!');
+    } catch (err) {
+      toast.error('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.first_name || !form.last_name) { toast.error('Name is required'); return; }
+    if (!form.first_name && !form.last_name) { toast.error('Name is required'); return; }
     setSaving(true);
     const payload = { ...form };
     if (payload.jersey_number) payload.jersey_number = parseInt(payload.jersey_number);
@@ -771,13 +830,48 @@ function PlayerForm({ player, onSave, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+      {/* Photo Upload Section */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-xs)' }}>
+        <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', overflow: 'hidden', background: 'rgba(255,255,255,0.03)', border: '2px solid var(--border)' }}>
+          {form.photo_url ? (
+            <img src={form.photo_url} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: 'var(--text-muted)' }}>
+              🏈
+            </div>
+          )}
+          {uploading && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)' }}>
+              Uploading...
+            </div>
+          )}
+        </div>
+        <label className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <Camera size={14} />
+          {form.photo_url ? 'Change Photo' : 'Upload Photo'}
+          <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} disabled={uploading || saving} />
+        </label>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
-        <div className="form-group"><label className="form-label">First Name *</label><input className="form-input" value={form.first_name} onChange={e => update('first_name', e.target.value)} required /></div>
+        <div className="form-group"><label className="form-label">First Name</label><input className="form-input" value={form.first_name} onChange={e => update('first_name', e.target.value)} placeholder="TBD or First Name" /></div>
         <div className="form-group"><label className="form-label">Last Name *</label><input className="form-input" value={form.last_name} onChange={e => update('last_name', e.target.value)} required /></div>
         <div className="form-group"><label className="form-label">Jersey #</label><input className="form-input" type="number" value={form.jersey_number} onChange={e => update('jersey_number', e.target.value)} /></div>
-        <div className="form-group"><label className="form-label">Position</label>
+        <div className="form-group"><label className="form-label">Position (Primary)</label>
           <select className="form-input" value={form.position} onChange={e => update('position', e.target.value)}>
             <option value="">Select...</option>
+            {Object.entries(POSITION_LABELS).map(([k, v]) => <option key={k} value={k}>{k} — {v}</option>)}
+          </select>
+        </div>
+        <div className="form-group"><label className="form-label">Position (Secondary)</label>
+          <select className="form-input" value={form.secondary_position} onChange={e => update('secondary_position', e.target.value)}>
+            <option value="">None</option>
+            {Object.entries(POSITION_LABELS).map(([k, v]) => <option key={k} value={k}>{k} — {v}</option>)}
+          </select>
+        </div>
+        <div className="form-group"><label className="form-label">Position (Tertiary)</label>
+          <select className="form-input" value={form.tertiary_position} onChange={e => update('tertiary_position', e.target.value)}>
+            <option value="">None</option>
             {Object.entries(POSITION_LABELS).map(([k, v]) => <option key={k} value={k}>{k} — {v}</option>)}
           </select>
         </div>

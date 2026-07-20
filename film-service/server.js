@@ -118,9 +118,12 @@ async function runPipeline({ filmId, videoUrl, clipStart, clipEnd, filmType, opp
     // ── STEP 2: TWO-PASS ANALYSIS ──────────────────────────────
     // Model chain: try 3.1 Pro → fallback to 2.5 Pro if preview model fails on video
     const MODEL_CHAIN = speedMode === 'pro'
-      ? ['gemini-3.5-pro', 'gemini-3.1-pro']
-      : ['gemini-3.5-flash', 'gemini-3.1-flash'];
-    const effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
+      ? ['gemini-2.5-pro', 'gemini-2.5-flash']
+      : ['gemini-3.5-flash', 'gemini-2.5-flash'];
+    let effectiveType = isClip ? 'clip_breakdown' : (analysisType || 'full_breakdown');
+    if (!isClip && filmType === 'practice' && effectiveType === 'full_breakdown') {
+      effectiveType = 'practice_analysis';
+    }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
@@ -507,6 +510,20 @@ ${THREE_PHASE_METHOD}
 
 If you didn't see the score, say "Score not visible from film."
 Opponent: ${opponent || 'Unknown'}`,
+    practice_analysis: `You are an elite youth football (8U) player development coach reviewing practice tape.
+${ctx}${GROUND_TRUTH_RULES}
+${THREE_PHASE_METHOD}
+
+Analyze this practice session and provide:
+
+1. **Drill Recognition**: Identify the specific drills being run (e.g. tackling drills, blocking drills, passing routes, alignment walkthroughs, agility/cone drills).
+2. **Rep-by-Rep Breakdown**: For each observed rep, note the player(s) involved by jersey # (or physical description if unreadable), their execution (stance, first step, technique), and result of the rep.
+3. **Standout Performers**: Identify players demonstrating excellent effort, technique, or improvement.
+4. **Common Technical Errors**: What errors did you observe repeatedly across players? (e.g., high pad level, false steps, lunging during blocks, catching with body instead of hands).
+5. **Actionable Coaching Drills & Corrections**: Specific, detailed adjustments for the coaches to implement in the next practice to correct the observed mistakes.
+6. **Overall Practice Grade**: Grade the team's effort, discipline, and execution on an A-F scale.
+
+Provide timestamps for every drill/rep and make recommendations highly actionable for youth players.`,
   };
 
   return prompts[type] || prompts.full_breakdown;
@@ -569,8 +586,8 @@ app.post('/correct', async (req, res) => {
 
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
       const MODEL_CHAIN = speedMode === 'pro'
-        ? ['gemini-3.5-pro', 'gemini-3.1-pro']
-        : ['gemini-3.5-flash', 'gemini-3.1-flash'];
+        ? ['gemini-2.5-pro', 'gemini-2.5-flash']
+        : ['gemini-3.5-flash', 'gemini-2.5-flash'];
       let modelName = MODEL_CHAIN[0];
       let model = genAI.getGenerativeModel({ model: modelName });
 

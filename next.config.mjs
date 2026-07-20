@@ -14,6 +14,15 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/sponsorship',
+        destination: 'https://sites.leadconnectorhq.com/preview/jiGqpTpfLKDpYnZYvPuC?notrack=true',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

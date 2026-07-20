@@ -58,7 +58,7 @@ export async function POST(request) {
 
   try {
     const { fileUri, videoUrl, mimeType, filmType, opponent, analysisType, roster, clipStart, clipEnd, speedMode } = await request.json();
-    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-3.5-pro' : 'gemini-3.5-flash';
+    const GEMINI_MODEL = speedMode === 'pro' ? 'gemini-2.5-pro' : 'gemini-3.5-flash';
     const rosterContext = buildRosterContext(roster);
     const isClip = clipStart != null && clipEnd != null;
 
@@ -158,10 +158,27 @@ Provide a concise tactical summary:
 
 Keep it concise and actionable — this goes straight to the coaching staff.
 Opponent: ${opponent || 'Unknown'}`,
+      practice_analysis: `You are an elite youth football (8U) player development coach reviewing practice tape.
+${rosterContext}
+${GROUND_TRUTH_RULES}
+
+Analyze this practice session and provide:
+
+1. **Drill Recognition**: Identify the specific drills being run (e.g. tackling drills, blocking drills, passing routes, alignment walkthroughs, agility/cone drills).
+2. **Rep-by-Rep Breakdown**: For each observed rep, note the player(s) involved by jersey # (or physical description if unreadable), their execution (stance, first step, technique), and result of the rep.
+3. **Standout Performers**: Identify players demonstrating excellent effort, technique, or improvement.
+4. **Common Technical Errors**: What errors did you observe repeatedly across players? (e.g., high pad level, false steps, lunging during blocks, catching with body instead of hands).
+5. **Actionable Coaching Drills & Corrections**: Specific, detailed adjustments for the coaches to implement in the next practice to correct the observed mistakes.
+6. **Overall Practice Grade**: Grade the team's effort, discipline, and execution on an A-F scale.
+
+Provide timestamps for every drill/rep and make recommendations highly actionable for youth players.`,
     };
 
     // Auto-select clip_breakdown for clips, otherwise use selected type
-    const effectiveType = isClip ? 'clip_breakdown' : analysisType;
+    let effectiveType = isClip ? 'clip_breakdown' : analysisType;
+    if (!isClip && filmType === 'practice' && effectiveType === 'full_breakdown') {
+      effectiveType = 'practice_analysis';
+    }
     const systemPrompt = prompts[effectiveType] || prompts.full_breakdown;
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
