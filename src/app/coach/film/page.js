@@ -325,6 +325,18 @@ export default function FilmRoomPage() {
   const sidelineInputRef = useRef(null);
   const fullscreenContainerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const togglePlay = useCallback(() => {
+    const v = videoRef.current;
+    if (v) {
+      if (v.paused) {
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    }
+  }, []);
 
   const toggleFullscreen = useCallback(() => {
     const container = fullscreenContainerRef.current;
@@ -1358,6 +1370,8 @@ export default function FilmRoomPage() {
                           e.preventDefault();
                           toggleFullscreen();
                         }}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
                         style={{ 
                           width: '100%', 
                           height: isFullscreen ? '100%' : 'auto',
@@ -1382,7 +1396,7 @@ export default function FilmRoomPage() {
                           top: 0,
                           left: 0,
                           width: '100%',
-                          height: '100%',
+                          height: 'calc(100% - 50px)',
                           pointerEvents: isDrawingMode ? 'auto' : 'none',
                           cursor: isDrawingMode ? 'crosshair' : 'default',
                           zIndex: 10,
@@ -1427,7 +1441,29 @@ export default function FilmRoomPage() {
                     }}>
                       {/* Row 1: Telestrator */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)' }}>TELESTRATOR:</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)' }}>PLAYBACK:</span>
+                        <button
+                          onClick={togglePlay}
+                          style={{
+                            padding: '4px 12px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            background: isPlaying ? 'rgba(16, 107, 58, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                            color: isPlaying ? 'var(--rocks-green-light)' : '#fff',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                          title={isPlaying ? 'Pause' : 'Play'}
+                        >
+                          {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                          {isPlaying ? 'Pause' : 'Play'}
+                        </button>
+
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginLeft: 12 }}>TELESTRATOR:</span>
                         <button
                           onClick={() => {
                             setIsDrawingMode(!isDrawingMode);
