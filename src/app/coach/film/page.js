@@ -314,7 +314,7 @@ export default function FilmRoomPage() {
   });
   const [compressing, setCompressing] = useState(false);
   const [compressionProgress, setCompressionProgress] = useState(0);
-  const [shouldCompress, setShouldCompress] = useState(true);
+  const [shouldCompress, setShouldCompress] = useState(false);
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [uploadPaused, setUploadPaused] = useState(false);
@@ -1262,10 +1262,10 @@ export default function FilmRoomPage() {
               )}
 
               {selectedFile && !uploading && (
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '0.25rem 0' }}>
+                 <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '0.25rem 0' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-xs)', cursor: 'pointer', fontWeight: 600 }}>
                     <input type="checkbox" checked={shouldCompress} onChange={e => setShouldCompress(e.target.checked)} style={{ width: 14, height: 14 }} />
-                    Compress video before uploading (recommended for microSD cards)
+                    Compress video before uploading (reduces size while preserving up to 4K resolution)
                   </label>
                 </div>
               )}
