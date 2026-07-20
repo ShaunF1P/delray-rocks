@@ -10,7 +10,7 @@ import { trackFilmView, trackFilmUpload, trackFilmAnalysis } from '@/lib/track';
 import toast from 'react-hot-toast';
 import * as tus from 'tus-js-client';
 import { compressVideo } from '@/lib/video-compressor';
-import { Thermometer, Wind, Sun, CloudRain, Cloud, CloudLightning, Pause, FileText, Shield } from 'lucide-react';
+import { Thermometer, Wind, Sun, CloudRain, Cloud, CloudLightning, Pause, FileText, Shield, Lock, Unlock, GripVertical } from 'lucide-react';
 
 const FILM_TYPES = [
   { value: 'game', label: 'Game Film', Icon: StadiumIcon, color: 'red' },
@@ -326,6 +326,33 @@ export default function FilmRoomPage() {
   const fullscreenContainerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const [toolbarPos, setToolbarPos] = useState({ x: 0, y: 0 });
+  const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
+  const [dragStartToolbar, setDragStartToolbar] = useState({ x: 0, y: 0 });
+  const [isToolbarLocked, setIsToolbarLocked] = useState(true);
+
+  useEffect(() => {
+    if (!isDraggingToolbar) return;
+
+    const handleMouseMove = (e) => {
+      setToolbarPos({
+        x: e.clientX - dragStartToolbar.x,
+        y: e.clientY - dragStartToolbar.y
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingToolbar(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingToolbar, dragStartToolbar]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -1412,35 +1439,80 @@ export default function FilmRoomPage() {
                     </div>
 
                     {/* Telestrator, Speed & Zoom Tool Bar */}
-                    <div style={isFullscreen ? {
-                      position: 'absolute',
-                      bottom: 16,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      zIndex: 100,
-                      background: 'rgba(15, 23, 42, 0.95)',
-                      backdropFilter: 'blur(8px)',
-                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      width: '90%',
-                      maxWidth: 800,
-                      borderRadius: 'var(--radius-md)',
-                      padding: 12,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 12
-                    } : {
-                      marginTop: 12,
-                      padding: 12,
-                      background: 'rgba(255,255,255,0.05)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 12
-                    }}>
+                    <div style={
+                      !isToolbarLocked
+                        ? {
+                            position: 'absolute',
+                            bottom: 16,
+                            left: '50%',
+                            transform: `translate(calc(-50% + ${toolbarPos.x}px), ${toolbarPos.y}px)`,
+                            zIndex: 100,
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            backdropFilter: 'blur(8px)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            width: '90%',
+                            maxWidth: 800,
+                            borderRadius: 'var(--radius-md)',
+                            padding: 12,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }
+                        : isFullscreen
+                        ? {
+                            position: 'absolute',
+                            bottom: 16,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            zIndex: 100,
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            backdropFilter: 'blur(8px)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            width: '90%',
+                            maxWidth: 800,
+                            borderRadius: 'var(--radius-md)',
+                            padding: 12,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }
+                        : {
+                            marginTop: 12,
+                            padding: 12,
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }
+                    }>
                       {/* Row 1: Telestrator */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        {!isToolbarLocked && (
+                          <div
+                            onMouseDown={(e) => {
+                              setIsDraggingToolbar(true);
+                              setDragStartToolbar({
+                                x: e.clientX - toolbarPos.x,
+                                y: e.clientY - toolbarPos.y
+                              });
+                            }}
+                            style={{
+                              cursor: isDraggingToolbar ? 'grabbing' : 'grab',
+                              padding: '4px 2px',
+                              color: 'var(--text-dim)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              userSelect: 'none'
+                            }}
+                            title="Drag to move panel"
+                          >
+                            <GripVertical size={16} />
+                          </div>
+                        )}
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)' }}>PLAYBACK:</span>
                         <button
                           onClick={togglePlay}
@@ -1461,6 +1533,33 @@ export default function FilmRoomPage() {
                         >
                           {isPlaying ? <Pause size={12} /> : <Play size={12} />}
                           {isPlaying ? 'Pause' : 'Play'}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsToolbarLocked(!isToolbarLocked);
+                            if (!isToolbarLocked) {
+                              setToolbarPos({ x: 0, y: 0 });
+                            }
+                          }}
+                          style={{
+                            padding: '4px 12px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid',
+                            borderColor: !isToolbarLocked ? 'var(--rocks-gold)' : 'rgba(255,255,255,0.2)',
+                            background: !isToolbarLocked ? 'rgba(253,185,19,0.15)' : 'none',
+                            color: !isToolbarLocked ? 'var(--rocks-gold)' : '#fff',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                          title={isToolbarLocked ? 'Unlock Panel to drag' : 'Lock Panel in place'}
+                        >
+                          {isToolbarLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                          {isToolbarLocked ? 'Unlock Panel' : 'Lock Panel'}
                         </button>
 
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginLeft: 12 }}>TELESTRATOR:</span>
