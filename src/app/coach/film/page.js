@@ -455,6 +455,17 @@ export default function FilmRoomPage() {
     };
   }, [containerNode, handleWheel]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && selectedFilm) {
+      if (selectedFilm.clip_start_seconds != null) {
+        video.currentTime = selectedFilm.clip_start_seconds;
+      } else {
+        video.currentTime = 0;
+      }
+    }
+  }, [selectedFilm?.id, selectedFilm?.clip_start_seconds]);
+
   const handleMouseDown = (e) => {
     if (zoom > 1 && !isDrawingMode) {
       // Ignore click if it falls in the bottom 50px (area where native video controls are rendered)
@@ -568,6 +579,16 @@ export default function FilmRoomPage() {
     }
   };
 
+  const handleLoadedMetadata = () => {
+    initCanvas();
+    const video = videoRef.current;
+    if (video && selectedFilm) {
+      if (selectedFilm.clip_start_seconds != null) {
+        video.currentTime = selectedFilm.clip_start_seconds;
+      }
+    }
+  };
+
   const handleSpeedChange = (speed) => {
     setPlaybackSpeed(speed);
     if (videoRef.current) {
@@ -581,7 +602,10 @@ export default function FilmRoomPage() {
     if (filterType !== 'all') query = query.eq('film_type', filterType);
     if (search) query = query.ilike('title', `%${search}%`);
     const { data } = await query;
-    setFilms(data || []);
+    const sorted = (data || []).sort((a, b) => {
+      return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    setFilms(sorted);
     setLoading(false);
   }, [filterType, search]);
 
@@ -1132,20 +1156,24 @@ export default function FilmRoomPage() {
     if (clipEnd <= clipStart) { toast.error('End time must be after start time'); return; }
     setSavingClip(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from('game_films').insert({
-        title: clipTitle,
-        description: `Clip from ${formatTime(clipStart)} to ${formatTime(clipEnd)} of ${selectedFilm.title}`,
-        film_type: 'drill',
-        opponent: selectedFilm.opponent,
-        film_date: selectedFilm.film_date,
-        video_url: selectedFilm.video_url,
-        parent_film_id: selectedFilm.id,
-        clip_start_seconds: clipStart,
-        clip_end_seconds: clipEnd,
+      const res = await fetch('/api/film/clip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentFilmId: selectedFilm.id,
+          startTime: clipStart,
+          endTime: clipEnd,
+          title: clipTitle,
+          description: `Clip from ${formatTime(clipStart)} to ${formatTime(clipEnd)} of ${selectedFilm.title}`,
+          filmType: 'drill',
+          opponent: selectedFilm.opponent,
+          filmDate: selectedFilm.film_date
+        })
       });
-      if (error) throw error;
-      toast.success(`Clip saved: ${formatTime(clipStart)} → ${formatTime(clipEnd)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save clip');
+
+      toast.success(`Clip saved & physically sliced: ${formatTime(clipStart)} → ${formatTime(clipEnd)}`);
       setShowClipTrimmer(false);
       loadFilms();
     } catch (err) {
@@ -1513,7 +1541,7 @@ export default function FilmRoomPage() {
                           : selectedFilm.video_url}
                         controls 
                         controlsList="nofullscreen"
-                        onLoadedMetadata={initCanvas}
+                        onLoadedMetadata={handleLoadedMetadata}
                         onDragStart={(e) => e.preventDefault()}
                         onDoubleClick={(e) => {
                           e.preventDefault();
