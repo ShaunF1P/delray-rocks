@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delray Rocks & Coastal Community Church - Sponsorship Proposal</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-navy: #0A0F0A;
+            --primary-charcoal: #111C14;
+            --rocks-green: #15803D;
+            --rocks-green-light: #22C55E;
+            --rocks-green-dark: #166534;
+            --accent-gradient: linear-gradient(135deg, #15803D 0%, #22C55E 100%);
+            --accent-gradient-text: linear-gradient(135deg, #22C55E 0%, #4ADE80 100%);
+            --text-main: #E2E8F0;
+            --text-muted: #94A3B8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-bg-hover: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-border-highlight: rgba(34, 197, 94, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --green-glow: 0 0 20px rgba(34, 197, 94, 0.25);
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-charcoal) 100%);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Orbs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            animation: float 20s infinite alternate;
+            opacity: 0.4;
+        }
+
+        body::before {
+            background: radial-gradient(circle, rgba(21,128,61,0.2) 0%, rgba(10,15,10,0) 70%);
+            top: -200px;
+            left: -200px;
+        }
+
+        body::after {
+            background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, rgba(10,15,10,0) 70%);
+            bottom: -200px;
+            right: -200px;
+            animation-delay: -10s;
+        }
+
+        .orb-3 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(74,222,128,0.08) 0%, rgba(10,15,10,0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(80px);
+            z-index: -1;
+            animation: float-center 25s infinite alternate;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(100px, 100px) scale(1.2); }
+            100% { transform: translate(-50px, 150px) scale(0.8); }
+        }
+
+        @keyframes float-center {
+            0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            100% { transform: translate(-30%, -30%) scale(1.3) rotate(180deg); }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5 {
+            font-family: var(--font-heading);
+            color: #FFFFFF;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 0;
+            height: 3px;
+            background: var(--accent-gradient-text);
+            transition: width 0.5s ease;
+            border-radius: 2px;
+        }
+
+        h2:hover::after, .section.visible h2::after {
+            width: 100%;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: #22C55E;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            color: #FFFFFF;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-panel:hover {
+            background: var(--glass-bg-hover);
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .text-gradient-gold {
+            background: var(--accent-gradient-text);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Header Area */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .org-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+        }
+
+        .org-badge svg {
+            width: 24px;
+            height: 24px;
+            fill: url(#gold-grad);
+        }
+
+        .print-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            color: #FFFFFF;
+            font-family: var(--font-heading);
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+        }
+
+        .print-btn:hover {
+            border-color: var(--glass-border-highlight);
+            box-shadow: var(--green-glow);
+        }
+
+        .print-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Hero Banner */
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Logos Row */
+        .logos-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo-wrapper {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .logo-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-wrapper:hover::after {
+            opacity: 0.5;
+            filter: blur(10px);
+        }
+
+        .logo-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .logo-plus {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .logo-plus svg {
+            width: 20px;
+            height: 20px;
+            fill: #FFFFFF;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .summary-card {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .summary-card h3 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin: 0;
+        }
+
+        /* Feature Box */
+        .feature-box {
+            padding: 3rem;
+            margin: 3rem 0;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            box-shadow: var(--green-glow);
+        }
+
+        .feature-box h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Showcase Cards */
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .showcase-card {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .showcase-image {
+            height: 250px;
+            position: relative;
+            background: rgba(255,255,255,0.02);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .showcase-image::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(11,16,33,0.8), transparent);
+        }
+
+        .showcase-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.5s ease;
+        }
+
+        .showcase-card:hover .showcase-image img {
+            transform: scale(1.1);
+        }
+
+        .showcase-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .showcase-content h4 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Total Banner */
+        .total-banner {
+            padding: 3rem;
+            text-align: center;
+            margin: 4rem 0;
+            border: 1px solid var(--glass-border-highlight);
+            box-shadow: var(--green-glow);
+        }
+
+        .total-banner h3 {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .total-amount {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        /* Flow Steps */
+        .flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .flow-step {
+            padding: 2rem;
+            position: relative;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-navy);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--green-glow);
+        }
+
+        .flow-step h4 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Links Card */
+        .links-card {
+            padding: 3rem;
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .links-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: var(--accent-gradient);
+            color: var(--primary-navy);
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.25rem;
+            border-radius: 50px;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+        }
+
+        .action-btn:hover {
+            color: var(--primary-navy);
+            text-shadow: none;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.5);
+        }
+
+        /* Footer */
+        footer {
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+            border-radius: 24px 24px 0 0;
+            color: var(--text-muted);
+        }
+
+        /* Animations */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            will-change: opacity, transform;
+        }
+
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* SVG Gradients */
+        .svg-defs {
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 6rem;
+        }
+
+        /* Print Styles */
+        @media print {
+            /* Reset all decorative layers */
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+
+            @page {
+                size: letter portrait;
+                margin: 0.5in 0.6in;
+            }
+
+            body {
+                background: #fff !important;
+                color: #1a1a1a !important;
+                font-size: 11pt !important;
+                line-height: 1.5 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            body::before, body::after, .orb-3 {
+                display: none !important;
+            }
+
+            /* Hide interactive elements */
+            header {
+                display: none !important;
+            }
+
+            /* Container */
+            .container {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            /* Strip glassmorphism from all panels */
+            .glass-panel {
+                background: #fff !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                border: 1px solid #d1d5db !important;
+                border-radius: 8px !important;
+            }
+
+            /* Force all text to dark */
+            h1, h2, h3, h4, h5, h6, p, span, li, div {
+                color: #1a1a1a !important;
+                -webkit-text-fill-color: #1a1a1a !important;
+            }
+
+            /* Override gradient text to solid green */
+            .text-gradient-gold {
+                background: none !important;
+                -webkit-text-fill-color: #15803D !important;
+                color: #15803D !important;
+            }
+
+            /* Links show URL */
+            a {
+                color: #15803D !important;
+                -webkit-text-fill-color: #15803D !important;
+                text-decoration: underline !important;
+            }
+
+            /* ---- HERO ---- */
+            .hero {
+                padding: 1.5rem !important;
+                margin-bottom: 1.5rem !important;
+                text-align: center !important;
+                border: 2px solid #15803D !important;
+                page-break-inside: avoid !important;
+            }
+
+            .hero::before {
+                display: none !important;
+            }
+
+            .hero h1 {
+                font-size: 22pt !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .hero-subtitle {
+                font-size: 10pt !important;
+                color: #555 !important;
+                -webkit-text-fill-color: #555 !important;
+            }
+
+            /* ---- LOGOS ---- */
+            .logos-container {
+                gap: 1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .logo-wrapper {
+                width: 80px !important;
+                height: 80px !important;
+                padding: 0.5rem !important;
+                border: 2px solid #15803D !important;
+                background: #fff !important;
+            }
+
+            .logo-wrapper::after {
+                display: none !important;
+            }
+
+            .logo-plus {
+                width: 28px !important;
+                height: 28px !important;
+                border: none !important;
+                background: none !important;
+            }
+
+            .logo-plus svg {
+                fill: #15803D !important;
+            }
+
+            /* ---- SUMMARY GRID ---- */
+            .summary-grid {
+                gap: 0.75rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+
+            .summary-card {
+                padding: 0.75rem 1rem !important;
+                border: 1.5px solid #e5e7eb !important;
+                page-break-inside: avoid !important;
+            }
+
+            .summary-card h3 {
+                font-size: 8pt !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.08em !important;
+                color: #666 !important;
+                -webkit-text-fill-color: #666 !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            .summary-card p {
+                font-size: 12pt !important;
+                font-weight: 700 !important;
+            }
+
+            /* ---- SECTIONS ---- */
+            .section {
+                margin-bottom: 1.5rem !important;
+                page-break-inside: avoid !important;
+            }
+
+            h2 {
+                font-size: 16pt !important;
+                margin-bottom: 0.5rem !important;
+                padding-bottom: 0.4rem !important;
+                border-bottom: 2px solid #15803D !important;
+            }
+
+            h2::after {
+                display: none !important;
+            }
+
+            .section p {
+                font-size: 10pt !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            /* ---- FEATURE BOX ---- */
+            .feature-box {
+                padding: 1rem 1.25rem !important;
+                margin: 1rem 0 !important;
+                border: 1.5px solid #15803D !important;
+                border-left: 4px solid #15803D !important;
+                page-break-inside: avoid !important;
+            }
+
+            .feature-box h3 {
+                font-size: 12pt !important;
+                -webkit-text-fill-color: #15803D !important;
+                color: #15803D !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            .feature-box p {
+                font-size: 10pt !important;
+            }
+
+            /* ---- SHOWCASE GRID ---- */
+            .showcase-grid {
+                gap: 0.75rem !important;
+                margin-top: 0.75rem !important;
+            }
+
+            .showcase-card {
+                padding: 0.5rem !important;
+                page-break-inside: avoid !important;
+            }
+
+            .showcase-image {
+                height: 130px !important;
+                background: #f8f8f8 !important;
+                border-radius: 6px !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .showcase-image::after {
+                display: none !important;
+            }
+
+            .showcase-image img {
+                max-height: 120px !important;
+            }
+
+            .showcase-content h4 {
+                font-size: 10pt !important;
+                margin-bottom: 0.15rem !important;
+            }
+
+            .showcase-content p {
+                font-size: 8.5pt !important;
+                color: #555 !important;
+                -webkit-text-fill-color: #555 !important;
+            }
+
+            /* ---- TOTAL BANNER ---- */
+            .total-banner {
+                padding: 1rem !important;
+                margin: 1.5rem 0 !important;
+                border: 2px solid #15803D !important;
+                text-align: center !important;
+                page-break-inside: avoid !important;
+            }
+
+            .total-banner h3 {
+                font-size: 10pt !important;
+                color: #555 !important;
+                -webkit-text-fill-color: #555 !important;
+            }
+
+            .total-banner p {
+                font-size: 9pt !important;
+                color: #777 !important;
+                -webkit-text-fill-color: #777 !important;
+            }
+
+            .total-amount {
+                font-size: 28pt !important;
+                -webkit-text-fill-color: #15803D !important;
+                color: #15803D !important;
+            }
+
+            /* ---- FLOW STEPS ---- */
+            .flow-grid {
+                gap: 0.75rem !important;
+            }
+
+            .flow-step {
+                padding: 0.75rem 1rem !important;
+                page-break-inside: avoid !important;
+            }
+
+            .step-number {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 14pt !important;
+                background: #15803D !important;
+                color: #fff !important;
+                -webkit-text-fill-color: #fff !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .flow-step h4 {
+                font-size: 11pt !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            .flow-step p {
+                font-size: 9.5pt !important;
+            }
+
+            /* ---- LINKS CARD ---- */
+            .links-card {
+                padding: 1rem !important;
+                text-align: center !important;
+                page-break-inside: avoid !important;
+            }
+
+            .action-btn {
+                display: inline-block !important;
+                padding: 0.5rem 1.5rem !important;
+                background: #15803D !important;
+                color: #fff !important;
+                -webkit-text-fill-color: #fff !important;
+                border-radius: 6px !important;
+                font-size: 10pt !important;
+                text-decoration: none !important;
+            }
+
+            /* ---- FOOTER ---- */
+            footer {
+                margin-top: 1.5rem !important;
+                padding: 0.75rem !important;
+                font-size: 8pt !important;
+                border: none !important;
+                border-top: 1px solid #d1d5db !important;
+                border-radius: 0 !important;
+            }
+
+            footer p {
+                color: #888 !important;
+                -webkit-text-fill-color: #888 !important;
+            }
+
+            /* ---- ANIMATIONS KILL ---- */
+            .fade-in-section {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <svg class="svg-defs">
+        <defs>
+            <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#15803D" />
+                <stop offset="100%" stop-color="#22C55E" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div class="orb-3"></div>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <header>
+            <div class="org-badge glass-panel">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                <span>Sponsorship Proposal</span>
+            </div>
+            <div class="print-btn glass-panel" onclick="window.print()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                </svg>
+                Print Proposal
+            </div>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero glass-panel fade-in-section">
+            <div class="logos-container">
+                <div class="logo-wrapper glass-panel">
+                    <img src="https://media.hometeamsonline.com/photos/football/DELRAYROCKS/homelogo.jpg" alt="Delray Rocks Logo">
+                </div>
+                <div class="logo-plus glass-panel">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                </div>
+                <div class="logo-wrapper glass-panel">
+                    <img src="https://coastalcommunity.tv/wp-content/uploads/2025/09/cropped-Untitled-design-8-4-192x192.png" alt="Coastal Community TV Logo">
+                </div>
+            </div>
+            
+            <h1>Community Partnership Proposal</h1>
+            <p class="hero-subtitle">Delray Beach Rocks Youth Sports pitching to Coastal Community Church to support the 8U youth football division.</p>
+        </section>
+
+        <!-- Summary Grid -->
+        <section class="summary-grid fade-in-section">
+            <div class="summary-card glass-panel">
+                <h3>Proposed Sponsor</h3>
+                <p>Coastal Community Church</p>
+            </div>
+            <div class="summary-card glass-panel">
+                <h3>Sponsorship Level</h3>
+                <p class="text-gradient-gold">$1,000</p>
+            </div>
+            <div class="summary-card glass-panel">
+                <h3>Purpose</h3>
+                <p>Uniform Sets & Player Bags</p>
+            </div>
+        </section>
+
+        <!-- About -->
+        <section class="section fade-in-section">
+            <h2>About the Delray Beach Rocks</h2>
+            <p>The Delray Beach Rocks organization is a cornerstone of youth athletic development and community mentoring in our local area. We believe that football teaches children far more than just athletic skills; it instills lifelong values of hard work, discipline, sportsmanship, and teamwork.</p>
+            <p>For the upcoming season, the Delray Rocks 8U division is seeking a supportive community partner to sponsor our young athletes. As a community-first organization, we keep enrollment fees minimal so that every local child has a chance to play, regardless of financial background. To cover our uniform and equipment expenses, we rely on partnerships with organizations that share our dedication to youth development.</p>
+        </section>
+
+        <!-- Why Partner -->
+        <section class="section fade-in-section">
+            <h2>Why Partner with the Rocks?</h2>
+            <p>A partnership with the Delray Rocks is a direct, highly visible investment in local families. By supporting this division, Coastal Community Church will establish a regular connection with our player parents, coaches, and volunteers.</p>
+            
+            <div class="feature-box glass-panel">
+                <h3 class="text-gradient-gold">A Structured Bridge to Local Families</h3>
+                <p>Rather than a passive contribution, we have built a structured family outreach campaign. We are actively directing all of our 8U families to visit Coastal Community Church services and events (such as the West Boca Campus Block Party). It is a double-win: the kids get their complete player uniforms and gear bags fully funded, and the church gains an organic, warm connection with local families.</p>
+            </div>
+        </section>
+
+        <!-- What it Funds -->
+        <section class="section fade-in-section">
+            <h2>What the $1,000 Sponsorship Package Funds</h2>
+            <p>The $1,000 sponsorship from Coastal Community Church directly pays for the complete player gear package for every athlete on the 8U team roster:</p>
+            
+            <div class="showcase-grid">
+                <div class="showcase-card glass-panel">
+                    <div class="showcase-image">
+                        <img src="./images/uniform-front.jpg" alt="Delray Rocks Compression Uniform Front">
+                    </div>
+                    <div class="showcase-content">
+                        <h4>Custom Compression Shirt &amp; Short Set</h4>
+                        <p class="text-muted">Front view featuring the custom Delray Rocks R.T.G branding, green camo pattern, player number, and athletic shorts with zipper pockets.</p>
+                    </div>
+                </div>
+                <div class="showcase-card glass-panel">
+                    <div class="showcase-image">
+                        <img src="./images/uniform-back.jpg" alt="Delray Rocks Compression Uniform Back">
+                    </div>
+                    <div class="showcase-content">
+                        <h4>Customized Name &amp; Number Back</h4>
+                        <p class="text-muted">Back view featuring player name customization, large roster number, and 561 Athletics league badge.</p>
+                    </div>
+                </div>
+                <div class="showcase-card glass-panel">
+                    <div class="showcase-image">
+                        <img src="./images/gear-bags.png" alt="Delray Rocks Equipment Duffle & Backpack Set">
+                    </div>
+                    <div class="showcase-content">
+                        <h4>Delray Rocks Duffle &amp; Backpack Set</h4>
+                        <p class="text-muted">Heavy-duty player duffle bag and customized backpack set for carrying pads, helmets, and gear to practices and games.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Total Banner -->
+        <section class="total-banner glass-panel fade-in-section">
+            <h3>Total Sponsorship Package Contribution</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Fully funds all player uniform shortsets and gear bags for the 8U division</p>
+            <div class="total-amount text-gradient-gold">$1,000</div>
+        </section>
+
+        <!-- Outreach Campaign -->
+        <section class="section fade-in-section">
+            <h2>The Integrated Outreach &amp; Promotion Campaign</h2>
+            <p>To ensure active engagement and show our deep appreciation, the Delray Rocks will execute a structured, ongoing promotion campaign across the season:</p>
+            
+            <div class="flow-grid">
+                <div class="flow-step glass-panel">
+                    <div class="step-number">1</div>
+                    <h4>Family Signups</h4>
+                    <p>Parents register their youth players and RSVP to attend a Sunday service or campus block party via our customized landing page: <a href="https://signup.f1rstposition.com" target="_blank">signup.f1rstposition.com</a>.</p>
+                </div>
+                <div class="flow-step glass-panel">
+                    <div class="step-number">2</div>
+                    <h4>Monthly Coastal Service Sundays</h4>
+                    <p>The Delray Rocks will host a designated service Sunday once a month. The coaching staff will organize a group visit where coaches, players, and families attend a Coastal Community Church service together.</p>
+                </div>
+                <div class="flow-step glass-panel">
+                    <div class="step-number">3</div>
+                    <h4>Active Promotion in Family Group Chats &amp; Practices</h4>
+                    <p>The team will promote Coastal Community Church events and services directly inside the active family group chat and share announcements during weekly team practices to encourage regular family attendance.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Next Steps -->
+        <section class="section fade-in-section">
+            <h2>Next Steps</h2>
+            <p>Once Coastal Community Church confirms and funds the $1,000 sponsorship, we will immediately place the order for the complete 8U sports package (compression shortsets and gear bags for every player on the roster) and begin coordinating with the coaching staff to announce the next Coastal Service Sunday date to all of our families.</p>
+            <p>From there, the team will spread the word across the active family group chat and at practices, rallying families around the upcoming service and kicking off the promotion campaign from day one.</p>
+            <p>We are excited to build this partnership and make a lasting impact together in Delray Beach and West Boca.</p>
+        </section>
+
+        <!-- Links Card -->
+        <section class="links-card glass-panel fade-in-section">
+            <h3>Live Campaign Link</h3>
+            <p>View and share the family signup landing page.</p>
+            <a href="https://signup.f1rstposition.com" target="_blank" class="action-btn">Signup Landing Page</a>
+        </section>
+
+        <!-- Footer -->
+        <footer class="glass-panel fade-in-section">
+            <p>&copy; 2026 Delray Beach Rocks Youth Football Association.</p>
+        </footer>
+
+    </div>
+
+    <!-- Intersection Observer Script for Fade-ins -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            document.querySelectorAll('.fade-in-section').forEach((el) => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
