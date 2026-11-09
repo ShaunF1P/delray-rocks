@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(
   'https://prpcrwdsunjaxhcuvwqo.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBycGNyd2RzdW5qYXhoY3V2d3FvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njg3MzgwNiwiZXhwIjoyMDkyNDQ5ODA2fQ.gRJEGrljtg2QKwIGFoSa1EpgObV4ihPtDLNRiS38sEg'
+  (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '')
 );
 
 const drills = [

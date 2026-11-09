@@ -10,16 +10,16 @@ import { Card, Button, Badge, PageHeader } from '@/components/ui/index';
 import { createClient } from '@/lib/supabase';
 
 const EVENT_CONFIG = {
-  login:            { label: 'Login',           icon: LogIn,   color: '#60A5FA', emoji: '🔐' },
-  film_view:        { label: 'Film View',       icon: Film,    color: '#A78BFA', emoji: '🎬' },
-  film_upload:      { label: 'Film Upload',     icon: Film,    color: '#818CF8', emoji: '📤' },
-  film_analysis:    { label: 'Film Analysis',   icon: Film,    color: '#C084FC', emoji: '🧠' },
-  playbook_view:    { label: 'Playbook View',   icon: BookOpen, color: '#34D399', emoji: '📋' },
-  evaluation:       { label: 'Evaluation',      icon: Star,    color: '#FBBF24', emoji: '📊' },
-  roster_update:    { label: 'Roster Update',   icon: Users,   color: '#F87171', emoji: '📝' },
-  award_given:      { label: 'Award Given',     icon: Trophy,  color: '#FDB913', emoji: '🏆' },
-  practice_plan:    { label: 'Practice Plan',   icon: Calendar, color: '#4ADE80', emoji: '🏈' },
-  report_generated: { label: 'Report Generated', icon: FileText, color: '#FB923C', emoji: '📄' },
+  login:            { label: 'Login',           icon: LogIn,   color: '#60A5FA' },
+  film_view:        { label: 'Film View',       icon: Film,    color: '#A78BFA' },
+  film_upload:      { label: 'Film Upload',     icon: Film,    color: '#818CF8' },
+  film_analysis:    { label: 'Film Analysis',   icon: Film,    color: '#C084FC' },
+  playbook_view:    { label: 'Playbook View',   icon: BookOpen, color: '#34D399' },
+  evaluation:       { label: 'Evaluation',      icon: Star,    color: '#FBBF24' },
+  roster_update:    { label: 'Roster Update',   icon: Users,   color: '#F87171' },
+  award_given:      { label: 'Award Given',     icon: Trophy,  color: '#FDB913' },
+  practice_plan:    { label: 'Practice Plan',   icon: Calendar, color: '#4ADE80' },
+  report_generated: { label: 'Report Generated', icon: FileText, color: '#FB923C' },
 };
 
 export default function ActivityDashboardPage() {
@@ -202,13 +202,14 @@ export default function ActivityDashboardPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {topEvents.map(([type, count]) => {
-                    const cfg = EVENT_CONFIG[type] || { label: type, color: '#888', emoji: '📌' };
+                    const cfg = EVENT_CONFIG[type] || { label: type, color: '#888', icon: Activity };
                     const pct = Math.round((count / logs.length) * 100);
+                    const IconComp = cfg.icon;
                     return (
                       <div key={type}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                           <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span>{cfg.emoji}</span> {cfg.label}
+                            <IconComp size={16} color={cfg.color} /> {cfg.label}
                           </span>
                           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>{count} ({pct}%)</span>
                         </div>
@@ -235,11 +236,12 @@ export default function ActivityDashboardPage() {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {logs.slice(0, 30).map((log, i) => {
-                const cfg = EVENT_CONFIG[log.event_type] || { label: log.event_type, color: '#888', emoji: '📌' };
+                const cfg = EVENT_CONFIG[log.event_type] || { label: log.event_type, color: '#888', icon: Activity };
                 const userName = profiles[log.user_id] || log.details?.name || 'Unknown';
                 const time = new Date(log.created_at);
                 const ago = getTimeAgo(time);
                 const detail = log.details?.title || log.details?.player || log.details?.action || '';
+                const IconComp = cfg.icon;
 
                 return (
                   <motion.div
@@ -253,8 +255,8 @@ export default function ActivityDashboardPage() {
                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                     }}
                   >
-                    <div style={{ fontSize: '1.1rem', width: 28, textAlign: 'center', flexShrink: 0 }}>
-                      {cfg.emoji}
+                    <div style={{ width: 28, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+                      <IconComp size={16} color={cfg.color} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>

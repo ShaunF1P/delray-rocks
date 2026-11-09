@@ -3,14 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 import { sendTelegramMessage } from '@/lib/telegram';
 
 const AWARD_TYPES = [
-  'Film Guru 🎬',
-  'Practice MVP 💪',
-  'Playmaker 🏈',
-  'Iron Man 🦾',
-  'Rising Star ⭐',
-  'Team Builder 🤝',
-  'Defensive Mastermind 🛡️',
-  'Offensive Genius 🧠',
+  'Film Guru',
+  'Practice MVP',
+  'Playmaker',
+  'Iron Man',
+  'Rising Star',
+  'Team Builder',
+  'Defensive Mastermind',
+  'Offensive Genius',
 ];
 
 function getSupabase() {
@@ -90,16 +90,16 @@ export async function POST(request) {
     });
 
     const message = [
-      `🏆🏆🏆 *AWARD ALERT!* 🏆🏆🏆`,
+      `*AWARD ALERT!*`,
       ``,
       `*${name}* just received the`,
-      `✨ *${awardType}* ✨ award!`,
+      `*${awardType}* award!`,
       ``,
-      reason ? `📝 _"${reason}"_\n` : '',
+      reason ? `_"${reason}"_\n` : '',
       `Awarded by: *${giver}*`,
-      `🕐 ${timestamp}`,
+      `Time: ${timestamp}`,
       ``,
-      `🎉 Congratulations! Keep building CHAMPIONS! 💪🏈`,
+      `Congratulations! Keep building CHAMPIONS!`,
     ].filter(Boolean).join('\n');
 
     sendTelegramMessage(message).catch((err) =>

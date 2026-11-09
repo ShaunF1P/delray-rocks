@@ -43,3 +43,11 @@ next-env.d.ts
 *.mov
 *.avi
 *.mkv
+
+# scratch scripts and temporary logs
+scratch/*.js
+scratch/*.ps1
+scratch/chargers_keyframes/
+.agents/
+=
+temp_files.txt

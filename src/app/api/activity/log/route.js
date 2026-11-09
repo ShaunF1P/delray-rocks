@@ -29,7 +29,7 @@ export async function POST(request) {
     }
 
     // Build a Telegram notification
-    const emoji = EVENT_EMOJI[eventType] || '📌';
+    const tag = EVENT_EMOJI[eventType] || '[ACT]';
     const coachName = details?.coachName || 'A coach';
     const actionMap = {
       login: 'logged in to the portal',
@@ -52,7 +52,7 @@ export async function POST(request) {
       hour12: true,
     });
 
-    const message = `${emoji} *Delray Rocks Activity*\n\n*${coachName}* ${action}\n\n🕐 ${timestamp}`;
+    const message = `${tag} *Delray Rocks Activity*\n\n*${coachName}* ${action}\n\nTime: ${timestamp}`;
 
     // Fire-and-forget Telegram notification
     sendTelegramMessage(message).catch((err) =>

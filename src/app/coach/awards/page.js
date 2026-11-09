@@ -2,20 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Medal, Star, Award, Users, Gift, Clock, Send, X, Sparkles } from 'lucide-react';
+import { Trophy, Medal, Star, Award, Users, Gift, Clock, Send, X, Sparkles, Video, Zap, Shield, Brain, Handshake } from 'lucide-react';
 import { Card, Button, Badge, PageHeader, Modal, EmptyState } from '@/components/ui/index';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 const AWARD_TYPES = [
-  { label: 'Film Guru 🎬', icon: '🎬', color: 'rgba(139,92,246,0.2)', border: 'rgba(139,92,246,0.4)' },
-  { label: 'Practice MVP 💪', icon: '💪', color: 'rgba(253,185,19,0.2)', border: 'rgba(253,185,19,0.4)' },
-  { label: 'Playmaker 🏈', icon: '🏈', color: 'rgba(16,107,58,0.2)', border: 'rgba(16,107,58,0.4)' },
-  { label: 'Iron Man 🦾', icon: '🦾', color: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.4)' },
-  { label: 'Rising Star ⭐', icon: '⭐', color: 'rgba(253,185,19,0.2)', border: 'rgba(253,185,19,0.4)' },
-  { label: 'Team Builder 🤝', icon: '🤝', color: 'rgba(59,130,246,0.2)', border: 'rgba(59,130,246,0.4)' },
-  { label: 'Defensive Mastermind 🛡️', icon: '🛡️', color: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.4)' },
-  { label: 'Offensive Genius 🧠', icon: '🧠', color: 'rgba(16,107,58,0.2)', border: 'rgba(16,107,58,0.4)' },
+  { label: 'Film Guru', icon: Video, color: 'rgba(139,92,246,0.2)', border: 'rgba(139,92,246,0.4)' },
+  { label: 'Practice MVP', icon: Zap, color: 'rgba(253,185,19,0.2)', border: 'rgba(253,185,19,0.4)' },
+  { label: 'Playmaker', icon: Trophy, color: 'rgba(16,107,58,0.2)', border: 'rgba(16,107,58,0.4)' },
+  { label: 'Iron Man', icon: Medal, color: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.4)' },
+  { label: 'Rising Star', icon: Star, color: 'rgba(253,185,19,0.2)', border: 'rgba(253,185,19,0.4)' },
+  { label: 'Team Builder', icon: Handshake, color: 'rgba(59,130,246,0.2)', border: 'rgba(59,130,246,0.4)' },
+  { label: 'Defensive Mastermind', icon: Shield, color: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.4)' },
+  { label: 'Offensive Genius', icon: Brain, color: 'rgba(16,107,58,0.2)', border: 'rgba(16,107,58,0.4)' },
 ];
 
 export default function AwardsPage() {
@@ -117,7 +117,7 @@ export default function AwardsPage() {
         throw new Error(data.error || 'Failed to give award');
       }
 
-      toast.success(`🏆 Award given to ${selectedStaff.name}!`);
+      toast.success(`Award given to ${selectedStaff.name}!`);
       setShowModal(false);
       loadData(); // Refresh
     } catch (err) {
@@ -147,7 +147,7 @@ export default function AwardsPage() {
     <div>
       <PageHeader
         title="Staff Awards"
-        subtitle="Recognize excellence. Celebrate greatness. 🏆"
+        subtitle="Recognize excellence. Celebrate greatness."
         actions={
           <Badge variant="gold" style={{ fontSize: 'var(--text-sm)', padding: '6px 14px' }}>
             <Trophy size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
@@ -245,12 +245,15 @@ export default function AwardsPage() {
                             .slice(0, 4)
                             .map((a) => {
                               const awardInfo = AWARD_TYPES.find((t) => t.label === a.award_type);
+                              const IconComp = awardInfo?.icon || Trophy;
                               return (
                                 <span key={a.id} style={{
-                                  fontSize: '1rem',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  padding: 2,
                                   filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
                                 }} title={a.award_type}>
-                                  {awardInfo?.icon || '🏆'}
+                                  <IconComp size={16} color="var(--rocks-gold)" />
                                 </span>
                               );
                             })}
@@ -321,9 +324,9 @@ export default function AwardsPage() {
                           background: awardInfo?.color || 'rgba(253,185,19,0.1)',
                           border: `1px solid ${awardInfo?.border || 'rgba(253,185,19,0.2)'}`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '1.25rem', flexShrink: 0,
+                          flexShrink: 0,
                         }}>
-                          {awardInfo?.icon || '🏆'}
+                          {awardInfo?.icon ? <awardInfo.icon size={20} color="var(--rocks-gold)" /> : <Trophy size={20} color="var(--rocks-gold)" />}
                         </div>
 
                         {/* Award details */}
@@ -416,46 +419,49 @@ export default function AwardsPage() {
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: 'var(--space-sm)',
               }}>
-                {AWARD_TYPES.map((award) => (
-                  <button
-                    key={award.label}
-                    onClick={() => setSelectedAward(award.label)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-sm)',
-                      padding: 'var(--space-sm) var(--space-md)',
-                      borderRadius: 'var(--radius-md)',
-                      border: selectedAward === award.label
-                        ? '2px solid var(--rocks-gold)'
-                        : '1px solid var(--border)',
-                      background: selectedAward === award.label
-                        ? 'rgba(253,185,19,0.1)'
-                        : 'transparent',
-                      cursor: 'pointer',
-                      color: 'var(--text-primary)',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: selectedAward === award.label ? 700 : 500,
-                      textAlign: 'left',
-                      transition: 'all 150ms ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedAward !== award.label) {
-                        e.currentTarget.style.background = 'var(--bg-glass)';
-                        e.currentTarget.style.borderColor = 'var(--border-light)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedAward !== award.label) {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.borderColor = 'var(--border)';
-                      }
-                    }}
-                  >
-                    <span style={{ fontSize: '1.25rem' }}>{award.icon}</span>
-                    <span>{award.label.replace(/\s[\u{1F300}-\u{1FAD6}]/u, '')}</span>
-                  </button>
-                ))}
+                {AWARD_TYPES.map((award) => {
+                  const IconComp = award.icon || Trophy;
+                  return (
+                    <button
+                      key={award.label}
+                      onClick={() => setSelectedAward(award.label)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-sm)',
+                        padding: 'var(--space-sm) var(--space-md)',
+                        borderRadius: 'var(--radius-md)',
+                        border: selectedAward === award.label
+                          ? '2px solid var(--rocks-gold)'
+                          : '1px solid var(--border)',
+                        background: selectedAward === award.label
+                          ? 'rgba(253,185,19,0.1)'
+                          : 'transparent',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: selectedAward === award.label ? 700 : 500,
+                        textAlign: 'left',
+                        transition: 'all 150ms ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedAward !== award.label) {
+                          e.currentTarget.style.background = 'var(--bg-glass)';
+                          e.currentTarget.style.borderColor = 'var(--border-light)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedAward !== award.label) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                        }
+                      }}
+                    >
+                      <IconComp size={18} color="var(--rocks-gold)" />
+                      <span>{award.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

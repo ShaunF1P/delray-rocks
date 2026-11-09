@@ -1,0 +1,369 @@
+{
+  "timestamp": "2026-11-09T00:38:24.142Z",
+  "executionMode": "mock",
+  "datasetVersion": "1.0",
+  "totalPlaysEvaluated": 10,
+  "sensitivitySettings": {
+    "deadBallSensitivity": 0.5,
+    "playerIdConfidenceCutoff": 0.7,
+    "multiPassReasoning": true
+  },
+  "metrics": {
+    "temporalIoU": 0.9896,
+    "classification": {
+      "precision": 1,
+      "recall": 1,
+      "f1Score": 1,
+      "confusionMatrix": {
+        "trueLive": 6,
+        "falseDead": 0,
+        "falseLive": 0,
+        "trueDead": 4
+      }
+    },
+    "playerId": {
+      "precision": 1,
+      "recall": 1,
+      "hallucinationRate": 0
+    },
+    "statAttribution": {
+      "tackleAttributionF1": 1,
+      "ballCarrierF1": 1,
+      "tdAttributionAccuracy": 1,
+      "threePointAnchorComplianceRate": 1,
+      "overallStatF1": 1
+    }
+  },
+  "targets": {
+    "temporalIoU": {
+      "target": 0.8,
+      "passed": true
+    },
+    "f1Score": {
+      "target": 0.85,
+      "passed": true
+    },
+    "playerIdPrecision": {
+      "target": 0.85,
+      "passed": true
+    },
+    "hallucinationRate": {
+      "target": 0.1,
+      "passed": true
+    },
+    "overallStatF1": {
+      "target": 0.85,
+      "passed": true
+    },
+    "threePointAnchorComplianceRate": {
+      "target": 0.9,
+      "passed": true
+    }
+  },
+  "overallPassed": true,
+  "chargersStageBVerification": null,
+  "perPlayResults": [
+    {
+      "playId": "play_001",
+      "temporalIoU": 0.9905,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 5,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_002",
+      "temporalIoU": 0.9953,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_003",
+      "temporalIoU": 0.9875,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_004",
+      "temporalIoU": 0.9905,
+      "playTypeMatch": true,
+      "actualPlayType": "Penalty",
+      "predictedPlayType": "Penalty",
+      "playerMetrics": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_005",
+      "temporalIoU": 0.977,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_006",
+      "temporalIoU": 0.9909,
+      "playTypeMatch": true,
+      "actualPlayType": "Penalty",
+      "predictedPlayType": "Penalty",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_007",
+      "temporalIoU": 0.9915,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_008",
+      "temporalIoU": 0.9927,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_009",
+      "temporalIoU": 0.9918,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_010",
+      "temporalIoU": 0.9881,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    }
+  ],
+  "perPlayBreakdown": [
+    {
+      "playId": "play_001",
+      "temporalIoU": 0.9905,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 5,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_002",
+      "temporalIoU": 0.9953,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_003",
+      "temporalIoU": 0.9875,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_004",
+      "temporalIoU": 0.9905,
+      "playTypeMatch": true,
+      "actualPlayType": "Penalty",
+      "predictedPlayType": "Penalty",
+      "playerMetrics": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_005",
+      "temporalIoU": 0.977,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_006",
+      "temporalIoU": 0.9909,
+      "playTypeMatch": true,
+      "actualPlayType": "Penalty",
+      "predictedPlayType": "Penalty",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_007",
+      "temporalIoU": 0.9915,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_008",
+      "temporalIoU": 0.9927,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_009",
+      "temporalIoU": 0.9918,
+      "playTypeMatch": true,
+      "actualPlayType": "Live Ball",
+      "predictedPlayType": "Live Ball",
+      "playerMetrics": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    },
+    {
+      "playId": "play_010",
+      "temporalIoU": 0.9881,
+      "playTypeMatch": true,
+      "actualPlayType": "Dead Ball",
+      "predictedPlayType": "Dead Ball",
+      "playerMetrics": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "hallucinations": 0
+      },
+      "statAttributionMatch": true,
+      "threePointCompliant": true
+    }
+  ]
+}

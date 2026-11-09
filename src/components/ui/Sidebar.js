@@ -25,7 +25,7 @@ const coachMenuItems = [
   { label: 'Attendance', href: '/coach/attendance', icon: ClipboardCheck },
   { label: 'Film Room', href: '/coach/film', icon: Film, badge: 'Intel' },
   { label: 'Playbook', href: '/coach/playbook', icon: BookOpen },
-  { label: 'Sideline', href: '/coach/sideline', icon: Gamepad2, badge: '🏈' },
+  { label: 'Sideline', href: '/coach/sideline', icon: Gamepad2, badge: 'LIVE' },
   { label: 'Post-Game', href: '/coach/post-game', icon: FileText, badge: 'NEW' },
   { label: 'Scouting', href: '/coach/scouting', icon: Trophy, badge: 'NEW' },
   { label: 'Training', href: '/coach/training', icon: Dumbbell },

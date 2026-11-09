@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLAYSTREAM MEDIA NETWORK — Master Brand Book &amp; Production Guide</title>
+  <link rel="icon" href="/play_stream_favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #040711;
+      --card-bg: #0F172A;
+      --inner-card: #0B132B;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --border: rgba(255, 255, 255, 0.1);
+      --badge-bg: rgba(34, 211, 238, 0.1);
+      --badge-border: rgba(34, 211, 238, 0.3);
+      --accent-cyan: #22D3EE;
+      --accent-cobalt: #3B82F6;
+      --gradient: linear-gradient(135deg, #2563EB, #3B82F6, #22D3EE);
+    }
+
+    body.light-mode {
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --inner-card: #F1F5F9;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --border: rgba(15, 23, 42, 0.12);
+      --badge-bg: rgba(37, 99, 235, 0.1);
+      --badge-border: rgba(37, 99, 235, 0.3);
+      --accent-cyan: #0891B2;
+      --accent-cobalt: #2563EB;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 2rem 1.5rem 4rem;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 100px;
+      background: var(--badge-bg);
+      border: 1px solid var(--badge-border);
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    h1.brand-title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      margin: 0;
+      line-height: 1.1;
+      color: var(--text-primary);
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      margin-top: 0.35rem;
+      letter-spacing: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+      color: #FFFFFF;
+      border: none;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    }
+
+    nav.tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1.35rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent-cyan);
+      background: var(--badge-bg);
+      color: var(--accent-cyan);
+      font-weight: 800;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 2rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem;
+    }
+
+    .mockup-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .mockup-img {
+      width: 100%;
+      height: 320px;
+      object-fit: cover;
+    }
+
+    .mockup-body {
+      padding: 1.75rem;
+    }
+
+    .color-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      cursor: pointer;
+    }
+
+    .color-swatch {
+      height: 80px;
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    code {
+      background: var(--inner-card);
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="badge">Enterprise Edition • Brand Book Vol 1.0</div>
+        <h1 class="brand-title">PLAYSTREAM</h1>
+        <p class="subtitle">Action &amp; Sports Media Network Brand Guide</p>
+      </div>
+
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn" onclick="toggleTheme()">☀️ Light Mode</button>
+        <a href="/play_stream_logo_transparent.svg?v=1786021480" download class="btn btn-primary">⬇️ Download Transparent Vector Package</a>
+      </div>
+    </header>
+
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('overview')">1. Cover &amp; Vision</button>
+      <button class="tab-btn" onclick="switchTab('showcase')">2. Editorial Mockups</button>
+      <button class="tab-btn" onclick="switchTab('logos')">3. Vector Logo System</button>
+      <button class="tab-btn" onclick="switchTab('color-type')">4. Colors &amp; Typography</button>
+      <button class="tab-btn" onclick="switchTab('playbook')">5. YouTube &amp; OBS Playbook</button>
+      <button class="tab-btn" onclick="switchTab('security')">6. Anti-Piracy &amp; DRM Security</button>
+    </nav>
+
+    <!-- TAB 1: COVER & VISION -->
+    <div id="overview" class="tab-content active">
+      <div class="grid-2">
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="color:var(--accent-cobalt); font-size:0.85rem; font-weight:800; letter-spacing:4px; margin-bottom:1rem;">01 • BRAND STRATEGY</div>
+            <h2 style="font-size:2.25rem; font-weight:900; margin-bottom:1.25rem; line-height:1.15;">The Next-Gen Action Media Network</h2>
+            <p style="color:var(--text-secondary); font-size:1rem; line-height:1.6; margin-bottom:1.75rem;">
+              Engineered for high-impact sports broadcasting, PLAYSTREAM fuses autonomous 4K AI camera tracking with stadium-grade visual authority and viral social highlight delivery.
+            </p>
+
+            <div style="display:grid; gap:1rem; margin-bottom:2rem;">
+              <div style="background:var(--inner-card); padding:1.25rem; border-radius:16px; border-left:4px solid var(--accent-cyan);">
+                <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cyan); letter-spacing:2px; margin-bottom:0.35rem;">VISION STATEMENT</div>
+                <p style="font-size:0.925rem; margin:0; font-style:italic;">"To redefine sports &amp; action media by merging 4K AI camera technology with stadium-grade live coverage and viral digital storytelling."</p>
+              </div>
+
+              <div style="background:var(--inner-card); padding:1.25rem; border-radius:16px; border-left:4px solid var(--accent-cobalt);">
+                <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cobalt); letter-spacing:2px; margin-bottom:0.35rem;">MISSION STATEMENT</div>
+                <p style="font-size:0.925rem; margin:0; font-style:italic;">"To deliver stadium-quality multi-platform broadcasts, highlights, and production coverage that elevates athletes and sports programs globally."</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem;">
+            <div>
+              <div style="font-size:1.5rem; font-weight:900; color:var(--accent-cyan);">4K 60fps</div>
+              <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">Stream Quality</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem; font-weight:900;">AI 360°</div>
+              <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">XBotGo Tracking</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem; font-weight:900; color:var(--accent-cobalt);">100%</div>
+              <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">Vector Precision</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-radius:24px; overflow:hidden; position:relative; min-height:400px; border:1px solid var(--border);">
+          <img src="/playstream_studio_control_room_mockup_1786021105397.jpg" alt="Control Room" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: EDITORIAL MOCKUPS (7 MOCKUPS) -->
+    <div id="showcase" class="tab-content">
+      <div class="grid-3">
+        <div class="card mockup-card">
+          <img src="/playstream_merch_mockup_1786021072099.jpg" alt="Merchandise" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cobalt); letter-spacing:2px; margin-bottom:0.35rem;">02.1 • APPAREL &amp; MERCHANDISE</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">Official Media Crew &amp; Fans Collection</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">Monochrome titanium logo applications on heavy black cotton hoodies, broadcast field staff caps, and crew camera vests.</p>
+          </div>
+        </div>
+
+        <div class="card mockup-card">
+          <img src="/playstream_field_camera_mockup_1786021083252.jpg" alt="Field Camera" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cyan); letter-spacing:2px; margin-bottom:0.35rem;">02.2 • SIDELINE BROADCAST HARDWARE</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">Field Camera Rigs &amp; XBotGo AI Mounts</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">High-visibility cobalt and cyan vinyl badges applied to sideline 4K monitors, auto-tracking mounts, and battery housing.</p>
+          </div>
+        </div>
+
+        <div class="card mockup-card">
+          <img src="/playstream_mobile_social_mockup_1786021095397.jpg" alt="Mobile Feeds" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cobalt); letter-spacing:2px; margin-bottom:0.35rem;">02.3 • MOBILE &amp; SOCIAL FEED</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">YouTube Mobile &amp; Instagram Reels</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">High-contrast channel avatars and watermarks optimized for 9:16 vertical shorts, reels, and mobile YouTube app viewports.</p>
+          </div>
+        </div>
+
+        <div class="card mockup-card">
+          <img src="/playstream_broadcast_truck_mockup_1786022775926.jpg" alt="Broadcast Van" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cyan); letter-spacing:2px; margin-bottom:0.35rem;">02.4 • OUTDOOR BROADCAST FLEET</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">Mobile Production Van &amp; OB Truck</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">Colossal vector branding on fleet production vehicles, providing high-visibility stadium presence during live events.</p>
+          </div>
+        </div>
+
+        <div class="card mockup-card">
+          <img src="/playstream_stadium_jumbotron_mockup_1786022790814.jpg" alt="Stadium Displays" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cobalt); letter-spacing:2px; margin-bottom:0.35rem;">02.5 • ARENA &amp; STADIUM DISPLAYS</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">Stadium Jumbotron &amp; LED Ribbon Boards</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">High-impact 4K stadium displays and animated ribbon graphics for arena sponsorships and live game coverage.</p>
+          </div>
+        </div>
+
+        <div class="card mockup-card">
+          <img src="/playstream_mic_audio_mockup_1786022806589.jpg" alt="Reporter Mic" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cyan); letter-spacing:2px; margin-bottom:0.35rem;">02.6 • AUDIO &amp; SIDELINE INTERVIEWS</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">Reporter Microphone &amp; Studio Headphones</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">3D cube mic flags and custom headset branding for sideline reporters, press conferences, and podcast studios.</p>
+          </div>
+        </div>
+
+        <div class="card mockup-card">
+          <img src="/playstream_billboard_mockup_1786022821865.jpg" alt="Digital Billboard" class="mockup-img">
+          <div class="mockup-body">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--accent-cobalt); letter-spacing:2px; margin-bottom:0.35rem;">02.7 • OUTDOOR DIGITAL CAMPAIGNS</div>
+            <h3 style="font-size:1.35rem; font-weight:800; margin-bottom:0.5rem;">City Center Digital Billboards</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin:0;">Colossal city billboard displays showcasing athletic action shots, live broadcast alerts, and network branding.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: LIVE VECTOR LOGO SYSTEM -->
+    <div id="logos" class="tab-content">
+      <div class="grid-3">
+        <div class="card">
+          <div style="background:#040711; padding:2rem; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:1.25rem; height:180px;">
+            <img id="html-img-logo" src="/play_stream_logo.svg?v=1786021480" alt="Primary Logo" style="max-width:100%; max-height:100%; object-fit:contain;">
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h4 style="margin:0; font-weight:800; font-size:1.05rem;">Primary Horizontal Logo</h4>
+              <p style="margin:0.25rem 0 0; font-size:0.8rem; color:var(--text-secondary);">1800 × 480 px • Master Lockup</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <a href="/play_stream_logo.svg?v=1786021480" download class="btn btn-primary" style="padding:0.45rem 0.85rem; font-size:0.75rem;">SVG</a>
+              <a href="/play_stream_logo.png?v=1786021480" download class="btn" style="padding:0.45rem 0.85rem; font-size:0.75rem;">PNG</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="background:#040711; padding:2rem; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:1.25rem; height:180px;">
+            <img id="html-img-logo-transparent" src="/play_stream_logo_transparent.svg?v=1786021480" alt="Transparent Logo" style="max-width:100%; max-height:100%; object-fit:contain;">
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h4 style="margin:0; font-weight:800; font-size:1.05rem;">Transparent Full-Color Logo</h4>
+              <p style="margin:0.25rem 0 0; font-size:0.8rem; color:var(--text-secondary);">1800 × 480 px • Overlay Package</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <a href="/play_stream_logo_transparent.svg?v=1786021480" download class="btn btn-primary" style="padding:0.45rem 0.85rem; font-size:0.75rem;">SVG</a>
+              <a href="/play_stream_logo_transparent.png?v=1786021480" download class="btn" style="padding:0.45rem 0.85rem; font-size:0.75rem;">PNG</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="background:#F8FAFC; padding:2rem; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:1.25rem; height:180px;">
+            <img id="html-img-logo-dark" src="/play_stream_logo_dark_transparent.svg?v=1786021480" alt="Dark Transparent Logo" style="max-width:100%; max-height:100%; object-fit:contain;">
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h4 style="margin:0; font-weight:800; font-size:1.05rem;">Monochrome Dark Slate Logo</h4>
+              <p style="margin:0.25rem 0 0; font-size:0.8rem; color:var(--text-secondary);">1800 × 480 px • Light Merch Print</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <a href="/play_stream_logo_dark_transparent.svg?v=1786021480" download class="btn btn-primary" style="padding:0.45rem 0.85rem; font-size:0.75rem;">SVG</a>
+              <a href="/play_stream_logo_dark_transparent.png?v=1786021480" download class="btn" style="padding:0.45rem 0.85rem; font-size:0.75rem;">PNG</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: COLORS & TYPOGRAPHY -->
+    <div id="color-type" class="tab-content">
+      <h3 style="font-size:1.5rem; font-weight:800; margin-bottom:1.5rem;">Enterprise Color Architecture</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1.25rem; margin-bottom:3rem;">
+        <div class="color-card"><div class="color-swatch" style="background:#080C14;"></div><div style="font-weight:800;">Deep Onyx</div><code style="font-size:0.8rem;">#080C14</code></div>
+        <div class="color-card"><div class="color-swatch" style="background:#0F172A;"></div><div style="font-weight:800;">Midnight Slate</div><code style="font-size:0.8rem;">#0F172A</code></div>
+        <div class="color-card"><div class="color-swatch" style="background:#2563EB;"></div><div style="font-weight:800;">Electric Cobalt</div><code style="font-size:0.8rem;">#2563EB</code></div>
+        <div class="color-card"><div class="color-swatch" style="background:#22D3EE;"></div><div style="font-weight:800;">Hyper Cyan</div><code style="font-size:0.8rem;">#22D3EE</code></div>
+        <div class="color-card"><div class="color-swatch" style="background:#FFFFFF;"></div><div style="font-weight:800; color:#000;">Titanium White</div><code style="font-size:0.8rem;">#FFFFFF</code></div>
+      </div>
+    </div>
+
+    <!-- TAB 5: PLAYBOOK -->
+    <div id="playbook" class="tab-content">
+      <div class="card">
+        <h3 style="font-size:1.75rem; font-weight:900; margin-bottom:1.5rem;">YouTube Channel &amp; OBS Production Setup</h3>
+        <div class="grid-3">
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px;">
+            <h4 style="color:var(--accent-cyan); margin:0 0 0.75rem;">1. YouTube Profile Avatar</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Upload <code>play_stream_avatar.png</code> to YouTube Studio &gt; Customization &gt; Branding.</p>
+          </div>
+
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px;">
+            <h4 style="color:var(--accent-cobalt); margin:0 0 0.75rem;">2. YouTube Channel Banner</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Upload <code>play_stream_banner.png</code>. Perfectly centered for 1546×423 mobile safe zone.</p>
+          </div>
+
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px;">
+            <h4 style="color:#4ADE80; margin:0 0 0.75rem;">3. OBS Video Watermark</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Add <code>play_stream_watermark.png</code> as an Image Source in bottom-right corner at 85% opacity.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ANTI-PIRACY & DRM SECURITY -->
+    <div id="security" class="tab-content">
+      <div class="card" style="margin-bottom:2rem;">
+        <h3 style="font-size:1.75rem; font-weight:900; margin-bottom:1rem; color:var(--accent-cyan);">Broadcast Security &amp; Anti-Piracy Architecture</h3>
+        <p style="color:var(--text-secondary); font-size:0.95rem; line-height:1.6; margin-bottom:2rem;">
+          To safeguard live sports broadcasts from uncredited restreaming, screen-recording, and automated AI watermark deletion, PLAYSTREAM deploys a 4-layer security architecture.
+        </p>
+
+        <div class="grid-2">
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px; border-left:4px solid var(--accent-cyan);">
+            <h4 style="margin:0 0 0.5rem; color:var(--accent-cyan);">1. Forensic Session-Based Watermarking</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Injects drifting alphanumeric user tokens across video frames. Restreamers are identified and banned instantly via automated DMCA crawlers.</p>
+          </div>
+
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px; border-left:4px solid var(--accent-cobalt);">
+            <h4 style="margin:0 0 0.5rem; color:var(--accent-cobalt);">2. Anti-AI Micro-Jitter &amp; Pulse Opacity</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Randomized 2-pixel micro-movement breaks static AI watermark remover masks, creating video artifacts if pirates attempt deletion.</p>
+          </div>
+
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px; border-left:4px solid #4ADE80;">
+            <h4 style="margin:0 0 0.5rem; color:#4ADE80;">3. AES-128 HLS &amp; DRM Stream Encryption</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Encrypts live video segment chunks with authenticated session keys, blocking HTTP URL scraping and IPTV stream rippers.</p>
+          </div>
+
+          <div style="background:var(--inner-card); padding:1.5rem; border-radius:16px; border-left:4px solid #F43F5E;">
+            <h4 style="margin:0 0 0.5rem; color:#F43F5E;">4. Automated Content ID Fingerprinting</h4>
+            <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">Registers broadcast audio &amp; video waveforms with YouTube Content ID &amp; Meta Rights Manager for automatic 3-second copyright strikes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+      const isLight = document.body.classList.contains('light-mode');
+      document.getElementById('theme-toggle').innerText = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.currentTarget.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
+</body>
+</html>

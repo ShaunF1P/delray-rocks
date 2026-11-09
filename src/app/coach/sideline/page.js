@@ -111,11 +111,11 @@ export default function SidelineSpotter() {
     if (timerRunning) {
       clearInterval(timerIntervalRef.current);
       setTimerRunning(false);
-      toast('Timer paused', { icon: '⏸️' });
+      toast('Timer paused');
     } else {
       startTimerInterval();
       setTimerRunning(true);
-      toast('Timer resumed', { icon: '▶️' });
+      toast('Timer resumed');
     }
   }
 
@@ -136,7 +136,7 @@ export default function SidelineSpotter() {
     setPlayStartSeconds(elapsedSeconds);
     setPlayNotes('');
     setPlayJersey('');
-    toast('SNAP! Play under construction...', { icon: '🏈' });
+    toast('SNAP! Play under construction...');
   }
 
   // WHISTLE: Complete and log the play
@@ -389,11 +389,11 @@ export default function SidelineSpotter() {
                         <div className="form-group">
                           <label className="form-label" style={{ fontSize: 9 }}>Play Type</label>
                           <select className="form-input" style={{ padding: 6, fontSize: 12 }} value={playType} onChange={e => setPlayType(e.target.value)}>
-                            <option value="run">🏈 Run</option>
-                            <option value="pass">💨 Pass</option>
-                            <option value="penalty">⚠️ Penalty</option>
-                            <option value="turnover">🔄 Turnover</option>
-                            <option value="special">kick Special Teams</option>
+                            <option value="run">Run</option>
+                            <option value="pass">Pass</option>
+                            <option value="penalty">Penalty</option>
+                            <option value="turnover">Turnover</option>
+                            <option value="special">Special Teams</option>
                           </select>
                         </div>
                         <div className="form-group">

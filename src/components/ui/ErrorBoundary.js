@@ -1,6 +1,7 @@
 'use client';
 
 import { Component } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 export class ErrorBoundary extends Component {
   constructor(props) {
@@ -25,8 +26,9 @@ export class ErrorBoundary extends Component {
           <div style={{
             width: 64, height: 64, borderRadius: '50%', margin: '0 auto 1rem',
             background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28,
-          }}>⚠️</div>
+          }}>
+            <AlertTriangle size={28} color="#EF4444" />
+          </div>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
             Something went wrong
           </h2>

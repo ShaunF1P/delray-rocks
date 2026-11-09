@@ -1,0 +1,10 @@
+play_number,quarter,start_timestamp,end_timestamp,offense,play_type,formation,ball_carrier,key_blockers,result_yards,first_down,notes
+1,1,"00:00:04","00:00:13","Green Team","Run","Shotgun","#18 Hezekiah Monge","#53 Harrison Payne; #54 Silas Guimaraes; #55 Zachariah Simmons",4,FALSE,"Inside run to the right."
+2,1,"00:01:19","00:01:34","Green Team","Run","Shotgun","#18 Hezekiah Monge","#54 Silas Guimaraes; #55 Zachariah Simmons",5,FALSE,"Inside run to the right."
+3,1,"00:03:11","00:03:27","Green Team","Run","Shotgun","#18 Hezekiah Monge","#53 Harrison Payne; #54 Silas Guimaraes; #55 Zachariah Simmons",7,TRUE,"Inside run to the left."
+4,1,"00:05:10","00:05:25","Green Team","Run","Shotgun","#18 Hezekiah Monge","#54 Silas Guimaraes; #55 Zachariah Simmons",7,TRUE,"Inside run to the left."
+5,1,"00:06:01","00:06:17","Green Team","Run","Shotgun","#18 Hezekiah Monge","#53 Harrison Payne; #55 Zachariah Simmons",6,FALSE,"Inside run to the right."
+6,1,"00:07:31","00:07:47","Green Team","Run","Shotgun","#18 Hezekiah Monge","#53 Harrison Payne; #54 Silas Guimaraes",5,FALSE,"Inside run to the right."
+7,1,"00:08:12","00:08:29","Green Team","Run","Shotgun","#18 Hezekiah Monge","#54 Silas Guimaraes; #55 Zachariah Simmons",6,FALSE,"Inside run to the right."
+8,1,"00:09:51","00:09:59","Green Team","Run","Shotgun","#18 Hezekiah Monge","#55 Zachariah Simmons",4,FALSE,"Inside run to the right."
+9,1,"00:10:27","00:10:35","Green Team","Run","Shotgun","#18 Hezekiah Monge","#55 Zachariah Simmons",4,FALSE,"Inside run to the right."

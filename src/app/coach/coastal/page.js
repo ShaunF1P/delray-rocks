@@ -111,9 +111,9 @@ export default function CoastalCoachManagement() {
   const attendedCount = signups.filter((s) => s.attended).length;
   const optInCount = signups.filter((s) => s.text_opt_in).length;
   
-  // Calculate sponsorship details (e.g. $50 per family who attends, up to $500 max)
-  const sponsorshipTargetVal = 10; // 10 families = $500 sponsorship
-  const earnedSponsorship = Math.min(500, attendedCount * 50);
+  // Calculate sponsorship details (e.g. $100 per family who attends, up to $1,000 max)
+  const sponsorshipTargetVal = 10; // 10 families = $1,000 sponsorship
+  const earnedSponsorship = Math.min(1000, attendedCount * 100);
   const sponsorshipPercent = Math.min(100, Math.round((attendedCount / sponsorshipTargetVal) * 100));
   const optInPercent = totalSignups > 0 ? Math.round((optInCount / totalSignups) * 100) : 0;
 
@@ -121,7 +121,7 @@ export default function CoastalCoachManagement() {
     <div>
       <PageHeader
         title="Coastal Community TV Signups"
-        subtitle="Track church attendance signups and monitor the $500 sponsorship to support uniforms and bags for the 8U team."
+        subtitle="Track church attendance signups and monitor the $1,000 sponsorship to support uniforms and bags for the 8U team."
         actions={
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <Button variant="secondary" icon={<RefreshCw size={16} />} onClick={loadSignups} disabled={loading}>
@@ -193,7 +193,7 @@ export default function CoastalCoachManagement() {
               </div>
             </div>
             <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'var(--rocks-gold)' }}>
-              ${earnedSponsorship} <span style={{ fontSize: 'var(--text-lg)', fontWeight: 500, color: 'var(--text-dim)' }}>/ $500</span>
+              ${earnedSponsorship} <span style={{ fontSize: 'var(--text-lg)', fontWeight: 500, color: 'var(--text-dim)' }}>/ $1,000</span>
             </div>
             {/* Progress bar */}
             <div style={{ height: 6, background: 'var(--bg-glass)', borderRadius: 'var(--radius-full)', marginTop: 10, overflow: 'hidden' }}>

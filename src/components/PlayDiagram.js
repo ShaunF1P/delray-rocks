@@ -402,7 +402,7 @@ export default function PlayDiagram({
       {animated && hasAssignments && (
         <div style={{ position: 'absolute', bottom: 6, right: 6, display: 'flex', gap: 3, alignItems: 'center' }}>
           {/* Mode cycle: routes → motion → fullSim */}
-          {[{key:'routes',icon:'📐',label:'Routes'},{key:'motion',icon:'🏃',label:'Motion'},{key:'fullSim',icon:'🏟️',label:'Full Sim'}].map(m=>(
+          {[{key:'routes',label:'Routes'},{key:'motion',label:'Motion'},{key:'fullSim',label:'Full Sim'}].map(m=>(
             <button key={m.key} onClick={() => { stopAnim(); setMode(m.key); }}
               style={{
                 padding: '3px 6px', fontSize: 8, fontWeight: 700, borderRadius: 4, cursor: 'pointer',
@@ -410,7 +410,7 @@ export default function PlayDiagram({
                 border: `1px solid ${mode === m.key ? (m.key==='fullSim'?'rgba(96,165,250,0.5)':'rgba(253,185,19,0.4)') : 'rgba(255,255,255,0.1)'}`,
                 color: mode === m.key ? (m.key==='fullSim'?'#60A5FA':'#FDB913') : 'rgba(255,255,255,0.4)',
               }}>
-              {m.icon}
+              {m.label}
             </button>
           ))}
           {/* Play/stop */}
@@ -421,7 +421,11 @@ export default function PlayDiagram({
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 10, color: '#fff',
             }}>
-            {isPlaying ? '⏹' : '▶'}
+            {isPlaying ? (
+              <span style={{ width: 8, height: 8, background: '#fff', borderRadius: 1 }} />
+            ) : (
+              <span style={{ width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '7px solid #fff', marginLeft: 2 }} />
+            )}
           </button>
         </div>
       )}

@@ -79,7 +79,7 @@ export default function EventsPage() {
           {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 100, borderRadius: 'var(--radius-lg)' }} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon="📅" title="No Events" description="Schedule your first practice or game" action={<Button variant="primary" icon={<Plus size={16} />} onClick={() => setShowModal(true)}>Create Event</Button>} />
+        <EmptyState icon={<Calendar size={48} />} title="No Events" description="Schedule your first practice or game" action={<Button variant="primary" icon={<Plus size={16} />} onClick={() => setShowModal(true)}>Create Event</Button>} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
           {filtered.map((event, i) => {

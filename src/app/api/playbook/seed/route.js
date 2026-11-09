@@ -773,7 +773,7 @@ export async function GET() {
         }
         // Append read_key to description if it exists (safe fallback)
         if (p.read_key) {
-          safe.description = `${p.description}\n\n🔑 Read Key: ${p.read_key}`;
+          safe.description = `${p.description}\n\nRead Key: ${p.read_key}`;
         }
         return safe;
       });

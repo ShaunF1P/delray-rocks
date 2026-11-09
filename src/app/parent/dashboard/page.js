@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { getUserWithProfile } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { Users, TrendingUp, Calendar, Star, Trophy, FileText, Activity, Heart } from 'lucide-react';
+import { Users, TrendingUp, Calendar, Star, Trophy, FileText, Activity, Heart, Lightbulb } from 'lucide-react';
 
 export default function ParentDashboard() {
   const [children, setChildren] = useState([]);
@@ -83,7 +83,9 @@ export default function ParentDashboard() {
     return (
       <div style={{ padding: 40, textAlign: 'center' }}>
         <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ fontSize: 32, marginBottom: 12 }}>🏈</motion.div>
+          style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <Trophy size={32} color="#009A44" />
+        </motion.div>
         <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading your player data...</div>
       </div>
     );
@@ -109,7 +111,9 @@ export default function ParentDashboard() {
             background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: 12,
           }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>👋</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <Users size={40} color="var(--text-dim)" />
+          </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>No Players Linked Yet</div>
           <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>
             Ask your head coach to add your email as the guardian email on your child's roster profile.
@@ -225,9 +229,8 @@ export default function ParentDashboard() {
                   <div style={{
                     width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: event.type === 'game' ? 'rgba(239,68,68,0.1)' : 'rgba(74,222,128,0.1)',
-                    fontSize: 16,
                   }}>
-                    {event.type === 'game' ? '🏟️' : '🏈'}
+                    {event.type === 'game' ? <Activity size={18} color="#EF4444" /> : <Trophy size={18} color="#4ADE80" />}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{event.name || event.title || 'Event'}</div>
@@ -256,7 +259,9 @@ export default function ParentDashboard() {
           marginTop: 16, padding: 14, borderRadius: 10,
           background: 'rgba(253,185,19,0.04)', border: '1px solid rgba(253,185,19,0.1)',
         }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#FDB913', marginBottom: 4 }}>💡 Tip</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#FDB913', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Lightbulb size={14} color="#FDB913" /> Tip
+        </div>
         <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.5 }}>
           Check the <strong>Reports</strong> tab for weekly progress reports from your coach. These include at-home drills, nutrition guides, and personalized feedback.
         </div>

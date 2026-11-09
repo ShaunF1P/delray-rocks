@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Phone, Check, Heart, Trophy, Info, ArrowRight, Calendar, MapPin, Sparkles, Clock, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -138,9 +139,12 @@ export default function CoastalLandingPage() {
               <div className={styles.sponsorshipBanner}>
                 <Trophy size={20} color="var(--rocks-gold)" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
-                  <h4 className={styles.sponsorshipTitle}>$500 Team Sponsorship</h4>
+                  <h4 className={styles.sponsorshipTitle}>$1,000 Team Sponsorship</h4>
                   <p className={styles.sponsorshipDesc}>
-                    When 8U player families sign up and check out a service or join us for the block party, the team receives a <strong>$500 sponsorship</strong> to support uniforms and bags.
+                    When 8U player families sign up and check out a service or join us for the block party, the team receives a <strong>$1,000 sponsorship</strong> to support uniforms and bags.{' '}
+                    <Link href="/coastal/proposal" style={{ color: 'var(--rocks-gold)', textDecoration: 'underline', fontWeight: 600 }}>
+                      View Proposal Details
+                    </Link>
                   </p>
                 </div>
               </div>

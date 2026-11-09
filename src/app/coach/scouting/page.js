@@ -176,7 +176,7 @@ export default function ScoutingPage() {
             padding: 40, textAlign: 'center', maxWidth: 600,
             background: 'rgba(253,185,19,0.04)', border: '1px solid rgba(253,185,19,0.1)', borderRadius: 12,
           }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🏈</div>
+          <Target size={32} color="#FDB913" style={{ margin: '0 auto 12px' }} />
           <div style={{ fontSize: 14, fontWeight: 700, color: '#FDB913', marginBottom: 4 }}>Analyzing Opponent Intel...</div>
           <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Building game plan against {opponent}</div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
@@ -242,7 +242,7 @@ export default function ScoutingPage() {
           {/* Key Matchups */}
           {report.keyMatchups?.length > 0 && (
             <div style={{ padding: 14, marginBottom: 12, borderRadius: 10, background: 'rgba(168,85,247,0.04)', border: '1px solid rgba(168,85,247,0.1)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#A855F7', marginBottom: 8, textTransform: 'uppercase' }}>🔑 Key Matchups</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#A855F7', marginBottom: 8, textTransform: 'uppercase' }}>Key Matchups</div>
               {report.keyMatchups.map((m, i) => (
                 <div key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, paddingLeft: 8, borderLeft: '2px solid rgba(168,85,247,0.3)', lineHeight: 1.4 }}>{m}</div>
               ))}

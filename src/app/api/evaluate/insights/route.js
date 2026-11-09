@@ -52,7 +52,7 @@ Based on this evaluation history, provide 2-3 sentences of development insight. 
 Keep it concise, constructive, and appropriate for youth sports. Respond with plain text only, no JSON.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

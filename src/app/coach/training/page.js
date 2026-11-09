@@ -5,17 +5,17 @@ import { createClient } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dumbbell, Search, Filter, Clock, Users, ChevronDown, ChevronUp,
-  Plus, X, Save, GraduationCap, Zap, Shield, Target, Activity, Footprints
+  Plus, X, Save, GraduationCap, Zap, Shield, Target, Activity, Footprints, ClipboardList, Flame
 } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'all', label: 'All Drills', icon: '📋' },
-  { id: 'fundamentals', label: 'Fundamentals', icon: '🏈' },
-  { id: 'offense', label: 'Offense', icon: '⚔️' },
-  { id: 'defense', label: 'Defense', icon: '🛡️' },
-  { id: 'conditioning', label: 'Conditioning', icon: '🏃' },
-  { id: 'agility', label: 'Agility', icon: '⚡' },
-  { id: 'special_teams', label: 'Special Teams', icon: '🦶' },
+  { id: 'all', label: 'All Drills', icon: ClipboardList },
+  { id: 'fundamentals', label: 'Fundamentals', icon: Target },
+  { id: 'offense', label: 'Offense', icon: Zap },
+  { id: 'defense', label: 'Defense', icon: Shield },
+  { id: 'conditioning', label: 'Conditioning', icon: Activity },
+  { id: 'agility', label: 'Agility', icon: Flame },
+  { id: 'special_teams', label: 'Special Teams', icon: Footprints },
 ];
 
 const POSITIONS = [
@@ -27,9 +27,9 @@ const POSITIONS = [
 ];
 
 const DIFFICULTY_COLORS = {
-  beginner: { bg: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.3)', text: '#4ADE80', label: '🟢 Beginner' },
-  intermediate: { bg: 'rgba(253,185,19,0.15)', border: 'rgba(253,185,19,0.3)', text: '#FDB913', label: '🟡 Intermediate' },
-  advanced: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)', text: '#EF4444', label: '🔴 Advanced' },
+  beginner: { bg: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.3)', text: '#4ADE80', label: 'Beginner' },
+  intermediate: { bg: 'rgba(253,185,19,0.15)', border: 'rgba(253,185,19,0.3)', text: '#FDB913', label: 'Intermediate' },
+  advanced: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)', text: '#EF4444', label: 'Advanced' },
 };
 
 export default function TrainingPage() {
@@ -122,26 +122,30 @@ export default function TrainingPage() {
         <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
           style={{ padding: '8px 12px', fontSize: 13, background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', cursor: 'pointer' }}>
           <option value="all">All Levels</option>
-          <option value="beginner">🟢 Beginner</option>
-          <option value="intermediate">🟡 Intermediate</option>
-          <option value="advanced">🔴 Advanced</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
         </select>
       </div>
 
       {/* Category Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
-        {CATEGORIES.map(c => (
-          <button key={c.id} onClick={() => setCategory(c.id)}
-            style={{
-              padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid', borderRadius: 20,
-              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms',
-              background: category === c.id ? 'rgba(0,154,68,0.15)' : 'transparent',
-              borderColor: category === c.id ? 'var(--rocks-green)' : 'var(--border)',
-              color: category === c.id ? 'var(--rocks-green-light)' : 'var(--text-dim)',
-            }}>
-            {c.icon} {c.label}
-          </button>
-        ))}
+        {CATEGORIES.map(c => {
+          const IconComp = c.icon;
+          return (
+            <button key={c.id} onClick={() => setCategory(c.id)}
+              style={{
+                padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid', borderRadius: 20,
+                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: category === c.id ? 'rgba(0,154,68,0.15)' : 'transparent',
+                borderColor: category === c.id ? 'var(--rocks-green)' : 'var(--border)',
+                color: category === c.id ? 'var(--rocks-green-light)' : 'var(--text-dim)',
+              }}>
+              <IconComp size={13} /> {c.label}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ display: 'flex', gap: 20 }}>
@@ -224,7 +228,7 @@ export default function TrainingPage() {
                           {drill.coaching_points?.length > 0 && (
                             <div style={{ marginTop: 10 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: '#FDB913', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                🏈 Coaching Points
+                                Coaching Points
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 {drill.coaching_points.map((cp, i) => (

@@ -14,16 +14,16 @@ export const EVENT_TYPES = [
   'report_generated',
 ];
 
-/** Emoji map for Telegram notifications */
+/** Tag map for activity notifications */
 export const EVENT_EMOJI = {
-  login: '🔐',
-  film_view: '🎬',
-  playbook_view: '📋',
-  evaluation: '📊',
-  roster_update: '📝',
-  award_given: '🏆',
-  practice_plan: '🏈',
-  report_generated: '📄',
+  login: '[AUTH]',
+  film_view: '[FILM]',
+  playbook_view: '[PLAYBOOK]',
+  evaluation: '[EVAL]',
+  roster_update: '[ROSTER]',
+  award_given: '[AWARD]',
+  practice_plan: '[PRACTICE]',
+  report_generated: '[REPORT]',
 };
 
 /**

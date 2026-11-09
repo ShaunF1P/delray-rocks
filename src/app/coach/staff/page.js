@@ -319,7 +319,7 @@ function StaffForm({ coach, onSave, onCancel }) {
         
         {/* Compliance Section */}
         <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-md)', gridColumn: 'span 2' }}>
-          <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 'var(--space-md)', color: 'var(--rocks-green-light)' }}>📋 Compliance</h4>
+          <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 'var(--space-md)', color: 'var(--rocks-green-light)' }}>Compliance</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>

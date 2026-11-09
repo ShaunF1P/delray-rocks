@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Home, ArrowLeft } from 'lucide-react';
+import { FootballIcon } from '@/components/ui/Icons';
 
 export default function NotFound() {
   return (
@@ -20,7 +21,9 @@ export default function NotFound() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div style={{ fontSize: '6rem', marginBottom: '0.5rem' }}>🏈</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
+          <FootballIcon size={80} color="#009A44" />
+        </div>
         <h1 style={{
           fontSize: 'clamp(3rem, 8vw, 6rem)',
           fontWeight: 900,

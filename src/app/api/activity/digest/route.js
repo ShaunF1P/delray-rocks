@@ -4,7 +4,7 @@ import { sendTelegramMessage } from '@/lib/telegram';
 import { getActivitySummary, EVENT_EMOJI } from '@/lib/activity';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-3.5-flash';
+const GEMINI_MODEL = 'gemini-3.8-flash';
 
 function getSupabase() {
   return createClient(
@@ -36,14 +36,14 @@ export async function GET(request) {
     const summary = await getActivitySummary(supabase, daysBack);
 
     if (summary.total === 0) {
-      const noActivityMsg = `📊 *Delray Rocks — Activity Digest*\n\nNo activity recorded in the last ${daysBack} day(s). Time to get to work! 💪🏈`;
+      const noActivityMsg = `*Delray Rocks — Activity Digest*\n\nNo activity recorded in the last ${daysBack} day(s). Time to get to work!`;
       await sendTelegramMessage(noActivityMsg);
       return NextResponse.json({ digest: noActivityMsg, total: 0 });
     }
 
     // Build breakdown for the AI prompt
     const breakdown = Object.entries(summary.byType)
-      .map(([type, count]) => `- ${EVENT_EMOJI[type] || '📌'} ${type}: ${count}`)
+      .map(([type, count]) => `- ${EVENT_EMOJI[type] || '[ACT]'} ${type}: ${count}`)
       .join('\n');
 
     const recentSample = summary.recent
@@ -67,8 +67,8 @@ ${recentSample}
 
 RULES:
 - Use football and coaching-themed language
-- Include relevant emojis (🏈 🏆 💪 ⭐ 🎬 📋)
-- Start with a headline like "🏈 DELRAY ROCKS — ${daysBack <= 1 ? 'DAILY' : 'WEEKLY'} DIGEST"
+- Do NOT use unicode emojis in output
+- Start with a headline like "DELRAY ROCKS — ${daysBack <= 1 ? 'DAILY' : 'WEEKLY'} DIGEST"
 - Highlight top contributors by name if available
 - Mention standout numbers (e.g., "12 film sessions reviewed!")
 - End with a motivating one-liner

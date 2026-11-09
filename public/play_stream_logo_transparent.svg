@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240">
+  <defs>
+    <linearGradient id="magazineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="45%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+    <filter id="emblemGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#2563EB" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- 1-TO-1 EXACT MAGAZINE UPPER-RIGHT CORNER EMBLEM MARK (TRANSPARENT BACKGROUND) -->
+  <g transform="translate(75, 50)" filter="url(#emblemGlow)">
+    <path d="M 32 24 L 118 70 L 32 116 Z" 
+          fill="none" 
+          stroke="url(#magazineGrad)" 
+          stroke-width="22" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- TYPOGRAPHY LOCKUP -->
+  <g transform="translate(240, 126)">
+    <text font-family="'Inter', 'Outfit', system-ui, -apple-system, sans-serif" font-weight="900" font-size="72" fill="#FFFFFF" letter-spacing="2">
+      PLAYSTREAM
+    </text>
+    <text x="4" y="32" font-family="'Inter', system-ui, -apple-system, sans-serif" font-weight="700" font-size="15" fill="#94A3B8" letter-spacing="10">
+      MEDIA NETWORK
+    </text>
+  </g>
+</svg>

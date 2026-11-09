@@ -1,0 +1,176 @@
+{
+  "plays": [
+    {
+      "index": 1,
+      "start": 0,
+      "end": 5,
+      "start_seconds": 0,
+      "end_seconds": 5,
+      "title": "Inside handoff run",
+      "notes": "The center snaps the ball and hands it off to a teammate in the backfield. The ball carrier attempts to run forward but is quickly surrounded and stopped by the opposing defense at the line of scrimmage.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "The center snaps the ball and hands it off to a teammate in the backfield. The ball carrier attempts to run forward but is quickly surrounded and stopped by the opposing defense at the line of scrimmage.",
+      "players_involved": [
+        "unidentified Center",
+        "unidentified Running Back"
+      ]
+    },
+    {
+      "index": 2,
+      "start": 307.766673,
+      "end": 311.766673,
+      "start_seconds": 307.766673,
+      "end_seconds": 311.766673,
+      "title": "Pass play",
+      "notes": "The quarterback stands at the center of the field, takes a step back, and throws a forward pass towards the sideline, where it is caught by an unidentified receiver who continues running.",
+      "play_type": "pass",
+      "source": "sideline",
+      "description": "The quarterback stands at the center of the field, takes a step back, and throws a forward pass towards the sideline, where it is caught by an unidentified receiver who continues running.",
+      "players_involved": [
+        "QB #11 (Jake Feldman)",
+        "unidentified receiver"
+      ]
+    },
+    {
+      "index": 3,
+      "start": 681.7666730000001,
+      "end": 685.7666730000001,
+      "start_seconds": 681.7666730000001,
+      "end_seconds": 685.7666730000001,
+      "title": "Incomplete pass",
+      "notes": "The quarterback picks up the ball from the ground, moves to the right, and attempts a pass that falls incomplete.",
+      "play_type": "pass",
+      "source": "sideline",
+      "description": "The quarterback picks up the ball from the ground, moves to the right, and attempts a pass that falls incomplete.",
+      "players_involved": [
+        "QB #11 (Jake Feldman)"
+      ]
+    },
+    {
+      "index": 4,
+      "start": 993.7666730000001,
+      "end": 998.7666730000001,
+      "start_seconds": 993.7666730000001,
+      "end_seconds": 998.7666730000001,
+      "title": "Hand-off run to the right",
+      "notes": "The ball is handed off from the QB to the running back, who carries the ball to the right sideline before being tackled.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "The ball is handed off from the QB to the running back, who carries the ball to the right sideline before being tackled.",
+      "players_involved": [
+        "QB #11 (Jake Feldman)",
+        "RB #7 (Carter Thomas)"
+      ]
+    },
+    {
+      "index": 5,
+      "start": 1353.766673,
+      "end": 1359.766673,
+      "start_seconds": 1353.766673,
+      "end_seconds": 1359.766673,
+      "title": "Running play",
+      "notes": "A player in a dark jersey receives the ball from a central player and runs toward the center of the field, where they are tackled by two players in light jerseys.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "A player in a dark jersey receives the ball from a central player and runs toward the center of the field, where they are tackled by two players in light jerseys.",
+      "players_involved": [
+        "unidentified"
+      ]
+    },
+    {
+      "index": 6,
+      "start": 1713.766673,
+      "end": 1718.766673,
+      "start_seconds": 1713.766673,
+      "end_seconds": 1718.766673,
+      "title": "Dead ball recovery",
+      "notes": "A player in a light blue jersey retrieves the football from the ground in the middle of a cluster of players and walks it to the sideline to hand it to an official.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "A player in a light blue jersey retrieves the football from the ground in the middle of a cluster of players and walks it to the sideline to hand it to an official.",
+      "players_involved": [
+        "Opponent player in light blue jersey"
+      ]
+    },
+    {
+      "index": 7,
+      "start": 2073.766673,
+      "end": 2082.766673,
+      "start_seconds": 2073.766673,
+      "end_seconds": 2082.766673,
+      "title": "Fumbled handoff attempt",
+      "notes": "An unidentified green-jersey player attempts to hand the ball to an unidentified white-jersey player, but the ball is not transferred. The green-jersey player runs forward with the ball before dropping it on the turf at the 35-yard line.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "An unidentified green-jersey player attempts to hand the ball to an unidentified white-jersey player, but the ball is not transferred. The green-jersey player runs forward with the ball before dropping it on the turf at the 35-yard line.",
+      "players_involved": [
+        "unidentified green-jersey player",
+        "unidentified white-jersey player"
+      ]
+    },
+    {
+      "index": 8,
+      "start": 2248.566578,
+      "end": 2253.566578,
+      "start_seconds": 2248.566578,
+      "end_seconds": 2253.566578,
+      "title": "Handoff run play",
+      "notes": "A green-jersey player hands the ball to a black-jersey player who runs toward the left side of the field before being tackled by a green-jersey player.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "A green-jersey player hands the ball to a black-jersey player who runs toward the left side of the field before being tackled by a green-jersey player.",
+      "players_involved": [
+        "Opponent ball carrier (black jersey)",
+        "Unidentified green-jersey defender"
+      ]
+    },
+    {
+      "index": 9,
+      "start": 2269.999807,
+      "end": 2285.999807,
+      "start_seconds": 2269.999807,
+      "end_seconds": 2285.999807,
+      "title": "Running play to the sideline",
+      "notes": "The quarterback takes the snap and hands the ball off to a running back who attempts to run laterally across the field before being tackled by an opponent.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "The quarterback takes the snap and hands the ball off to a running back who attempts to run laterally across the field before being tackled by an opponent.",
+      "players_involved": [
+        "QB #11 (Jake Feldman)",
+        "Opponent defender"
+      ]
+    },
+    {
+      "index": 10,
+      "start": 2287.199889,
+      "end": 2292.199889,
+      "start_seconds": 2287.199889,
+      "end_seconds": 2292.199889,
+      "title": "Hand-off run to the right",
+      "notes": "The quarterback takes the snap and fakes a handoff to the right before handing the ball to a teammate in a black jersey. The ball carrier runs toward the right sideline and is tackled by multiple defenders.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "The quarterback takes the snap and fakes a handoff to the right before handing the ball to a teammate in a black jersey. The ball carrier runs toward the right sideline and is tackled by multiple defenders.",
+      "players_involved": [
+        "QB #11 (Jake Feldman)",
+        "Opponent ball carrier"
+      ]
+    },
+    {
+      "index": 11,
+      "start": 3119.799892,
+      "end": 3127.799892,
+      "start_seconds": 3119.799892,
+      "end_seconds": 3127.799892,
+      "title": "Dead ball recovery",
+      "notes": "A player in a green jersey, identified as #3 (Carter Latouche), retrieves a loose football from the field and jogs with it toward the sideline as players disperse.",
+      "play_type": "run",
+      "source": "sideline",
+      "description": "A player in a green jersey, identified as #3 (Carter Latouche), retrieves a loose football from the field and jogs with it toward the sideline as players disperse.",
+      "players_involved": [
+        "Carter Latouche #3"
+      ]
+    }
+  ]
+}

@@ -332,7 +332,7 @@ export default function DepthChartPage() {
             background: side === s ? 'rgba(0,154,68,0.2)' : 'rgba(255,255,255,0.03)',
             borderColor: side === s ? '#009A44' : 'rgba(255,255,255,0.1)',
             color: side === s ? '#4ADE80' : 'rgba(255,255,255,0.4)',
-          }}>{s === 'offense' ? '⚔️' : s === 'defense' ? '🛡️' : '⚡'} {s}</button>
+          }}>{s}</button>
         ))}
       </div>
 

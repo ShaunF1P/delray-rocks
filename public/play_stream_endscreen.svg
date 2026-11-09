@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#040711"/>
+      <stop offset="50%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#020408"/>
+    </linearGradient>
+    <linearGradient id="cobaltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="platGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bgGrad)"/>
+
+  <!-- Technical Grid overlay -->
+  <g opacity="0.04" stroke="#FFFFFF" stroke-width="1.5">
+    <line x1="0" y1="270" x2="1920" y2="270"/>
+    <line x1="0" y1="540" x2="1920" y2="540"/>
+    <line x1="0" y1="810" x2="1920" y2="810"/>
+    <line x1="480" y1="0" x2="480" y2="1080"/>
+    <line x1="960" y1="0" x2="960" y2="1080"/>
+    <line x1="1440" y1="0" x2="1440" y2="1080"/>
+  </g>
+
+  <!-- TOP BRANDING BANNER LOCKUP -->
+  <g transform="translate(100, 80)" filter="url(#subtleShadow)">
+    <rect x="0" y="0" width="160" height="125" rx="32" fill="#0B132B" stroke="url(#cobaltGrad)" stroke-width="3"/>
+    <path d="M 28 35 L 68 62.5 L 28 90 Z" fill="url(#platGrad)"/>
+    <path d="M 82 45 A 22 22 0 0 1 82 80" fill="none" stroke="url(#cyanGrad)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 95 34 A 36 36 0 0 1 95 91" fill="none" stroke="url(#cobaltGrad)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 108 23 A 50 50 0 0 1 108 102" fill="none" stroke="#60A5FA" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+
+    <g transform="translate(190, 75)">
+      <text font-family="'Inter', 'Outfit', system-ui, sans-serif" font-size="64" letter-spacing="3">
+        <tspan font-weight="900" fill="url(#platGrad)">PLAY</tspan>
+        <tspan font-weight="300" fill="url(#cyanGrad)">STREAM</tspan>
+      </text>
+      <text x="4" y="32" font-family="'Inter', system-ui, sans-serif" font-weight="700" font-size="14" fill="#94A3B8" letter-spacing="10">
+        THANKS FOR WATCHING • SUBSCRIBE FOR MORE
+      </text>
+    </g>
+  </g>
+
+  <!-- YOUTUBE ENDSCREEN PLACEHOLDER BOXES -->
+  <!-- Left Video Placeholders -->
+  <rect x="140" y="280" width="760" height="428" rx="20" fill="none" stroke="url(#cobaltGrad)" stroke-width="4" stroke-dasharray="16 12" opacity="0.6"/>
+  <text x="520" y="504" font-family="'Inter', sans-serif" font-weight="800" font-size="24" fill="#64748B" text-anchor="middle" letter-spacing="4">BEST FOR VIEWER</text>
+
+  <rect x="960" y="280" width="760" height="428" rx="20" fill="none" stroke="url(#cyanGrad)" stroke-width="4" stroke-dasharray="16 12" opacity="0.6"/>
+  <text x="1340" y="504" font-family="'Inter', sans-serif" font-weight="800" font-size="24" fill="#64748B" text-anchor="middle" letter-spacing="4">RECENT UPLOAD</text>
+
+  <!-- Center Subscribe Circle Placeholder -->
+  <circle cx="960" cy="840" r="80" fill="#0B132B" stroke="url(#cyanGrad)" stroke-width="5"/>
+  <text x="960" y="848" font-family="'Inter', sans-serif" font-weight="900" font-size="18" fill="#22D3EE" text-anchor="middle" letter-spacing="3">SUBSCRIBE</text>
+</svg>

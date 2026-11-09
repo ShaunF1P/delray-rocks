@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmeml version="4">
+  <sequence>
+    <name>RTG Game Breakdown Timeline</name>
+    <rate><timebase>30</timebase></rate>
+    <media>
+      <video>
+        <track>
+          <generatoritem id="play_1">
+            <name>Play #1 - #18 Hezekiah Monge</name>
+            <start>0</start>
+            <end>300</end>
+            <in>00:00:04</in>
+            <out>00:00:13</out>
+          </generatoritem>
+          <generatoritem id="play_2">
+            <name>Play #2 - #18 Hezekiah Monge</name>
+            <start>300</start>
+            <end>600</end>
+            <in>00:01:19</in>
+            <out>00:01:34</out>
+          </generatoritem>
+          <generatoritem id="play_3">
+            <name>Play #3 - #18 Hezekiah Monge</name>
+            <start>600</start>
+            <end>900</end>
+            <in>00:03:11</in>
+            <out>00:03:27</out>
+          </generatoritem>
+          <generatoritem id="play_4">
+            <name>Play #4 - #18 Hezekiah Monge</name>
+            <start>900</start>
+            <end>1200</end>
+            <in>00:05:10</in>
+            <out>00:05:25</out>
+          </generatoritem>
+          <generatoritem id="play_5">
+            <name>Play #5 - #18 Hezekiah Monge</name>
+            <start>1200</start>
+            <end>1500</end>
+            <in>00:06:01</in>
+            <out>00:06:17</out>
+          </generatoritem>
+          <generatoritem id="play_6">
+            <name>Play #6 - #18 Hezekiah Monge</name>
+            <start>1500</start>
+            <end>1800</end>
+            <in>00:07:31</in>
+            <out>00:07:47</out>
+          </generatoritem>
+          <generatoritem id="play_7">
+            <name>Play #7 - #18 Hezekiah Monge</name>
+            <start>1800</start>
+            <end>2100</end>
+            <in>00:08:12</in>
+            <out>00:08:29</out>
+          </generatoritem>
+          <generatoritem id="play_8">
+            <name>Play #8 - #18 Hezekiah Monge</name>
+            <start>2100</start>
+            <end>2400</end>
+            <in>00:09:51</in>
+            <out>00:09:59</out>
+          </generatoritem>
+          <generatoritem id="play_9">
+            <name>Play #9 - #18 Hezekiah Monge</name>
+            <start>2400</start>
+            <end>2700</end>
+            <in>00:10:27</in>
+            <out>00:10:35</out>
+          </generatoritem>
+        </track>
+      </video>
+    </media>
+  </sequence>
+</xmeml>

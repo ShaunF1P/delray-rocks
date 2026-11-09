@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { FootballIcon } from '@/components/ui/Icons';
 
 export default function LiveGamePage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function LiveGamePage() {
           maxWidth: 420,
         }}
       >
-        <div style={{ fontSize: 32, marginBottom: 12 }}>🏈</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><FootballIcon size={32} color="#4ADE80" /></div>
         <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: '#4ADE80' }}>
           Scoreboard Moved
         </h2>

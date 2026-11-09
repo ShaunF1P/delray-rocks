@@ -135,15 +135,14 @@ export async function POST(request) {
     }
 
     // Build and send Telegram message to coaching staff
-    const emoji = '⛪';
-    const message = `${emoji} *New Coastal Community Church Signup!*\n\n` +
+    const message = `*New Coastal Community Church Signup!*\n\n` +
       `*Parent/Guardian:* ${parent_first_name.trim()} ${parent_last_name.trim()}\n` +
       `*Email:* ${email.trim()}\n` +
       `*Phone:* ${phone.trim()}\n` +
       `*8U Player:* ${player_name.trim()}\n` +
       `*Planned Visit:* ${planned_visit || 'Unspecified'}\n` +
-      `*SMS Opt-in:* ${text_opt_in ? '✅ Yes' : '❌ No'}\n\n` +
-      `This signup helps support the Delray Rocks 8U team's $500 sponsorship for uniforms & bags! 🏈`;
+      `*SMS Opt-in:* ${text_opt_in ? 'Yes' : 'No'}\n\n` +
+      `This signup helps support the Delray Rocks 8U team's $1,000 sponsorship for uniforms & bags!`;
 
     const headers = {
       'Access-Control-Allow-Origin': '*',

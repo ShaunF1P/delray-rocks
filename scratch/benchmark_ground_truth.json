@@ -1,0 +1,677 @@
+{
+  "datasetVersion": "1.0",
+  "datasetDescription": "Ground-truth benchmark dataset for 8U youth football play recognition, dead-ball classification, player identification, and 3-point anchor stat attribution.",
+  "totalPlays": 10,
+  "plays": [
+    {
+      "playId": "play_001",
+      "scenarioDescription": "Clean Live Play: Sweep Left down the sideline, runner pushed out of bounds.",
+      "videoTimestampStart": 5.0,
+      "videoTimestampEnd": 18.0,
+      "snapTimestamp": 7.2,
+      "whistleTimestamp": 15.6,
+      "playType": "Live Ball",
+      "isDeadBall": false,
+      "penaltyDetails": null,
+      "statAttributions": {
+        "ballCarrier": {
+          "jerseyNumber": 4,
+          "position": "RB",
+          "rushYards": 8,
+          "rushTd": false,
+          "matchedAnchors": [
+            "alignment:RB",
+            "cleats:dark",
+            "visor:black",
+            "jersey:4"
+          ]
+        },
+        "primaryTackler": {
+          "jerseyNumber": 9,
+          "position": "RDE",
+          "soloTackle": true,
+          "tackleForLoss": false,
+          "matchedAnchors": [
+            "alignment:RDE",
+            "cleats:neon_green",
+            "facemask:white",
+            "jersey:9"
+          ]
+        },
+        "keyBlocks": [
+          {
+            "jerseyNumber": 53,
+            "position": "OL",
+            "pancakeBlock": true
+          }
+        ]
+      },
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build",
+            "white undershirt"
+          ]
+        },
+        {
+          "jerseyNumber": 0,
+          "position": "WR",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "lean build"
+          ]
+        },
+        {
+          "jerseyNumber": 4,
+          "position": "RB",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "average build",
+            "black visor"
+          ]
+        },
+        {
+          "jerseyNumber": 53,
+          "position": "OL",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "stocky build"
+          ]
+        },
+        {
+          "jerseyNumber": null,
+          "position": "CB",
+          "descriptors": [
+            "white helmet",
+            "neon yellow cleats",
+            "lean build",
+            "red gloves"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_002",
+      "scenarioDescription": "Pre-Snap Dead Ball: False start on offensive guard prior to snap.",
+      "videoTimestampStart": 20.0,
+      "videoTimestampEnd": 30.0,
+      "snapTimestamp": null,
+      "whistleTimestamp": 24.3,
+      "playType": "Dead Ball",
+      "isDeadBall": true,
+      "penaltyDetails": {
+        "flagTimestamp": 24.1,
+        "foul": "False Start",
+        "enforced": true
+      },
+      "statAttributions": null,
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 56,
+          "position": "OL",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "heavy build",
+            "knee brace"
+          ]
+        },
+        {
+          "jerseyNumber": 3,
+          "position": "WR",
+          "descriptors": [
+            "dark helmet",
+            "solid white cleats",
+            "average build"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_003",
+      "scenarioDescription": "Pre-Snap Dead Ball: Defensive offsides / neutral zone infraction contact before snap.",
+      "videoTimestampStart": 32.0,
+      "videoTimestampEnd": 44.0,
+      "snapTimestamp": null,
+      "whistleTimestamp": 36.8,
+      "playType": "Dead Ball",
+      "isDeadBall": true,
+      "penaltyDetails": {
+        "flagTimestamp": 36.5,
+        "foul": "Offsides",
+        "enforced": true
+      },
+      "statAttributions": null,
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 55,
+          "position": "C",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "stocky build"
+          ]
+        },
+        {
+          "jerseyNumber": null,
+          "position": "DT",
+          "descriptors": [
+            "white helmet",
+            "black cleats",
+            "tall heavy build"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_004",
+      "scenarioDescription": "Post-Snap Penalty Flag: Live power run up middle with offensive holding flag thrown during play.",
+      "videoTimestampStart": 48.0,
+      "videoTimestampEnd": 63.0,
+      "snapTimestamp": 50.4,
+      "whistleTimestamp": 59.8,
+      "playType": "Penalty",
+      "isDeadBall": false,
+      "penaltyDetails": {
+        "flagTimestamp": 53.2,
+        "foul": "Offensive Holding",
+        "enforced": true
+      },
+      "statAttributions": {
+        "ballCarrier": {
+          "jerseyNumber": 24,
+          "position": "RB",
+          "rushYards": 4,
+          "rushTd": false,
+          "matchedAnchors": [
+            "alignment:RB",
+            "cleats:dark",
+            "equipment:arm_sleeves",
+            "jersey:24"
+          ]
+        },
+        "primaryTackler": {
+          "jerseyNumber": 9,
+          "position": "RDE",
+          "soloTackle": true,
+          "tackleForLoss": true,
+          "matchedAnchors": [
+            "alignment:RDE",
+            "cleats:neon_green",
+            "facemask:white",
+            "jersey:9"
+          ]
+        },
+        "keyBlocks": [
+          {
+            "jerseyNumber": 51,
+            "position": "OL",
+            "pancakeBlock": false
+          }
+        ]
+      },
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 24,
+          "position": "RB",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "compact athletic build",
+            "arm sleeves"
+          ]
+        },
+        {
+          "jerseyNumber": 51,
+          "position": "OL",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "stocky build"
+          ]
+        },
+        {
+          "jerseyNumber": 7,
+          "position": "LB",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "average build"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_005",
+      "scenarioDescription": "Early Whistle Variation: Inadvertent referee whistle stopping live play early while runner is upright.",
+      "videoTimestampStart": 66.0,
+      "videoTimestampEnd": 78.0,
+      "snapTimestamp": 68.1,
+      "whistleTimestamp": 71.5,
+      "playType": "Dead Ball",
+      "isDeadBall": true,
+      "penaltyDetails": null,
+      "statAttributions": null,
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 1,
+          "position": "WR",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "lean build"
+          ]
+        },
+        {
+          "jerseyNumber": null,
+          "position": "DB",
+          "descriptors": [
+            "white helmet",
+            "white cleats",
+            "lean build"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_006",
+      "scenarioDescription": "Post-Snap Penalty Flag: Defensive pass interference on deep sideline pass during live play.",
+      "videoTimestampStart": 80.0,
+      "videoTimestampEnd": 95.0,
+      "snapTimestamp": 82.5,
+      "whistleTimestamp": 91.2,
+      "playType": "Penalty",
+      "isDeadBall": false,
+      "penaltyDetails": {
+        "flagTimestamp": 86.4,
+        "foul": "Defensive Pass Interference",
+        "enforced": true
+      },
+      "statAttributions": {
+        "ballCarrier": {
+          "jerseyNumber": 11,
+          "position": "WR",
+          "rushYards": 0,
+          "rushTd": false,
+          "matchedAnchors": [
+            "alignment:WR",
+            "cleats:orange",
+            "equipment:white_undershirt",
+            "jersey:11"
+          ]
+        },
+        "primaryTackler": {
+          "jerseyNumber": 9,
+          "position": "RDE",
+          "soloTackle": true,
+          "tackleForLoss": false,
+          "matchedAnchors": [
+            "alignment:RDE",
+            "cleats:neon_green",
+            "facemask:white",
+            "jersey:9"
+          ]
+        },
+        "keyBlocks": []
+      },
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 11,
+          "position": "WR",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build",
+            "white undershirt"
+          ]
+        },
+        {
+          "jerseyNumber": null,
+          "position": "CB",
+          "descriptors": [
+            "blue helmet",
+            "black cleats",
+            "lean build",
+            "white visor"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_007",
+      "scenarioDescription": "Late Whistle Variation: Runner steps out of bounds, but official whistle is delayed by 2.3s.",
+      "videoTimestampStart": 98.0,
+      "videoTimestampEnd": 114.0,
+      "snapTimestamp": 100.2,
+      "whistleTimestamp": 110.8,
+      "playType": "Live Ball",
+      "isDeadBall": false,
+      "penaltyDetails": null,
+      "statAttributions": {
+        "ballCarrier": {
+          "jerseyNumber": 9,
+          "position": "RB",
+          "rushYards": 18,
+          "rushTd": true,
+          "matchedAnchors": [
+            "alignment:RDE",
+            "cleats:neon_green",
+            "facemask:white",
+            "jersey:9"
+          ]
+        },
+        "primaryTackler": {
+          "jerseyNumber": 7,
+          "position": "LB",
+          "soloTackle": true,
+          "tackleForLoss": false,
+          "matchedAnchors": [
+            "alignment:LB",
+            "cleats:dark",
+            "helmet:dark",
+            "jersey:7"
+          ]
+        },
+        "keyBlocks": [
+          {
+            "jerseyNumber": 6,
+            "position": "OL",
+            "pancakeBlock": true
+          }
+        ]
+      },
+      "players": [
+        {
+          "jerseyNumber": 9,
+          "position": "RB",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 6,
+          "position": "OL",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "stocky build"
+          ]
+        },
+        {
+          "jerseyNumber": 16,
+          "position": "WR",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "lean build"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_008",
+      "scenarioDescription": "Clean Live Play: Center-snap fumble scramble and ball recovery before whistle.",
+      "videoTimestampStart": 118.0,
+      "videoTimestampEnd": 134.0,
+      "snapTimestamp": 120.5,
+      "whistleTimestamp": 130.1,
+      "playType": "Live Ball",
+      "isDeadBall": false,
+      "penaltyDetails": null,
+      "statAttributions": {
+        "ballCarrier": {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "rushYards": -2,
+          "rushTd": false,
+          "matchedAnchors": [
+            "alignment:QB",
+            "cleats:orange",
+            "helmet:dark",
+            "jersey:12"
+          ]
+        },
+        "primaryTackler": {
+          "jerseyNumber": 9,
+          "position": "RDE",
+          "soloTackle": true,
+          "tackleForLoss": true,
+          "matchedAnchors": [
+            "alignment:RDE",
+            "cleats:neon_green",
+            "facemask:white",
+            "jersey:9"
+          ]
+        },
+        "keyBlocks": [
+          {
+            "jerseyNumber": 58,
+            "position": "C",
+            "pancakeBlock": false
+          }
+        ]
+      },
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 58,
+          "position": "C",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "stocky build"
+          ]
+        },
+        {
+          "jerseyNumber": 2,
+          "position": "DB",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": null,
+          "position": "DL",
+          "descriptors": [
+            "white helmet",
+            "red cleats",
+            "heavy build"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_009",
+      "scenarioDescription": "Obscured Jersey Play: Handoff under heavy rain/mud where running back jersey number is obscured.",
+      "videoTimestampStart": 138.0,
+      "videoTimestampEnd": 152.0,
+      "snapTimestamp": 140.0,
+      "whistleTimestamp": 148.5,
+      "playType": "Live Ball",
+      "isDeadBall": false,
+      "penaltyDetails": null,
+      "statAttributions": {
+        "ballCarrier": {
+          "jerseyNumber": 9,
+          "position": "RB",
+          "rushYards": 12,
+          "rushTd": true,
+          "matchedAnchors": [
+            "alignment:RDE",
+            "cleats:neon_green",
+            "facemask:white",
+            "jersey:9"
+          ]
+        },
+        "primaryTackler": {
+          "jerseyNumber": 7,
+          "position": "LB",
+          "soloTackle": true,
+          "tackleForLoss": false,
+          "matchedAnchors": [
+            "alignment:LB",
+            "cleats:black",
+            "equipment:yellow_wristbands",
+            "jersey:7"
+          ]
+        },
+        "keyBlocks": [
+          {
+            "jerseyNumber": 57,
+            "position": "OL",
+            "pancakeBlock": true
+          }
+        ]
+      },
+      "players": [
+        {
+          "jerseyNumber": null,
+          "position": "RB",
+          "descriptors": [
+            "dark helmet",
+            "green cleats",
+            "compact build",
+            "mud-covered jersey"
+          ]
+        },
+        {
+          "jerseyNumber": 30,
+          "position": "RB",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 57,
+          "position": "OL",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "heavy build"
+          ]
+        },
+        {
+          "jerseyNumber": null,
+          "position": "LB",
+          "descriptors": [
+            "white helmet",
+            "black cleats",
+            "tall build",
+            "yellow wristbands"
+          ]
+        }
+      ]
+    },
+    {
+      "playId": "play_010",
+      "scenarioDescription": "Pre-Snap Dead Ball: Illegal motion penalty blown dead prior to snap.",
+      "videoTimestampStart": 155.0,
+      "videoTimestampEnd": 168.0,
+      "snapTimestamp": null,
+      "whistleTimestamp": 159.2,
+      "playType": "Dead Ball",
+      "isDeadBall": true,
+      "penaltyDetails": {
+        "flagTimestamp": 159.0,
+        "foul": "Illegal Motion",
+        "enforced": true
+      },
+      "statAttributions": null,
+      "players": [
+        {
+          "jerseyNumber": 12,
+          "position": "QB",
+          "descriptors": [
+            "standard dark helmet",
+            "orange cleats",
+            "average build"
+          ]
+        },
+        {
+          "jerseyNumber": 8,
+          "position": "WR",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "lean build"
+          ]
+        },
+        {
+          "jerseyNumber": 17,
+          "position": "WR",
+          "descriptors": [
+            "dark helmet",
+            "dark cleats",
+            "lean build"
+          ]
+        }
+      ]
+    }
+  ]
+}

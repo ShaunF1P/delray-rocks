@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+scratch
+test-results
+public/game_film.mp4
+*.mp4
+*.log

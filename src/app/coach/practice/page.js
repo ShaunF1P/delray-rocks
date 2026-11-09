@@ -475,7 +475,7 @@ export default function PracticePlanPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
         {blocks.length === 0 && (
           <div style={{ padding: 40, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px dashed rgba(255,255,255,0.1)' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>📋</div>
+            <ClipboardCheck size={32} color="var(--text-dim)" style={{ margin: '0 auto 8px' }} />
             <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>No blocks yet. Add drills, load a template, or use <strong style={{ color: '#A855F7' }}>AI Generate</strong>.</div>
           </div>
         )}

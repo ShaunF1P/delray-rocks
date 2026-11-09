@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import { trackPlaybookView } from '@/lib/track';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2, Star, Copy, RotateCcw, ClipboardList, Printer } from 'lucide-react';
+import { BookOpen, Plus, Search, Edit2, Trash2, X, Save, Maximize2, Star, Copy, RotateCcw, ClipboardList, Printer, Zap, Target, Sparkles, RefreshCw, Flame, Grid, User, FileText, GraduationCap, Layout, Shield, Brain, MousePointerClick } from 'lucide-react';
 import PlayDiagram from '@/components/PlayDiagram';
 
 // Module-level helpers (shared by all components)
@@ -14,12 +14,12 @@ function isInRotation(play) {
 
 function getReadKey(play) {
   if (play.read_key) return play.read_key;
-  const match = (play.description || '').match(/\u{1F511} Read Key:\s*(.+)/su);
+  const match = (play.description || '').match(/Read Key:\s*(.+)/s);
   return match ? match[1].trim() : null;
 }
 
 function getCleanDescription(play) {
-  return (play.description || '').replace(/\n\n\u{1F511} Read Key:.+/su, '').trim();
+  return (play.description || '').replace(/\n\nRead Key:.+/s, '').trim();
 }
 
 // DB stores RPOs as play_type='run' with 'rpo' tag (check constraint doesn't allow 'rpo' type)
@@ -130,7 +130,19 @@ export default function PlaybookPage() {
 
   const rotationCount = plays.filter(p => isInRotation(p)).length;
 
-  const typeIcon = (t) => t === 'run' ? '🏃' : t === 'pass' ? '🎯' : t === 'trick' ? '🎭' : t === 'rpo' ? '🔄' : t === 'blitz' ? '💥' : t === 'zone' ? '🔷' : t === 'man' ? '👤' : t === 'special' ? '⭐' : '📋';
+  const typeIcon = (t) => {
+    switch (t) {
+      case 'run': return <Zap size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'pass': return <Target size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'trick': return <Sparkles size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'rpo': return <RefreshCw size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'blitz': return <Flame size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'zone': return <Grid size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'man': return <User size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      case 'special': return <Star size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+      default: return <FileText size={14} style={{ display: 'inline-block', verticalAlign: 'middle' }} />;
+    }
+  };
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -225,8 +237,8 @@ export default function PlaybookPage() {
         {/* Rotation header when in rotation view */}
         {isRotationView && (
           <div style={{ width: 240, flexShrink: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--rocks-gold)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              ⭐ Game Day Rotation
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--rocks-gold)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Star size={12} fill="var(--rocks-gold)" /> Game Day Rotation
             </div>
             <div style={{ padding: 12, background: 'rgba(253,185,19,0.06)', border: '1px solid rgba(253,185,19,0.15)', borderRadius: 8, marginBottom: 8 }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--rocks-gold)' }}>{rotationCount}</div>
@@ -325,7 +337,7 @@ export default function PlaybookPage() {
                         background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)',
                         borderRadius: 6, lineHeight: 1.4,
                       }}>
-                        <span style={{ fontWeight: 700 }}>🔑 Read:</span> {getReadKey(p)}
+                        <span style={{ fontWeight: 700 }}>Read:</span> {getReadKey(p)}
                       </div>
                     )}
                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>
@@ -457,7 +469,7 @@ function PlayEditor({ play, formations, allPlays, onSave, onClose, isTemplate })
         style={{ width: 580, maxHeight: '90vh', overflow: 'auto', background: '#0d1117', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700 }}>
-            {play?.id ? 'Edit Play' : isTemplate ? '📋 Create from Template' : '➕ New Play'}
+            {play?.id ? 'Edit Play' : isTemplate ? 'Create from Template' : 'New Play'}
           </h3>
           <div style={{ display: 'flex', gap: 6 }}>
             {!play?.id && (
@@ -517,7 +529,7 @@ function PlayEditor({ play, formations, allPlays, onSave, onClose, isTemplate })
           {/* RPO Read Key */}
           {(form.play_type === 'rpo' || (form.tags || []).includes('rpo')) && (
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', marginBottom: 4, textTransform: 'uppercase' }}>🔑 RPO Read Key</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', marginBottom: 4, textTransform: 'uppercase' }}>RPO Read Key</div>
               <input value={form.read_key || ''} onChange={e => setForm(p => ({ ...p, read_key: e.target.value }))}
                 placeholder="e.g., Read the OLB — hand off if he crashes, throw bubble if he stays wide"
                 style={{ width: '100%', padding: 10, fontSize: 12, background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)', borderRadius: 8, color: '#A78BFA' }} />
@@ -662,7 +674,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
                 background: tab === t ? 'rgba(0,154,68,0.15)' : 'transparent',
                 borderColor: tab === t ? '#009A44' : 'rgba(255,255,255,0.1)',
                 color: tab === t ? '#4ADE80' : 'rgba(255,255,255,0.4)',
-              }}>{t === 'diagram' ? '📐 Diagram' : t === 'lineup' ? '👕 Lineup' : t === 'learn' ? '🎓 Watch & Learn' : '📋 Assignments'}</button>
+              }}>{t === 'diagram' ? 'Diagram' : t === 'lineup' ? 'Lineup' : t === 'learn' ? 'Watch & Learn' : 'Assignments'}</button>
             ))}
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8 }}>
               <X size={18} color="var(--text-dim)" />
@@ -677,7 +689,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
             borderBottom: '1px solid rgba(139,92,246,0.15)',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#A78BFA' }}>🔑 RPO Read:</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#A78BFA' }}>RPO Read:</span>
             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{getReadKey(play)}</span>
           </div>
         )}
@@ -688,7 +700,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
             <PlayDiagram formationName={formationName} play={play}
               isDefense={['blitz','zone','man'].includes(getEffectiveType(play))}
               width={600} height={420} animated={true} playerOverrides={playerOverrides} />
-            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>Click players to highlight • Toggle 🏃 Motion / 📐 Routes • Hit ▶ to animate</div>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>Click players to highlight • Toggle Motion / Routes • Hit Play to animate</div>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: 16, maxWidth: 600, textAlign: 'center' }}>{play.description}</div>
           </div>
         )}
@@ -697,7 +709,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
         {tab === 'learn' && (
           <div style={{ padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--rocks-gold)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              🎓 Choose a Position to Learn
+              Choose a Position to Learn
             </div>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 16 }}>
               {posKeys.map(pk => (
@@ -719,9 +731,9 @@ function FocusedPlayViewer({ play, formations, onClose }) {
             <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ fontSize: 10, color: 'var(--text-dim)', marginRight: 4 }}>Tone:</span>
               {[
-                { key: 'encouraging', label: '😊 Encouraging', desc: 'Fun & kid-friendly' },
-                { key: 'direct', label: '💪 Direct', desc: 'Firm but helpful' },
-                { key: 'coach', label: '📋 Coach', desc: 'Technical breakdown' },
+                { key: 'encouraging', label: 'Encouraging', desc: 'Fun & kid-friendly' },
+                { key: 'direct', label: 'Direct', desc: 'Firm but helpful' },
+                { key: 'coach', label: 'Coach', desc: 'Technical breakdown' },
               ].map(t => (
                 <button key={t.key} onClick={() => { setTone(t.key); if (teachPos) loadTeaching(teachPos, t.key); }}
                   title={t.desc}
@@ -736,7 +748,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
 
             {loadingTeach && (
               <div style={{ textAlign: 'center', padding: 40 }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>🧠</div>
+                <Brain size={32} color="#4ADE80" style={{ margin: '0 auto 12px' }} />
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#4ADE80' }}>Coach Assistant is breaking it down...</div>
                 <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>Generating {tone} teaching for {teachPos}</div>
               </div>
@@ -774,7 +786,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: 12, marginBottom: 16 }}>
                   {teaching.coaching_tips?.length > 0 && (
                     <div style={{ padding: 12, background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)', borderRadius: 10 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#60A5FA', marginBottom: 6 }}>💡 Coaching Tips</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#60A5FA', marginBottom: 6 }}>Coaching Tips</div>
                       {teaching.coaching_tips.map((t, i) => (
                         <div key={i} style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, paddingLeft: 8, borderLeft: '2px solid rgba(96,165,250,0.3)' }}>{t}</div>
                       ))}
@@ -782,7 +794,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
                   )}
                   {teaching.common_mistakes?.length > 0 && (
                     <div style={{ padding: 12, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 10 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#EF4444', marginBottom: 6 }}>⚠️ Common Mistakes</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#EF4444', marginBottom: 6 }}>Common Mistakes</div>
                       {teaching.common_mistakes.map((m, i) => (
                         <div key={i} style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, paddingLeft: 8, borderLeft: '2px solid rgba(239,68,68,0.3)' }}>{m}</div>
                       ))}
@@ -794,13 +806,13 @@ function FocusedPlayViewer({ play, formations, onClose }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: 12 }}>
                     {teaching.strength_vs && (
                       <div style={{ padding: 10, background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 8 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', marginBottom: 4 }}>✅ STRONG AGAINST</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#4ADE80', marginBottom: 4 }}>STRONG AGAINST</div>
                         <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>{teaching.strength_vs}</div>
                       </div>
                     )}
                     {teaching.weakness_vs && (
                       <div style={{ padding: 10, background: 'rgba(253,185,19,0.06)', border: '1px solid rgba(253,185,19,0.15)', borderRadius: 8 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#FDB913', marginBottom: 4 }}>⚠️ WATCH OUT FOR</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#FDB913', marginBottom: 4 }}>WATCH OUT FOR</div>
                         <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>{teaching.weakness_vs}</div>
                       </div>
                     )}
@@ -811,7 +823,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
 
             {!teachPos && !loadingTeach && (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-dim)' }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>👆</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><MousePointerClick size={32} /></div>
                 <div style={{ fontSize: 13 }}>Pick a position above to see what that player needs to do</div>
               </div>
             )}
@@ -834,7 +846,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
               <div style={{ flex: '1 1 300px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--rocks-gold)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    👕 Set Your Lineup
+                    Set Your Lineup
                   </div>
                   {Object.keys(lineup).length > 0 && (
                     <button onClick={() => setLineup({})} style={{
@@ -894,7 +906,7 @@ function FocusedPlayViewer({ play, formations, onClose }) {
                     marginTop: 10, padding: '6px 14px', fontSize: 11, fontWeight: 600, width: '100%',
                     background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)',
                     borderRadius: 6, color: '#60A5FA', cursor: 'pointer',
-                  }}>⚡ Auto-Fill by Position Match</button>
+                  }}>Auto-Fill by Position Match</button>
                 )}
               </div>
             </div>
@@ -1219,7 +1231,7 @@ function CallSheetView({ plays, formations, setPlays, typeIcon }) {
         }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--rocks-green-light)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              📋 Script First 15
+              Script First 15
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
               Drag plays from above or situation groups into your scripted opener

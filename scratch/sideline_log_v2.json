@@ -1,0 +1,704 @@
+{
+  "plays": [
+    {
+      "index": 1,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1.13,
+      "end": 1.16,
+      "start_seconds": 1.13,
+      "end_seconds": 1.16,
+      "play_type": "run",
+      "title": "Inside Run Right, #24 Meccellion gains 7 yards",
+      "description": "From an I-formation at the 45-yard line, center #8 Zechariah Geffrard snaps to QB #11 Jake Feldman. #11 Feldman executes a quick handoff to running back #24 Jasyah Meccellion. The offensive line drives forward, creating a lane slightly to the right of the center. #24 Meccellion runs straight ahead, crossing the 40-yard line, before being tackled by unidentified Team White #44 and other defenders near the 38-yard line.",
+      "players_involved": [
+        "#8 Zechariah Geffrard",
+        "#11 Jake Feldman",
+        "#24 Jasyah Meccellion",
+        "unidentified Team White #44"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 2,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 393,
+      "end": 395,
+      "start_seconds": 393,
+      "end_seconds": 395,
+      "play_type": "pass",
+      "title": "Pass to #20 Henderson on left sideline for 5-yard gain",
+      "description": "From a standard offensive formation at the 45-yard line, #49 (opponent center) snaps to QB #1 Ori Darrisaw (black helmet, black cleats). Darrisaw executes a forward pass to #20 Rasheed Henderson (black helmet, black cleats) running a route towards the left sideline. Henderson secures the catch just past the 50-yard line and is immediately engaged and tackled by opponent #30 (dark green jersey) at the 50-yard line near the left hash, gaining 5 yards. Offensive line blocking details are unclear from this angle.",
+      "players_involved": [
+        "#49 unidentified (opponent)",
+        "#1 Ori Darrisaw",
+        "#20 Rasheed Henderson",
+        "#30 unidentified (opponent)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 3,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 471,
+      "end": 476,
+      "start_seconds": 471,
+      "end_seconds": 476,
+      "play_type": "run",
+      "title": "Handoff to opponent #44 up the middle for 1-yard gain",
+      "description": "In a standard offensive formation at the 45-yard line, #49 (opponent center) snaps to QB #1 Ori Darrisaw. Darrisaw hands off to opponent #44 (white jersey, black helmet, black cleats) who runs forward from behind the line of scrimmage, veering slightly right. The offensive line engages the defensive front. #44 is quickly wrapped up by multiple green-jerseyed defenders and brought down at the 46-yard line, gaining 1 yard. Offensive line blocking details are unclear from this angle.",
+      "players_involved": [
+        "#49 unidentified (opponent)",
+        "#1 Ori Darrisaw",
+        "#44 unidentified (opponent)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 4,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 591,
+      "end": 595,
+      "start_seconds": 591,
+      "end_seconds": 595,
+      "play_type": "pass",
+      "title": "Incomplete pass by #1 Darrisaw to left sideline",
+      "description": "From a standard offensive formation at the 45-yard line, #49 (opponent center) snaps to QB #1 Ori Darrisaw. Darrisaw attempts a forward pass towards the left sideline, targeting opponent #29 (white jersey, black helmet, black cleats). The pass is overthrown and falls incomplete at the 40-yard line near the left sideline. The offensive line holds its blocks, but the receiver is unable to make a play on the ball.",
+      "players_involved": [
+        "#49 unidentified (opponent)",
+        "#1 Ori Darrisaw",
+        "#29 unidentified (opponent)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 5,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 894,
+      "end": 897,
+      "start_seconds": 894,
+      "end_seconds": 897,
+      "play_type": "pass",
+      "title": "#1 Darrisaw's deep pass to left sideline falls incomplete",
+      "description": "In a standard offensive formation at the 45-yard line, #49 (opponent center) snaps to QB #1 Ori Darrisaw. Darrisaw drops back and throws a deep pass towards the left sideline, intended for opponent #29. The ball travels through the air but is not caught by any player, landing incomplete at the 40-yard line near the left sideline. Offensive line protection is maintained, but the pass is out of reach.",
+      "players_involved": [
+        "#49 unidentified (opponent)",
+        "#1 Ori Darrisaw",
+        "#29 unidentified (opponent)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 6,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 740,
+      "end": 745,
+      "start_seconds": 740,
+      "end_seconds": 745,
+      "play_type": "run",
+      "title": "Play 1: Shotgun run right by #5 Brown for 1-yard loss, tackled by #9",
+      "description": "Offensive team lines up in a shotgun formation with seven players crouching at the line of scrimmage. #5 Jasper Brown (white jersey, black cleats) stands directly behind the center, flanked by #27 (unidentified) to the left and #25 (unidentified) to the right. The white-jerseyed offensive line moves forward, engaging with the green-jerseyed defensive line. #5 Brown receives a backward handoff, initially moves backward and to his right towards the 49-yard line from the 50-yard line, then attempts to cut forward. He is quickly met and tackled by #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats) at the white-jerseyed team's 49-yard line, resulting in a 1-yard loss. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 7,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 829,
+      "end": 834,
+      "start_seconds": 829,
+      "end_seconds": 834,
+      "play_type": "run",
+      "title": "Play 2: #5 Brown's second shotgun run, 1-yard loss right, stopped by #9",
+      "description": "From the white-jerseyed team's 49-yard line, the offense sets up in the same shotgun formation with seven players on the line and #5 Jasper Brown (white jersey, black cleats) behind the center. #5 Brown takes the backward handoff, moving backward and to his right towards the 48-yard line. The offensive line attempts to block, but #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats) quickly converge. #5 Brown tries to turn upfield but is tackled for a 1-yard loss at the 48-yard line. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 8,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 847,
+      "end": 852,
+      "start_seconds": 847,
+      "end_seconds": 852,
+      "play_type": "run",
+      "title": "Play 3: Third shotgun run for #5 Brown, 1-yard loss right, tackled by #9 and others",
+      "description": "The offense lines up at the white-jerseyed team's 47-yard line in the shotgun formation. #5 Jasper Brown (white jersey, black cleats) receives the snap, moving backward and to his right towards the 46-yard line. The offensive line engages, but the green-jerseyed defense, including #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats), quickly penetrates. #5 Brown is brought down at the 46-yard line for a 1-yard loss. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 9,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 875,
+      "end": 920,
+      "start_seconds": 875,
+      "end_seconds": 920,
+      "play_type": "run",
+      "title": "Play 4: #5 Brown's fourth shotgun attempt, 1-yard loss to the right, stopped by #9",
+      "description": "Starting from the white-jerseyed team's 45-yard line, the offense is in the shotgun formation. #5 Jasper Brown (white jersey, black cleats) takes the backward handoff, retreating and drifting right towards the 44-yard line. The offensive line attempts to create a lane. However, #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats) are again instrumental in stopping the play, tackling #5 Brown at the 44-yard line for a 1-yard loss. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 10,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 931,
+      "end": 936,
+      "start_seconds": 931,
+      "end_seconds": 936,
+      "play_type": "run",
+      "title": "Play 5: Fifth shotgun run for #5 Brown, 1-yard loss right, tackled by #9 and others",
+      "description": "The offense lines up at the white-jerseyed team's 43-yard line in the shotgun formation. #5 Jasper Brown (white jersey, black cleats) receives the snap, moving backward and to his right towards the 42-yard line. The offensive line engages, but the green-jerseyed defense, including #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats), quickly penetrates. #5 Brown is brought down at the 42-yard line for a 1-yard loss. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 11,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 945,
+      "end": 950,
+      "start_seconds": 945,
+      "end_seconds": 950,
+      "play_type": "run",
+      "title": "Play 6: #5 Brown's sixth shotgun run, 1-yard loss to the right, stopped by #9",
+      "description": "From the white-jerseyed team's 41-yard line, the offense sets up in the same shotgun formation. #5 Jasper Brown (white jersey, black cleats) takes the backward handoff, moving backward and to his right towards the 40-yard line. The offensive line attempts to block, but #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats) quickly converge. #5 Brown tries to turn upfield but is tackled for a 1-yard loss at the 40-yard line. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 12,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1041,
+      "end": 1046,
+      "start_seconds": 1041,
+      "end_seconds": 1046,
+      "play_type": "run",
+      "title": "Play 7: Seventh shotgun run for #5 Brown, 1-yard loss right, tackled by #9 and others",
+      "description": "The offense lines up at the white-jerseyed team's 40-yard line in the shotgun formation. #5 Jasper Brown (white jersey, black cleats) receives the snap, moving backward and to his right towards the 39-yard line. The offensive line engages, but the green-jerseyed defense, including #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats), quickly penetrates. #5 Brown is brought down at the 39-yard line for a 1-yard loss. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 13,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1222,
+      "end": 1227,
+      "start_seconds": 1222,
+      "end_seconds": 1227,
+      "play_type": "run",
+      "title": "Play 8: #5 Brown's eighth shotgun run, 1-yard loss to the right, stopped by #9",
+      "description": "From the white-jerseyed team's 38-yard line, the offense sets up in the same shotgun formation. #5 Jasper Brown (white jersey, black cleats) takes the backward handoff, moving backward and to his right towards the 37-yard line. The offensive line attempts to block, but #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats) quickly converge. #5 Brown tries to turn upfield but is tackled for a 1-yard loss at the 37-yard line. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 14,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1242,
+      "end": 1247,
+      "start_seconds": 1242,
+      "end_seconds": 1247,
+      "play_type": "run",
+      "title": "Play 9: Ninth shotgun run for #5 Brown, 1-yard loss right, tackled by #9 and others",
+      "description": "The offense lines up at the white-jerseyed team's 36-yard line in the shotgun formation. #5 Jasper Brown (white jersey, black cleats) receives the snap, moving backward and to his right towards the 35-yard line. The offensive line engages, but the green-jerseyed defense, including #9 (green jersey, green guardian cap, black cleats) and #20 (green jersey, black cleats), quickly penetrates. #5 Brown is brought down at the 35-yard line for a 1-yard loss. The referee signals the play dead.",
+      "players_involved": [
+        "#5 Jasper Brown",
+        "unidentified white-jerseyed center",
+        "unidentified #27",
+        "unidentified #25",
+        "(Opponent) #9 (green jersey)",
+        "(Opponent) #20 (green jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 15,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1091,
+      "end": 1099,
+      "start_seconds": 1091,
+      "end_seconds": 1099,
+      "play_type": "run",
+      "title": "Play 1: Handoff right to #4 Jacobs, tackled for 7-yard gain near sideline",
+      "description": "The black jersey team lines up in a standard offensive formation with a center over the ball and a quarterback (#1 Ori Darrisaw) behind. #4 Kasen Jacobs crouches behind the offensive line to the left of the center. The ball is snapped and handed off from #1 Ori Darrisaw to #4 Kasen Jacobs. The offensive line initiates forward movement, with some players engaging in blocking. #4 Kasen Jacobs carries the ball in his right arm, running diagonally forward and to his right from the 50-yard line. He continues running towards the right sideline, reaching the 45-yard line. Opponent #13 pursues from behind, and Opponent #20 dives towards #4. #4 Kasen Jacobs is tackled by Opponent #35 around the 43-yard line near the right sideline, falling to the ground on his left side. The ball remains in his possession until released after the tackle, and the play is whistled dead.",
+      "players_involved": [
+        "#1 Ori Darrisaw",
+        "#4 Kasen Jacobs",
+        "Opponent #13",
+        "Opponent #20",
+        "Opponent #35"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 16,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1393,
+      "end": 1398,
+      "start_seconds": 1393,
+      "end_seconds": 1398,
+      "play_type": "run",
+      "title": "Play 2: Handoff right to #4 Jacobs, gains 5 yards before tackle",
+      "description": "The black jersey team lines up in a standard offensive formation with an unidentified center over the ball and an unidentified quarterback behind. #4 Kasen Jacobs is the ball carrier. The ball is snapped and handed off to #4 Kasen Jacobs. Players from both teams move forward and engage. #4 Kasen Jacobs carries the ball to his right from the 40-yard line towards the 45-yard line. He is tackled by an unidentified white jersey player around the 45-yard line on the right side of the field, falling to the ground. The ball remains in his possession until released after the tackle, and the play is whistled dead.",
+      "players_involved": [
+        "#4 Kasen Jacobs",
+        "unidentified center",
+        "unidentified quarterback",
+        "unidentified opponent tackler"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 17,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1480,
+      "end": 1484,
+      "start_seconds": 1480,
+      "end_seconds": 1484,
+      "play_type": "run",
+      "title": "Play 3: Handoff right to #4 Jacobs, tackled for 5-yard gain",
+      "description": "The black jersey team lines up in a standard offensive formation with an unidentified center over the ball and an unidentified quarterback behind. #4 Kasen Jacobs is the ball carrier. The ball is snapped and handed off to #4 Kasen Jacobs. Players from both teams move forward and engage. #4 Kasen Jacobs carries the ball to his right from the 40-yard line towards the 45-yard line. He is tackled by an unidentified white jersey player around the 45-yard line on the right side of the field, falling to the ground. The ball remains in his possession until released after the tackle, and the play is whistled dead.",
+      "players_involved": [
+        "#4 Kasen Jacobs",
+        "unidentified center",
+        "unidentified quarterback",
+        "unidentified opponent tackler"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 18,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1589,
+      "end": 1593,
+      "start_seconds": 1589,
+      "end_seconds": 1593,
+      "play_type": "run",
+      "title": "Play 4: Handoff right to #4 Jacobs, gains 5 yards",
+      "description": "The black jersey team lines up in a standard offensive formation with an unidentified center over the ball and an unidentified quarterback behind. #4 Kasen Jacobs is the ball carrier. The ball is snapped and handed off to #4 Kasen Jacobs. Players from both teams move forward and engage. #4 Kasen Jacobs carries the ball to his right from the 40-yard line towards the 45-yard line. He is tackled by an unidentified white jersey player around the 45-yard line on the right side of the field, falling to the ground. The ball remains in his possession until released after the tackle, and the play is whistled dead.",
+      "players_involved": [
+        "#4 Kasen Jacobs",
+        "unidentified center",
+        "unidentified quarterback",
+        "unidentified opponent tackler"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 19,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1440,
+      "end": 1448,
+      "start_seconds": 1440,
+      "end_seconds": 1448,
+      "play_type": "run",
+      "title": "Play 1: Inside handoff right to #25 for 5-yard gain",
+      "description": "The play begins with the ball on the ground at the 45-yard line. Center #1 Ori Darrisaw (black cleats, medium build) lifts the ball and executes a quick handoff to running back #25 (black jersey, guardian cap, black cleats, medium build) who is positioned directly behind him. #25 takes the handoff and immediately drives forward and slightly to the right, gaining momentum. The offensive line appears to engage the defensive front, but specific blocking assignments are unclear from the angle. #25 is met by multiple Baby Zip defenders in blue jerseys around the 40-yard line and is tackled to the ground for a gain of approximately 5 yards.",
+      "players_involved": [
+        "#1 Ori Darrisaw",
+        "unidentified #25"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 20,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1445.13,
+      "end": 1445.18,
+      "start_seconds": 1445.13,
+      "end_seconds": 1445.18,
+      "play_type": "run",
+      "title": "Play 2: Handoff left to #25 for 5-yard gain up the middle",
+      "description": "The offensive backfield shows a center and a running back directly behind. An unidentified center in a black jersey performs a handoff to running back #25 (black jersey, guardian cap, black cleats, medium build). #25 receives the ball and quickly cuts to his left, driving forward. The offensive line engages the defensive front, but specific blocking assignments are unclear from the angle. #25 is met by several Baby Zip defenders near the 45-yard line and is brought down for an approximate 5-yard gain.",
+      "players_involved": [
+        "unidentified center",
+        "unidentified #25"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 21,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 1802,
+      "end": 1812,
+      "start_seconds": 1802,
+      "end_seconds": 1812,
+      "play_type": "pass",
+      "title": "Shotgun Pass Right, Unidentified Receiver Tackled for Short Gain",
+      "description": "From a shotgun formation at the 35-yard line on the left hash, an unidentified center snaps the ball to quarterback #11 Jake Feldman. Feldman immediately throws a short pass to an unidentified receiver who catches the ball moving right. The offensive line blocking is unclear from this film angle. The receiver is quickly converged upon by multiple opposing players, including opponent #24, and driven to the ground for a short gain. The ball is secured by a blue-jersey player.",
+      "players_involved": [
+        "unidentified center",
+        "#11 Jake Feldman (QB)",
+        "unidentified receiver"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 22,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 2013,
+      "end": 2021,
+      "start_seconds": 2013,
+      "end_seconds": 2021,
+      "play_type": "run",
+      "title": "Under-Center Handoff Left, Unidentified Back Gains Minimal Yardage",
+      "description": "In an under-center formation at the 30-yard line on the left hash, an unidentified center snaps the ball directly to an unidentified running back. The offensive line blocking is unclear from this film angle. The running back takes the handoff and attempts to run towards the left side of the field. He is met almost immediately by multiple opposing players and driven backward to the ground for minimal or no gain. The ball is recovered by a blue-jersey player.",
+      "players_involved": [
+        "unidentified center",
+        "unidentified running back"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 23,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 2033,
+      "end": 2041,
+      "start_seconds": 2033,
+      "end_seconds": 2041,
+      "play_type": "run",
+      "title": "Direct Snap Up the Middle, Unidentified Back Stuffed at Line",
+      "description": "From an under-center formation near the 30-yard line on the left hash, an unidentified center snaps the ball to an unidentified running back directly behind him. The offensive line blocking is unclear from this film angle. The running back attempts to run straight forward, but is quickly engaged by multiple opposing players at the line of scrimmage and driven to the ground for no gain. The ball is recovered by a blue-jersey player.",
+      "players_involved": [
+        "unidentified center",
+        "unidentified running back"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 24,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 2164.48,
+      "end": 2164.54,
+      "start_seconds": 2164.48,
+      "end_seconds": 2164.54,
+      "play_type": "run",
+      "title": "QB Keeper Left, #4 Jacobs tackled for 5-yard loss",
+      "description": "From a standard offensive formation at the 40-yard line, #4 Kasen Jacobs takes the snap, initially steps back two yards, then runs forward angling towards the left sideline. The offensive line engages defenders, but #4 is quickly met by multiple Baby Zip defenders around the 35-yard line and tackled in a pile for a loss of approximately 5 yards.",
+      "players_involved": [
+        "#4 Kasen Jacobs",
+        "Unidentified Center",
+        "Multiple Unidentified Baby Zip Defenders"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 25,
+      "segment_id": "5514faf3-aa72-4f8c-8bd5-2a08f8246d0b",
+      "segment_title": "RTG vs. Baby Zip - Segment 1",
+      "start": 2521.47,
+      "end": 2521.5,
+      "start_seconds": 2521.47,
+      "end_seconds": 2521.5,
+      "play_type": "turnover",
+      "title": "Pitch Left to Unidentified Running Back, Fumble Recovered by Opponent",
+      "description": "The offense lines up in a standard formation near the 45-yard line. The center snaps the ball to the quarterback, who then executes a backward underhand pitch to an unidentified running back (dark green jersey, black cleats) running towards the left sideline. The offensive line engages with the defensive front. The running back carries the ball in his left arm, attempting to gain yardage. As he reaches approximately the 48-yard line, the ball slips from his grasp and falls to the ground. A defensive player in a white jersey quickly dives onto the loose ball, securing the recovery for the opposing team. The play is immediately blown dead by the referee's whistle.",
+      "players_involved": [
+        "Unidentified Center (dark green jersey)",
+        "Unidentified Quarterback (dark green jersey)",
+        "Unidentified Running Back (dark green jersey, black cleats)",
+        "Unidentified Defensive Player (white jersey)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 26,
+      "segment_id": "f72d4fbb-3d02-49de-9b3f-36566552e4f4",
+      "segment_title": "RTG vs. Baby Zip - Segment 2",
+      "start": 30,
+      "end": 36,
+      "start_seconds": 30,
+      "end_seconds": 36,
+      "play_type": "run",
+      "title": "QB #3 Carter Latouche Scramble Left for 5 Yards, Tackled Near 45-Yard Line",
+      "description": "The green team lines up in an offensive formation at the 50-yard line. The center snaps the ball directly to quarterback #3 Carter Latouche. The offensive line engages with the defensive front. #3 Carter Latouche immediately pivots to his left and runs laterally across the field, crossing the 50-yard line into the defensive half. He attempts to evade defenders but is eventually tackled by opponent #3 and #7 near the 45-yard line on the far left sideline, gaining approximately 5 yards. A referee signals a first down after the play.",
+      "players_involved": [
+        "#3 Carter Latouche",
+        "Opponent #3",
+        "Opponent #7"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 27,
+      "segment_id": "f72d4fbb-3d02-49de-9b3f-36566552e4f4",
+      "segment_title": "RTG vs. Baby Zip - Segment 2",
+      "start": 329,
+      "end": 336,
+      "start_seconds": 329,
+      "end_seconds": 336,
+      "play_type": "penalty",
+      "title": "DEAD BALL — Pre-snap Stoppage Before Snap",
+      "description": "The green team lines up in an offensive formation near the right hash mark, positioned between the 40 and 45-yard lines, facing left. The black/white/orange team is lined up in a defensive formation opposite the green team. Players remain in formation, but no snap occurs, and the play is not initiated before the clip ends, indicating a pre-snap dead ball.",
+      "players_involved": [],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 28,
+      "segment_id": "f72d4fbb-3d02-49de-9b3f-36566552e4f4",
+      "segment_title": "RTG vs. Baby Zip - Segment 2",
+      "start": 360.49,
+      "end": 360.54,
+      "start_seconds": 360.49,
+      "end_seconds": 360.54,
+      "play_type": "run",
+      "title": "QB Sneak Left, #6 Ferguson gains 1-2 yards before tackle",
+      "description": "The offensive team lines up in an under-center formation at the 33-yard line. Center #60 snaps the ball directly to Quarterback #6 Gavin Ferguson. The offensive line moves forward to engage defenders. Ferguson takes the handoff, moves forward 1-2 yards, then cuts slightly to his left. Multiple defenders from the Baby Zip team converge on him, forming a pile and tackling him around the 34-35 yard line, slightly left of the hash marks. The ball is obscured in the pile.",
+      "players_involved": [
+        "#6 Gavin Ferguson",
+        "#60 Aiden Davis",
+        "Unidentified offensive linemen",
+        "Multiple Baby Zip defenders"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 29,
+      "segment_id": "f72d4fbb-3d02-49de-9b3f-36566552e4f4",
+      "segment_title": "RTG vs. Baby Zip - Segment 2",
+      "start": 720.14,
+      "end": 720.16,
+      "start_seconds": 720.14,
+      "end_seconds": 720.16,
+      "play_type": "run",
+      "title": "Handoff Right for 2 Yards, Tackled at 38-Yard Line",
+      "description": "The offensive team lines up in a tight formation on the 40-yard line. The quarterback, #11 Jake Feldman, takes the snap and executes a handoff to an unidentified running back to his right. The offensive line engages with the defense. The running back drives forward and slightly right, gaining approximately 2 yards before being tackled by multiple Baby Zip defenders near the 38-yard line, forming a pile.",
+      "players_involved": [
+        "#11 Jake Feldman (QB)",
+        "unidentified running back"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 30,
+      "segment_id": "f72d4fbb-3d02-49de-9b3f-36566552e4f4",
+      "segment_title": "RTG vs. Baby Zip - Segment 2",
+      "start": 721.1,
+      "end": 721.11,
+      "start_seconds": 721.1,
+      "end_seconds": 721.11,
+      "play_type": "run",
+      "title": "QB Sneak Up Middle for 5 Yards, Tackled at 35-Yard Line",
+      "description": "From a tight formation on the 40-yard line, #11 Jake Feldman, the quarterback, takes the snap and keeps the ball, driving directly forward up the middle. The offensive line engages to create a push. Feldman gains approximately 5 yards before being brought down by multiple Baby Zip defenders near the 35-yard line in a pile.",
+      "players_involved": [
+        "#11 Jake Feldman (QB)"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 31,
+      "segment_id": "f72d4fbb-3d02-49de-9b3f-36566552e4f4",
+      "segment_title": "RTG vs. Baby Zip - Segment 2",
+      "start": 723.11,
+      "end": 723.17,
+      "start_seconds": 723.11,
+      "end_seconds": 723.17,
+      "play_type": "run",
+      "title": "Handoff Left for 40-Yard Touchdown Run",
+      "description": "From a power formation on the 40-yard line, #11 Jake Feldman, the quarterback, takes the snap and hands off to an unidentified running back to his left. The offensive line engages the defense. The running back bursts through the line, accelerating down the left side of the field. He crosses the 30, 20, and 10-yard lines, evading a defender near the 10-yard line, and continues into the endzone for a 40-yard touchdown.",
+      "players_involved": [
+        "#11 Jake Feldman (QB)",
+        "unidentified running back"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 32,
+      "segment_id": "7a939597-873b-4ac5-9f99-4d572443de85",
+      "segment_title": "RTG vs. Baby Zip - Segment 3",
+      "start": 50,
+      "end": 54,
+      "start_seconds": 50,
+      "end_seconds": 54,
+      "play_type": "run",
+      "title": "Play 1: Sweep left, unidentified running back tackled for a 2-yard loss",
+      "description": "The offense lines up in a Pistol formation at the 35-yard line. The center snaps the ball to QB #11 Jake Feldman, who quickly hands it off to an unidentified running back sweeping to the left. The offensive line attempts to seal the edge, but the Baby Zip defense penetrates the backfield. The ball carrier is met by multiple green-jersey defenders and tackled at the 33-yard line for a loss of 2 yards.",
+      "players_involved": [
+        "#11 Jake Feldman",
+        "unidentified running back"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 33,
+      "segment_id": "0450a1f6-1fb6-4658-9945-8739aff7edf8",
+      "segment_title": "RTG vs. Baby Zip - Segment 5",
+      "start": 44,
+      "end": 54,
+      "start_seconds": 44,
+      "end_seconds": 54,
+      "play_type": "run",
+      "title": "Play 1: Off-tackle right, #5 Jasper Brown runs for 8 yards",
+      "description": "The offense aligns in a Wing-T formation at the 35-yard line. Center snaps the ball to QB #11 Jake Feldman, who hands off to RB #5 Jasper Brown (wearing white cleats). The offensive line blocks down to the left, creating a seam on the right side. Brown takes the handoff and sweeps diagonally to the right, crossing the 40-yard line before being tackled near the 43-yard line by an opponent defender with an orange helmet.",
+      "players_involved": [
+        "#11 Jake Feldman",
+        "#5 Jasper Brown"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 34,
+      "segment_id": "0450a1f6-1fb6-4658-9945-8739aff7edf8",
+      "segment_title": "RTG vs. Baby Zip - Segment 5",
+      "start": 215,
+      "end": 242,
+      "start_seconds": 215,
+      "end_seconds": 242,
+      "play_type": "penalty",
+      "title": "Play 2: Dead Ball — False start penalty on offense",
+      "description": "The offense lines up in a Wing-T formation at the 43-yard line. Before the snap, an offensive player moves prematurely, causing the referee to blow the whistle and signal a false start penalty, moving the ball back.",
+      "players_involved": [
+        "unidentified"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 35,
+      "segment_id": "0450a1f6-1fb6-4658-9945-8739aff7edf8",
+      "segment_title": "RTG vs. Baby Zip - Segment 5",
+      "start": 252,
+      "end": 301,
+      "start_seconds": 252,
+      "end_seconds": 301,
+      "play_type": "run",
+      "title": "Play 3: Toss sweep left, #1 Ori Darrisaw gains 5 yards",
+      "description": "The offense aligns in a Wing-T formation at the 43-yard line. Center snaps the ball to QB #11 Jake Feldman, who turns and hands off to RB #1 Ori Darrisaw (wearing black cleats) running to the left. The left tackle and guard pull to lead block. Darrisaw sweeps left, crossing the 40-yard line, and is tackled at the 38-yard line by multiple defenders in black jerseys.",
+      "players_involved": [
+        "#11 Jake Feldman",
+        "#1 Ori Darrisaw"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 36,
+      "segment_id": "912caf85-aea4-4040-b8f0-3282f56d2280",
+      "segment_title": "RTG vs. Baby Zip - Segment 6",
+      "start": 5,
+      "end": 12,
+      "start_seconds": 5,
+      "end_seconds": 12,
+      "play_type": "run",
+      "title": "Play 1: Off-tackle left, #1 Darrisaw runs for 2 yards",
+      "description": "The offense lines up in an I-formation. Center snaps the ball to QB #11 Jake Feldman, who hands off to #1 Ori Darrisaw running from right to left. Darrisaw runs forward into the defensive line and is tackled after a gain of 2 yards by multiple defenders.",
+      "players_involved": [
+        "#11 Jake Feldman",
+        "#1 Ori Darrisaw"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 37,
+      "segment_id": "912caf85-aea4-4040-b8f0-3282f56d2280",
+      "segment_title": "RTG vs. Baby Zip - Segment 6",
+      "start": 84,
+      "end": 92,
+      "start_seconds": 84,
+      "end_seconds": 92,
+      "play_type": "run",
+      "title": "Play 2: Sweep left, #1 Darrisaw gains 3 yards",
+      "description": "The offense lines up in a split-back formation. QB #11 Jake Feldman takes the snap and hands off to #1 Ori Darrisaw running to the left side. Darrisaw cuts inside and is tackled after a 3-yard gain by the defensive end.",
+      "players_involved": [
+        "#11 Jake Feldman",
+        "#1 Ori Darrisaw"
+      ],
+      "source": "two-pass-v2"
+    },
+    {
+      "index": 38,
+      "segment_id": "912caf85-aea4-4040-b8f0-3282f56d2280",
+      "segment_title": "RTG vs. Baby Zip - Segment 6",
+      "start": 168,
+      "end": 174,
+      "start_seconds": 168,
+      "end_seconds": 174,
+      "play_type": "run",
+      "title": "Play 3: Outside run left, #1 Darrisaw stopped for no gain",
+      "description": "The offense lines up in a tight double-wing formation. QB #11 Jake Feldman takes the snap and hands off to #1 Ori Darrisaw running to the left. The defense penetrates quickly, and Darrisaw is tackled near the line of scrimmage for no gain.",
+      "players_involved": [
+        "#11 Jake Feldman",
+        "#1 Ori Darrisaw"
+      ],
+      "source": "two-pass-v2"
+    }
+  ]
+}
